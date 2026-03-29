@@ -1,0 +1,6 @@
+package com.merge.final_project.notification;
+
+public enum EmailTemplateType {
+    DONATION_COMPLETE, CAMPAIGN_APPROVED, CAMPAIGN_REJECTED,
+    CAMPAIGN_ACHIEVED, PASSWORD_RESET, ACCOUNT_APPROVED, ACCOUNT_REJECTED
+}
