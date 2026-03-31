@@ -25,10 +25,12 @@
 - test     : 테스트 코드
 - style    : 코드 포맷 (기능 변경 없음)
 
-예시
-feat: 캠페인 등록 API 구현
-fix: 기부 내역 조회 오류 수정
-chore: .gitignore 환경변수 추가
+#### 예시
+<b>컨벤션: [이름] 수행 내역</b><br>
+
+feat: [김가빈] 캠페인 등록 API 구현 <br>
+fix: [김가빈]기부 내역 조회 오류 수정<br>
+chore: [김가빈].gitignore 환경변수 추가
 
 ---
 
