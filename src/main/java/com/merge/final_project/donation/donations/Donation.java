@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 public class Donation {
 
     @Id
-    @Column(name = "donation_no")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long donationNo;
 

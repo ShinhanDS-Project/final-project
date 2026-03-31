@@ -1,8 +1,6 @@
 package com.merge.final_project.org.illegalfoundation;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -14,8 +12,8 @@ import org.springframework.data.annotation.Id;
 public class IllegalFoundation {
 
     @Id
-    @Column(name = "illegal_no", nullable = false)
-    private String illegalNo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long illegalNo;
 
     @Column(name = "name")
     private String name;

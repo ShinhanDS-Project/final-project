@@ -14,11 +14,10 @@ import java.time.LocalDateTime;
 public class Payment {
 
     @Id
-    @Column(name = "payment_no")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long paymentNo;
 
-    private String method;
+    private String method; //결제수단 : 계좌이체 / 페이 / 카드 결제 -> enum 만들어주세요
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus status;

@@ -14,8 +14,8 @@ import java.time.LocalDateTime;
 public class Wallet {
 
     @Id
-    @Column(name = "wallet_no", nullable = false)
-    private String walletNo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long walletNo;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "owner_type")

@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class UsersAccount {
     @Id
-    @Column(name = "login_no", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String loginNo;
 
     @Column(name = "email")

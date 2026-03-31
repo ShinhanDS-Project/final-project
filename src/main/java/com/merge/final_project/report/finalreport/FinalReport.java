@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 public class FinalReport {
 
     @Id
-    @Column(name = "report_no", nullable = false)
-    private String reportNo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long reportNo;
 
     @Column(name = "content")
     private String content;

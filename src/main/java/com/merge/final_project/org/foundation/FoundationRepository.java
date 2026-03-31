@@ -1,4 +1,7 @@
 package com.merge.final_project.org.foundation;
 
-public interface FoundationRepository {
+import com.merge.final_project.auth.role.Role;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface FoundationRepository extends JpaRepository<Foundation, Long> {
 }

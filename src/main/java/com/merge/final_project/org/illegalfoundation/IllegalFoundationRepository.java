@@ -1,4 +1,6 @@
 package com.merge.final_project.org.illegalfoundation;
 
-public interface IllegalFoundationRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface IllegalFoundationRepository extends JpaRepository<IllegalFoundation, Long> {
 }

@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class User {
     @Id
-    @Column(name = "login_no", nullable = false)
-    private String userNo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long userNo;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "login_no", nullable = false)

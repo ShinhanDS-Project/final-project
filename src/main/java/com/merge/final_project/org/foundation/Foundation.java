@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 public class Foundation {
 
     @Id
-    @Column(name = "foundation_no", nullable = false)
-    private String foundationNo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long foundationNo;
 
     @Column(name = "foundation_hash")
     private String foundationHash;

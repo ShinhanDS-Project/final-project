@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
 public class Beneficiary {
 
     @Id
-    @Column(name = "beneficiary_no", nullable = false)
-    private String beneficiaryNo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long beneficiaryNo;
 
     @Column(name = "name")
     private String name;

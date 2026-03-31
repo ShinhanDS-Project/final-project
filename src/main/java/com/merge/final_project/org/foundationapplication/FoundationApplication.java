@@ -14,8 +14,8 @@ import java.time.LocalDateTime;
 public class FoundationApplication {
 
     @Id
-    @Column(name = "applications_no", nullable = false)
-    private String applicationsNo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long applicationsNo;
 
     @Column(name = "proposer_email")
     private String proposerEmail;
