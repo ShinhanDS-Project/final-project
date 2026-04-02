@@ -19,10 +19,10 @@ public class Admin extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long adminNo;
 
-    private String id;
+    private String adminId;
     private String password;
     private String name;
-    private String role;
+    private String adminRole;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
