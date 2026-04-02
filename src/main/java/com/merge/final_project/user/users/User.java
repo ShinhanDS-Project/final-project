@@ -1,11 +1,10 @@
 package com.merge.final_project.user.users;
 
-import com.merge.final_project.auth.useraccount.UsersAccount;
+
 import com.merge.final_project.wallet.Wallet;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,11 +15,16 @@ import java.time.LocalDateTime;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userNo;
+    private int userNo;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "login_no", nullable = false)
-    private UsersAccount usersAccount;
+    @Column(name="login_type")
+    private String loginType;
+
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
+
+    @Column(name="status")
+    private String status; // active inactive, 정지
 
     @Column(name="email")
     private String email;
@@ -44,9 +48,9 @@ public class User {
     @JoinColumn(name = "wallet_no", nullable = false)
     private Wallet wallet;
 
-    @Column(name="")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name="")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt; //처음에 생성시점의 시각을 createdAt과 updatedAT 둘다 갱신해둘것
 }
