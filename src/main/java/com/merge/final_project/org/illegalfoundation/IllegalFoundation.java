@@ -3,7 +3,6 @@ package com.merge.final_project.org.illegalfoundation;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
 
 @Entity
 @Table(name = "illegal_foundation")

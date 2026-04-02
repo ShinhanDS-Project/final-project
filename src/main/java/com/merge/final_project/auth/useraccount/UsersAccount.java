@@ -4,7 +4,6 @@ import com.merge.final_project.auth.role.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 
@@ -13,9 +12,11 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 public class UsersAccount {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String loginNo;
+    @Column(name = "login_no")
+    private Long loginNo;
 
     @Column(name = "email")
     private String email;
