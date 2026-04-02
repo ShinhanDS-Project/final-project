@@ -5,7 +5,6 @@ import com.merge.final_project.wallet.Wallet;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
