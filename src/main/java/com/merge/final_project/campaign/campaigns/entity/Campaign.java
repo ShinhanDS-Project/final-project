@@ -1,5 +1,7 @@
-package com.merge.final_project.campaign.campaigns;
+package com.merge.final_project.campaign.campaigns.entity;
 
+import com.merge.final_project.campaign.campaigns.ApprovalStatus;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.global.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -7,11 +9,12 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "campaign")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@Table(name = "campaign")
 public class Campaign extends BaseEntity {
 
     @Id
