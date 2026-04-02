@@ -15,11 +15,13 @@ import java.time.LocalDateTime;
 public class Campaign extends BaseEntity {
 
     @Id
-    @Column(name = "campaign_no")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long campaignNo;
+    @Column(name = "campaign_no")
+    private Integer campaignNo;
 
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "image_path")
@@ -38,15 +40,14 @@ public class Campaign extends BaseEntity {
     private LocalDateTime usageEndAt;
 
     @Column(name = "target_amount")
-    private String targetAmount;
+    private Integer targetAmount;
+
+    @Column(name = "achieved_at")
+    private LocalDateTime achievedAt;
 
     @Column(name = "current_amount")
-    private String currentAmount;
+    private Integer currentAmount;
 
-    @Column(name = "achived_at")
-    private LocalDateTime achivedAt;
-
-    private String disbursement;
     private String category;
 
     @Enumerated(EnumType.STRING)
@@ -60,21 +61,18 @@ public class Campaign extends BaseEntity {
     @Column(name = "campaign_status")
     private CampaignStatus campaignStatus;
 
-    @Column(name = "camp_wallet_no")
-    private Long campWalletNo;
-
-    @Column(name = "wallet_no2")
-    private Long walletNo2;
-
-    @Column(name = "foundation_no")
-    private Long foundationNo;
-
-    @Column(name = "beneficiary_no")
-    private Long beneficiaryNo;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "reject_reason")
+    @Column(name = "reject_reason", columnDefinition = "TEXT")
     private String rejectReason;
+
+    @Column(name = "beneficiary_no")
+    private Integer beneficiaryNo;
+
+    @Column(name = "foundation_no")
+    private Integer foundationNo;
 }
