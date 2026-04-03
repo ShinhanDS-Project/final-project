@@ -1,6 +1,5 @@
 package com.merge.final_project.recipient.beneficiary;
 
-import com.merge.final_project.auth.useraccount.UsersAccount;
 import com.merge.final_project.wallet.Wallet;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -46,9 +45,8 @@ public class Beneficiary {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "login_no", nullable = false)
-    private UsersAccount usersAccount;
+    @Column(name = "privatekey_no", nullable = false)
+    private Integer privatekeyNo;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_no", nullable = false)

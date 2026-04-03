@@ -1,6 +1,6 @@
 package com.merge.final_project.report.finalreport;
 
-import com.merge.final_project.auth.useraccount.UsersAccount;
+
 import com.merge.final_project.campaign.campaigns.Campaign;
 import com.merge.final_project.recipient.beneficiary.Beneficiary;
 import jakarta.persistence.*;
@@ -37,10 +37,6 @@ public class FinalReport {
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status")
     private ReportApprovalStatus approvalStatus;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "login_no", nullable = false)
-    private UsersAccount usersAccount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "campaign_no", nullable = false)

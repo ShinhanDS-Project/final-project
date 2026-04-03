@@ -1,6 +1,5 @@
 package com.merge.final_project.org.foundation;
 
-import com.merge.final_project.auth.useraccount.UsersAccount;
 import com.merge.final_project.wallet.Wallet;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -48,10 +47,6 @@ public class Foundation {
 
     @Column(name = "image_path")
     private String imagePath;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "login_no", nullable = false)
-    private UsersAccount usersAccount;
 
     @Column(name = "account")
     private String account;
