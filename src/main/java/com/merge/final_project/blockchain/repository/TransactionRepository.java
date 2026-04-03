@@ -1,4 +1,7 @@
 package com.merge.final_project.blockchain.repository;
 
-public class TransactionRepository {
+import com.merge.final_project.blockchain.entity.Transaction;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 }

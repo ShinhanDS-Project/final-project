@@ -1,8 +1,9 @@
 package com.merge.final_project.org.foundation;
 
-import com.merge.final_project.auth.useraccount.UsersAccount;
-import com.merge.final_project.wallet.Wallet;
+import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +14,8 @@ import java.time.LocalDateTime;
 @Table(name = "foundation")
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Foundation {
 
     @Id
@@ -26,7 +29,7 @@ public class Foundation {
     private String foundationName;
 
     @Column(name = "business_registration_number")
-    private String businessRegistrationNumber;
+    private Integer businessRegistrationNumber;
 
     @Column(name = "representative_name")
     private String representativeName;
@@ -43,15 +46,27 @@ public class Foundation {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "foundation_email", nullable = false)
+    private String foundationEmail;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "image_path")
-    private String imagePath;
+    @Column(name = "profile_path")
+    private String profilePath;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "login_no", nullable = false)
-    private UsersAccount usersAccount;
+    @Column(name = "campaign_wallet1")
+    private String campaignWallet1;
+
+    @Column(name = "campaign_wallet2")
+    private String campaignWallet2;
+
+    @Column(name = "campaign_wallet3")
+    private String campaignWallet3;
+
+//    @OneToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "login_no", nullable = false)
+//    private UsersAccount usersAccount;
 
     @Column(name = "account")
     private String account;

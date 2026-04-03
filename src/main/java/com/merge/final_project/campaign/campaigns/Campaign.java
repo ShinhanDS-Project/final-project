@@ -1,10 +1,10 @@
 package com.merge.final_project.campaign.campaigns;
 
-import com.merge.final_project.global.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
-
-import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "campaign")
@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Campaign extends BaseEntity {
+public class Campaign {
 
     @Id
-    @Column(name = "campaign_no")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "campaign_no")
     private Long campaignNo;
 
     private String title;
@@ -25,17 +25,18 @@ public class Campaign extends BaseEntity {
     @Column(name = "image_path")
     private String imagePath;
 
+    // 🔥 전부 String으로 맞춤
     @Column(name = "start_at")
-    private LocalDateTime startAt;
+    private String startAt;
 
     @Column(name = "end_at")
-    private LocalDateTime endAt;
+    private String endAt;
 
     @Column(name = "usage_start_at")
-    private LocalDateTime usageStartAt;
+    private String usageStartAt;
 
     @Column(name = "usage_end_at")
-    private LocalDateTime usageEndAt;
+    private String usageEndAt;
 
     @Column(name = "target_amount")
     private String targetAmount;
@@ -43,10 +44,9 @@ public class Campaign extends BaseEntity {
     @Column(name = "current_amount")
     private String currentAmount;
 
-    @Column(name = "achived_at")
-    private LocalDateTime achivedAt;
+    @Column(name = "achieved_at")
+    private String achievedAt;
 
-    private String disbursement;
     private String category;
 
     @Enumerated(EnumType.STRING)
@@ -54,26 +54,27 @@ public class Campaign extends BaseEntity {
     private ApprovalStatus approvalStatus;
 
     @Column(name = "approved_at")
-    private LocalDateTime approvedAt;
+    private String approvedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "campaign_status")
     private CampaignStatus campaignStatus;
 
-    @Column(name = "camp_wallet_no")
-    private Long campWalletNo;
-
-    @Column(name = "wallet_no2")
-    private Long walletNo2;
+    // 🔥 이것도 varchar라 String
+    @Column(name = "wallet_no")
+    private String walletNo;
 
     @Column(name = "foundation_no")
-    private Long foundationNo;
+    private String foundationNo;
 
     @Column(name = "beneficiary_no")
-    private Long beneficiaryNo;
+    private String beneficiaryNo;
+
+    @Column(name = "created_at")
+    private String createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private String updatedAt;
 
     @Column(name = "reject_reason")
     private String rejectReason;

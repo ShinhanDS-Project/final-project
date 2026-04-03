@@ -1,8 +1,9 @@
 package com.merge.final_project.recipient.beneficiary;
 
-import com.merge.final_project.auth.useraccount.UsersAccount;
-import com.merge.final_project.wallet.Wallet;
+import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +13,8 @@ import java.time.LocalDateTime;
 @Table(name = "beneficiary")
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Beneficiary {
 
     @Id
@@ -46,9 +49,12 @@ public class Beneficiary {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "login_no", nullable = false)
-    private UsersAccount usersAccount;
+    @Column(name = "entry_code", nullable = false)
+    private Integer entryCode;
+
+//    @OneToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "login_no", nullable = false)
+//    private UsersAccount usersAccount;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_no", nullable = false)
