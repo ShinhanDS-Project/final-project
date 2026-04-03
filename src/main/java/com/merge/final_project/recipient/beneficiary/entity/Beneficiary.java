@@ -1,10 +1,8 @@
-package com.merge.final_project.recipient.beneficiary;
+package com.merge.final_project.recipient.beneficiary.entity;
 
-import com.merge.final_project.auth.useraccount.UsersAccount;
-import com.merge.final_project.wallet.Wallet;
+import com.merge.final_project.recipient.beneficiary.BeneficiaryType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +10,9 @@ import java.time.LocalDateTime;
 @Table(name = "beneficiary")
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@ToString
 public class Beneficiary {
 
     @Id
@@ -30,6 +31,9 @@ public class Beneficiary {
     @Column(name = "phone")
     private String phone;
 
+    @Column(name = "entry_code")
+    private int entry_code;
+
     @Column(name = "account")
     private String account;
 
@@ -46,11 +50,10 @@ public class Beneficiary {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "login_no", nullable = false)
-    private UsersAccount usersAccount;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_no", nullable = false)
-    private Wallet wallet;
+    @Column(name = "wallet_no")
+    private Long wallet_no;
+
+    @Column(name = "key_no")
+    private Long key_no;
 }
