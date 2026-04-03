@@ -1,4 +1,4 @@
-package com.merge.final_project.config;
+package com.merge.final_project.global.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
