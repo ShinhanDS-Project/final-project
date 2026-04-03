@@ -16,10 +16,15 @@ import lombok.NoArgsConstructor;
 public class UsePlan {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long usePlanNo;
+    @Column(name = "use_plan_no")
+    private Integer usePlanNo;
 
+    @Column(name = "plan_content", nullable = false)
     private String planContent;
-    private Integer planAmount;
-    private Long campaignNo;
 
+    @Column(name = "plan_amount", nullable = false)
+    private Integer planAmount;
+
+    @Column(name = "campaign_no", nullable = false)
+    private Integer campaignNo;
 }

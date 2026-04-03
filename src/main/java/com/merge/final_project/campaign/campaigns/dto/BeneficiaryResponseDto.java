@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BeneficiaryResponseDto {
-    private Long beneficiaryNo;
+    private Integer beneficiaryNo;
     private String name;
     private String phone;
 }

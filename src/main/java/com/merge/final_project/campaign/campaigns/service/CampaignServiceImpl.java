@@ -45,7 +45,7 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional
     public void registerCampaign(CampaignRequestDto dto, Long foundationNo) {
-        // 1. 기부단체 지갑 주소 3개 가져오기
+        // 기부단체 지갑 주소 3개 가져오기
         Foundation foundation = foundationRepository.findById(foundationNo)
                 .orElseThrow(() -> new IllegalArgumentException("기부단체 정보를 찾을 수 없습니다."));
 
@@ -55,18 +55,18 @@ public class CampaignServiceImpl implements CampaignService {
                 foundation.getCampaignWallet3()
         );
 
-        // 2. 사용 가능(INACTIVE)한 지갑 매칭
+        // 사용 가능한 지갑 매칭
         Wallet availableWallet = walletRepository.findFirstByWalletAddressInAndStatus(walletAddresses, "INACTIVE")
-                .orElseThrow(() -> new IllegalStateException("현재 사용 가능한(INACTIVE) 빈 지갑이 없습니다."));
+                .orElseThrow(() -> new IllegalStateException("현재 사용 가능한 빈 지갑이 없습니다."));
 
-        // 3. 캠페인 엔티티 생성 및 지갑 매칭
+        // 캠페인 엔티티 생성 및 지갑 매칭
         Campaign campaign = dto.toEntity();
-        campaign.setFoundationNo(foundationNo);
+        campaign.setFoundationNo(foundationNo.intValue());
         campaign.setWalletNo(availableWallet.getWalletNo()); // 자동 매칭된 지갑 번호
 
         Campaign savedCampaign = campaignRepository.save(campaign);
 
-        // 4. 지출 계획(use_plan) 저장
+        // 지출 계획 저장
         if (dto.getUsePlans() != null) {
             dto.getUsePlans().forEach(planDto -> {
                 UsePlan plan = planDto.toEntity(savedCampaign.getCampaignNo());
@@ -74,7 +74,7 @@ public class CampaignServiceImpl implements CampaignService {
             });
         }
 
-        // 매칭된 지갑 상태를 ACTIVE로 변경
+        // 매칭된 지갑 상태 변경
         availableWallet.setStatus("ACTIVE");
     }
 }

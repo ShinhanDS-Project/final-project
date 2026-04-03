@@ -3,42 +3,45 @@ package com.merge.final_project.recipient.beneficiary;
 import com.merge.final_project.auth.useraccount.UsersAccount;
 import com.merge.final_project.wallet.Wallet;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "beneficiary")
 @Getter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "beneficiary")
 public class Beneficiary {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long beneficiaryNo;
+    @Column(name = "beneficiary_no")
+    private Integer beneficiaryNo;
 
-    @Column(name = "name")
+    @Column(nullable = false)
     private String name;
 
-    @Column(name = "email")
+    @Column(nullable = false)
     private String email;
 
-    @Column(name = "password")
     private String password;
 
-    @Column(name = "phone")
-    private String phone;
+    @Column(name = "entry_code")
+    private Integer entryCode;
 
-    @Column(name = "account")
+    private String phone;
     private String account;
 
     @Column(name = "beneficiary_hash")
     private String beneficiaryHash;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "beneficiary_type")
-    private BeneficiaryType beneficiaryType;
+    private String beneficiaryType;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -46,16 +49,10 @@ public class Beneficiary {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "login_no", nullable = false)
-    private UsersAccount usersAccount;
+    @Column(name = "wallet_no", nullable = false)
+    private Integer walletNo;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_no", nullable = false)
-    private Wallet wallet;
-
-    @Column(name = "entry_code")
-    private Integer entryCode;
-
+    @Column(name = "key_no", nullable = false)
+    private Integer keyNo;
 
 }

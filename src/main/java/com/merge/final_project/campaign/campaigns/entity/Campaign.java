@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 @Setter
 @Table(name = "campaign")
 public class Campaign extends BaseEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "campaign_no")
@@ -64,12 +63,6 @@ public class Campaign extends BaseEntity {
     @Column(name = "campaign_status")
     private CampaignStatus campaignStatus;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     @Column(name = "reject_reason", columnDefinition = "TEXT")
     private String rejectReason;
 
@@ -78,4 +71,7 @@ public class Campaign extends BaseEntity {
 
     @Column(name = "foundation_no")
     private Integer foundationNo;
+
+    @Column(name = "wallet_no")
+    private Integer walletNo;
 }

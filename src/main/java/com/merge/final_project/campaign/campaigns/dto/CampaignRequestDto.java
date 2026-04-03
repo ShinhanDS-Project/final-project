@@ -1,7 +1,10 @@
 package com.merge.final_project.campaign.campaigns.dto;
 
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
+import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDto;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class CampaignRequestDto {
@@ -10,7 +13,7 @@ public class CampaignRequestDto {
     private String category;
     private Long targetAmount;
     private Long beneficiaryNo;
-    private List<UsePlanRequestDto> usePlans; // 지출 계획 리스트 포함
+    private List<UsePlanRequestDto> usePlans;
 
     // DTO -> Entity
     public Campaign toEntity() {
@@ -18,8 +21,8 @@ public class CampaignRequestDto {
                 .title(this.title)
                 .description(this.description)
                 .category(this.category)
-                .targetAmount(this.targetAmount)
-                .beneficiaryNo(this.beneficiaryNo)
+                .targetAmount(this.targetAmount.intValue())
+                .beneficiaryNo(this.beneficiaryNo.intValue())
                 .build();
     }
 }

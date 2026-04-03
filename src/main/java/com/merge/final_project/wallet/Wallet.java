@@ -1,44 +1,43 @@
 package com.merge.final_project.wallet;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "wallet")
 @Getter
+@Setter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "wallet")
 public class Wallet {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long walletNo;
+    @Column(name = "wallet_no")
+    private Integer walletNo;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "owner_type")
-    private OwnerType ownerType;
+    @Column(name = "key_no", nullable = false)
+    private Integer keyNo;
+
+    @Column(name = "wallet_type")
+    private Integer walletType;
 
     @Column(name = "owner_no")
-    private String ownerNo;
+    private Integer ownerNo;
 
-    @Column(name = "wallet_address")
+    @Column(name = "wallet_address", nullable = false, unique = true)
     private String walletAddress;
 
-    @Column(name = "balance")
-    private BigDecimal balance;
-
-    @Column(name = "encrypted_private_key")
-    private String encryptedPrivateKey;
+    private Integer balance;
 
     @Column(name = "wallet_hash")
     private String walletHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    private WalletStatus status;
+    private String status;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
