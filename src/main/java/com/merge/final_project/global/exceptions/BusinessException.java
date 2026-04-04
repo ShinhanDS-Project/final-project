@@ -1,4 +1,4 @@
-package com.merge.final_project.global.exception;
+package com.merge.final_project.global.exceptions;
 
 import lombok.Getter;
 
