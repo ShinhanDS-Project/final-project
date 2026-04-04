@@ -1,0 +1,43 @@
+reviews:
+  enabled: true
+  review_status: true
+
+  auto_review:
+    enabled: true
+    branches:
+      - "*"
+
+  # 리뷰 강도 조절
+  review_level: medium   # low / medium / high
+
+  # 너무 사소한 코멘트 줄이기
+  tone: concise
+
+  # 반복적/불필요한 코멘트 방지
+  avoid_redundant_comments: true
+
+  # PR 전체 요약 제공
+  summary:
+    enabled: true
+
+  # 중요한 문제만 강조
+  categories:
+    - bug_risk
+    - security
+    - performance
+    - maintainability
+    
+
+  # 특정 파일/경로 제외 (선택)
+  path_filters:
+    exclude:
+      - "*.md"
+      - "*.yml"
+      - "*.json"
+      - "node_modules/**"
+      - "build/**"
+      - "dist/**"
+
+  # PR 크기 클 때 과도한 리뷰 방지
+  max_files: 30
+  max_changes: 500
