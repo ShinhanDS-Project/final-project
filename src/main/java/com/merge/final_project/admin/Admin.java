@@ -1,4 +1,4 @@
-package com.merge.final_project.admin.admins;
+package com.merge.final_project.admin;
 
 import com.merge.final_project.global.BaseUpdatedAtEntity;
 import jakarta.persistence.*;

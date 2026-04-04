@@ -1,7 +1,5 @@
 package com.merge.final_project.admin;
 
-import com.merge.final_project.admin.admins.Admin;
-import com.merge.final_project.admin.admins.AdminRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -56,6 +56,8 @@ public class JwtTokenProvider {
         return parseClaims(token).get("role", String.class);
     }
 
+
+    //유효한 토큰인지 검증.
     public boolean validateToken(String token){
         try {
             parseClaims(token);
@@ -65,4 +67,7 @@ public class JwtTokenProvider {
             return false;
         }
     }
+
+    //리프레시 토큰 생성
+
 }

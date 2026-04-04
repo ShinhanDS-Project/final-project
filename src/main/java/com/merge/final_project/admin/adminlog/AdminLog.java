@@ -1,6 +1,6 @@
 package com.merge.final_project.admin.adminlog;
 
-import com.merge.final_project.admin.admins.Admin;
+import com.merge.final_project.admin.Admin;
 import com.merge.final_project.global.BaseCreatedAtEntity;
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,4 +1,4 @@
-package com.merge.final_project.admin.admins.dto;
+package com.merge.final_project.admin.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

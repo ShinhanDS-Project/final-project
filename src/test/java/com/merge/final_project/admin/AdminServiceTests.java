@@ -1,10 +1,8 @@
 package com.merge.final_project.admin;
 
-import com.merge.final_project.admin.admins.Admin;
-import com.merge.final_project.admin.admins.AdminAuthServiceImpl;
-import com.merge.final_project.admin.admins.AdminRepository;
-import com.merge.final_project.admin.admins.dto.AdminSigninRequestDTO;
-import com.merge.final_project.admin.admins.dto.AdminSigninResponseDTO;
+import com.merge.final_project.admin.auth.AdminAuthServiceImpl;
+import com.merge.final_project.admin.auth.dto.AdminSigninRequestDTO;
+import com.merge.final_project.admin.auth.dto.AdminSigninResponseDTO;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
