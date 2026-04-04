@@ -9,4 +9,8 @@ import lombok.Getter;
 @Builder
 public class AdminSigninResponseDTO {
     private String accessToken;
+    private String tokenType;
+    private String adminId;
+    private String name;
+    private String adminRole;
 }

@@ -2,30 +2,38 @@ package com.merge.final_project.admin.admins;
 
 import com.merge.final_project.admin.admins.dto.AdminSigninRequestDTO;
 import com.merge.final_project.admin.admins.dto.AdminSigninResponseDTO;
-import com.merge.final_project.global.exception.ErrorCode;
-import com.merge.final_project.global.exception.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class AdminAuthServiceImpl implements  AdminAuthService{
     private final AdminRepository adminRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     public AdminSigninResponseDTO login(AdminSigninRequestDTO requestDTO) {
 
-        Optional<Admin> admin = adminRepository.findByAdminId(requestDTO.getAdminId())
+        Admin admin = adminRepository.findByAdminId(requestDTO.getAdminId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
 
-        if (!passwordEncoder.matches(requestDTO.getPassword(), admin.get().getPassword())) {
+        if (!passwordEncoder.matches(requestDTO.getPassword(), admin.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD);
         }
 
-        return null;
+        String accessToken = jwtTokenProvider.createAdminAccessToken(admin.getAdminId(), admin.getAdminRole());
+
+        return AdminSigninResponseDTO.builder()
+                .accessToken(accessToken)
+                .tokenType("Bearer")
+                .adminId(admin.getAdminId())
+                .name(admin.getName())
+                .adminRole(admin.getAdminRole())
+                .build();
     }
 }
