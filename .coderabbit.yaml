@@ -1,6 +1,7 @@
 reviews:
   enabled: true
   review_status: true
+  language: ko
 
   auto_review:
     enabled: true
