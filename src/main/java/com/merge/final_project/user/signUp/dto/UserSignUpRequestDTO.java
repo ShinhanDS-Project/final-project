@@ -5,11 +5,14 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
-
+@AllArgsConstructor
 @Getter
+@Builder
 public class UserSignUpRequestDTO {
 
    @NotBlank(message = "이름은 필수입니다.")
@@ -31,6 +34,9 @@ public class UserSignUpRequestDTO {
 
    @NotBlank(message = "사진을 지정해주세요.")
    private String profilePath;
+
+
+
 
    //중복검사용 메서드 추가
 

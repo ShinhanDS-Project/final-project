@@ -31,4 +31,10 @@ public class EmailVerification {
     @Column(name="verified",nullable = false)
     private boolean verified;
 
+    // EmailVerification 엔티티 내부에 추가
+    public void updateVerification(String code, LocalDateTime expiredAt) {
+        this.verificationCode = code;
+        this.expiredAt = expiredAt;
+        this.verified = false; // 재발송 시 다시 미인증 상태로
+    }
 }

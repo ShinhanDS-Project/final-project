@@ -4,6 +4,7 @@ import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.users.User;
 import com.merge.final_project.user.users.UserStatus;
 import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
+import com.merge.final_project.user.verify.VerificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,23 +15,39 @@ public class UserSignUpServiceImpl implements UserSignUpService{
 
 
     private final UserSignUpRepository userSignUpRepository;
-
+private final VerificationService verificationService;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
     @Override
-    public void register(UserSignUpRequestDTO requestDto) {
+    public void register(UserSignUpRequestDTO requestDto)  {
         if(requestDto.getLoginType()==null){
-            throw new IllegalAccessException("잘못된 접근입니다.");
+            throw new IllegalArgumentException("잘못된 접근입니다.");
         }
         if(userSignUpRepository.existsByPhone(requestDto.getPhone())){
             throw new IllegalArgumentException("이미 존재하는 회원 정보입니다.");
         }
+        if (requestDto.getLoginType() == LoginType.LOCAL &&
+                (requestDto.getPassword() == null || requestDto.getPassword().isBlank())) {
+            throw new IllegalArgumentException("비밀번호는 필수입니다.");
+        }
         if (requestDto.getLoginType() == LoginType.LOCAL) {
+            //부가기능 추가 : 이메일 인증
             if (userSignUpRepository.existsByEmailAndLoginType(requestDto.getEmail(), LoginType.LOCAL)) {
                 throw new IllegalArgumentException("이미 존재하는 이메일입니다..");
             }
+            if (!verificationService.isVerifiedEmail(requestDto.getEmail())) {
+                throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다.");
+            }
             registerLocal(requestDto);
+            return;
+        }
+        if (requestDto.getLoginType() == LoginType.GOOGLE) {
+            //부가기능 추가 : 이메일 인증
+            if (userSignUpRepository.existsByEmailAndLoginType(requestDto.getEmail(), LoginType.GOOGLE)) {
+                throw new IllegalArgumentException("이미 존재하는 이메일입니다..");
+            }
+            registerGoogle(requestDto);
             return;
         }
         throw new IllegalArgumentException("잘못된 접근입니다.");
