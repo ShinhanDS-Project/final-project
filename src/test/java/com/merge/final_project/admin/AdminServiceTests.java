@@ -55,7 +55,7 @@ class AdminServiceTests {
 
         when(adminRepository.findByAdminId("admin1")).thenReturn(Optional.of(admin));
         when(passwordEncoder.matches("rawPassword", "encodedPassword")).thenReturn(true);
-        when(jwtTokenProvider.createAccessToken("admin1")).thenReturn("mock-access-token");
+        when(jwtTokenProvider.createAdminAccessToken("admin1","ROLE_ADMIN")).thenReturn("mock-access-token");
 
         AdminSigninRequestDTO request = createRequest("admin1", "rawPassword");
 
@@ -69,7 +69,7 @@ class AdminServiceTests {
     }
 
     @Test
-    @DisplayName("존재하지 않는 관리자 아이디로 로그인하면 ADMIN_NOT_FOUND 예외가 발생한다")
+    @DisplayName("존재하지 않는 관리자 아이디로 로그인하면 AUTHENTICATION_FAILED 예외가 발생한다")
     void 로그인_실패_존재하지않는관리자() {
         // given
         when(adminRepository.findByAdminId("unknown")).thenReturn(Optional.empty());
@@ -83,11 +83,11 @@ class AdminServiceTests {
         );
 
         // then
-        assertThat(exception.getMessage()).isEqualTo(ErrorCode.ADMIN_NOT_FOUND.getMessage());
+        assertThat(exception.getMessage()).isEqualTo(ErrorCode.AUTHENTICATION_FAILED.getMessage());
     }
 
     @Test
-    @DisplayName("비밀번호가 일치하지 않으면 INVALID_PASSWORD 예외가 발생한다")
+    @DisplayName("비밀번호가 일치하지 않으면 AUTHENTICATION_FAILED 예외가 발생한다")
     void 로그인_실패_비밀번호불일치() {
         // given
         Admin admin = Admin.builder()
@@ -109,6 +109,6 @@ class AdminServiceTests {
         );
 
         // then
-        assertThat(exception.getMessage()).isEqualTo(ErrorCode.INVALID_PASSWORD.getMessage());
+        assertThat(exception.getMessage()).isEqualTo(ErrorCode.AUTHENTICATION_FAILED.getMessage());
     }
 }

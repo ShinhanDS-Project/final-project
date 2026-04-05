@@ -2,6 +2,7 @@ package com.merge.final_project.admin.auth;
 
 import com.merge.final_project.admin.auth.dto.AdminSigninRequestDTO;
 import com.merge.final_project.admin.auth.dto.AdminSigninResponseDTO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +15,7 @@ public class AdminAuthController {
     private final AdminAuthService adminAuthService;
 
     @PostMapping("/login")
-    public ResponseEntity<AdminSigninResponseDTO> login(@RequestBody AdminSigninRequestDTO requestDTO) {
+    public ResponseEntity<AdminSigninResponseDTO> login(@RequestBody @Valid AdminSigninRequestDTO requestDTO) {
         AdminSigninResponseDTO response = adminAuthService.login(requestDTO);
         return ResponseEntity.ok(response);
     }

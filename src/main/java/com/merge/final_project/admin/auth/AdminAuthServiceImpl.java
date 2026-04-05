@@ -8,9 +8,11 @@ import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminAuthServiceImpl implements  AdminAuthService{
@@ -22,10 +24,14 @@ public class AdminAuthServiceImpl implements  AdminAuthService{
     public AdminSigninResponseDTO login(AdminSigninRequestDTO requestDTO) {
 
         Admin admin = adminRepository.findByAdminId(requestDTO.getAdminId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("로그인 실패 - 존재하지 않는 관리자 ID: {}", requestDTO.getAdminId());
+                    return new BusinessException(ErrorCode.AUTHENTICATION_FAILED);
+                });
 
         if (!passwordEncoder.matches(requestDTO.getPassword(), admin.getPassword())) {
-            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+            log.warn("로그인 실패 - 비밀번호 불일치, 관리자 ID: {}", requestDTO.getAdminId());
+            throw new BusinessException(ErrorCode.AUTHENTICATION_FAILED);
         }
 
         String accessToken = jwtTokenProvider.createAdminAccessToken(admin.getAdminId(), admin.getAdminRole());

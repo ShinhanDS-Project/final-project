@@ -24,9 +24,4 @@ public class AdminRepositoryTests {
         assertEquals("admin_gabeen", admin.get().getAdminId());
     }
 
-    @Test
-    void 비밀번호_암호화_확인() {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        System.out.println(encoder.encode("1234"));
-    }
 }

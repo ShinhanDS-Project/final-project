@@ -8,6 +8,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class JwtAccessDeniedHandler implements AccessDeniedHandler {
@@ -15,6 +16,8 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);   // 403 : 관리자X
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType("text/plain; charset=UTF-8");
         response.getWriter().write("접근 권한이 없습니다.");
 
     }
