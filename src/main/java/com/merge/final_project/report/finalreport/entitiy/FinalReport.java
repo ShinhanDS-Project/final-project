@@ -2,6 +2,8 @@ package com.merge.final_project.report.finalreport.entitiy;
 
 import com.merge.final_project.report.finalreport.ReportApprovalStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -10,6 +12,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "final_report")
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class FinalReport {
 
