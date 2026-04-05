@@ -1,17 +1,13 @@
-package com.merge.final_project.user.users.signUp;
+package com.merge.final_project.user.signUp;
 
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.users.User;
 import com.merge.final_project.user.users.UserStatus;
+import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.time.LocalDateTime;
-
-import static com.merge.final_project.user.users.signUp.UserHashGenerater.generateUserHash;
 @RequiredArgsConstructor
 @Service
 public class UserSignUpServiceImpl implements UserSignUpService{
@@ -21,8 +17,9 @@ public class UserSignUpServiceImpl implements UserSignUpService{
 
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     @Override
-    public void register(UserSignUpRequestDTO requestDto) throws IllegalAccessException {
+    public void register(UserSignUpRequestDTO requestDto) {
         if(requestDto.getLoginType()==null){
             throw new IllegalAccessException("잘못된 접근입니다.");
         }

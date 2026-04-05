@@ -1,4 +1,4 @@
-package com.merge.final_project.user.users.signUp;
+package com.merge.final_project.user.signUp;
 
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.users.User;

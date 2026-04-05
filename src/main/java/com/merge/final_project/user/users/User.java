@@ -10,10 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 @Entity
-@Table(name = "user", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_user_email_login_type", columnNames = {"email", "login_type"}),
-        @UniqueConstraint(name = "uk_user_phone", columnNames = {"phone"})
-})
+@Table(name = "user")
 @Getter
 @Builder
 @AllArgsConstructor
@@ -29,7 +26,7 @@ public class User {
     private String passwordHash;
 
 
-    @Column(name="email",nullable = false)
+    @Column(name="email",unique=true, nullable = false)
     private String email;
 
     @Column(name="name_hash",unique = true, nullable = false)
