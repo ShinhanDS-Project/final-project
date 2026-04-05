@@ -11,7 +11,11 @@ public class GlobalExceptionHandler {
     // @Valid 검증 실패하면 400 응답
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidException(MethodArgumentNotValidException e) {
-        String message = e.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
+        String message = e.getBindingResult().getAllErrors()
+                .stream()
+                .findFirst()
+                .map(error -> error.getDefaultMessage())
+                .orElse("요청 값이 올바르지 않습니다.");
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("VALID_001", message));
     }
