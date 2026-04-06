@@ -1,5 +1,6 @@
 package com.merge.final_project.org;
 
+import com.merge.final_project.notification.EmailStatus;
 import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
 import com.merge.final_project.org.dto.FoundationApplyResponseDTO;
 import com.merge.final_project.org.dto.FoundationDetailResponseDTO;
@@ -14,6 +15,10 @@ public interface FoundationService {
     IllegalFoundationResponseDTO checkIllegalFoundation(FoundationApplyRequestDTO requestDTO);
     boolean existByBusinessRegistrationNumber(String businessRegistrationNumber);
     FoundationApplyResponseDTO apply(FoundationApplyRequestDTO requestDTO, MultipartFile profileImage);
-    Page<FoundationListResponseDTO> getFoundationApplicationList(String reviewStatus, Pageable pageable);
+    Page<FoundationListResponseDTO> getFoundationApplicationList(Pageable pageable);
+    Page<FoundationListResponseDTO> getApprovedFoundationList( Pageable pageable);
     FoundationDetailResponseDTO getFoundationDetail(Long foundationNo);
+    Long approveFoundation(Long foundationNo);
+    Long rejectFoundationForIllegal(Long foundationNo);
+
 }

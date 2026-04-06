@@ -25,6 +25,7 @@ public class FoundationDetailResponseDTO {
     private String accountStatus;  // PRE_REGISTERED / ACTIVE / INACTIVE    -> 기부단체 계정 상태
     private String rejectReason;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static FoundationDetailResponseDTO from(Foundation foundation) {
         return FoundationDetailResponseDTO.builder()
@@ -41,6 +42,8 @@ public class FoundationDetailResponseDTO {
                 .accountStatus(foundation.getAccountStatus())
                 .rejectReason(foundation.getRejectReason())
                 .createdAt(foundation.getCreatedAt())
+                .updatedAt(foundation.getUpdatedAt())
                 .build();
     }
+
 }

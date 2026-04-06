@@ -1,5 +1,6 @@
 package com.merge.final_project.org.dto;
 
+import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationType;
 import com.merge.final_project.org.ReviewStatus;
@@ -18,7 +19,7 @@ public class FoundationListResponseDTO {
     private String representativeName;
     private FoundationType foundationType;
     private ReviewStatus reviewStatus;
-    private String accountStatus;
+    private AccountStatus accountStatus;
     private LocalDateTime createdAt;
 
     public static FoundationListResponseDTO from(Foundation foundation) {

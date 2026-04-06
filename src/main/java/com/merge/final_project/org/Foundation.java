@@ -52,7 +52,7 @@ public class Foundation extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "account_status")
-    private String accountStatus;
+    private AccountStatus accountStatus;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "review_status")
@@ -83,5 +83,20 @@ public class Foundation extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "foundation_type")
     private FoundationType foundationType;
+
+
+    public void approved() {
+        this.reviewStatus = ReviewStatus.APPROVED;
+        this.accountStatus = AccountStatus.ACTIVE;
+    }
+
+    public void reject(String rejectReason) {
+        this.reviewStatus = ReviewStatus.REJECTED;
+        this.rejectReason = rejectReason;
+    }
+
+    public void updatePassword(String encodedPassword) {
+        this.foundationPassword = encodedPassword;
+    }
 
 }

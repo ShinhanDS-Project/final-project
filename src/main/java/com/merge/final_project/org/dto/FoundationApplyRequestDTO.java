@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Getter
-@Builder
+@NoArgsConstructor  //Jackson이 JSON을 역직렬화할 때 기본 생성자가 필요. 따라서 빌드만 있으면 안 되고 기본 생성자가 필요.
 public class FoundationApplyRequestDTO {
 
     @NotBlank(message = "이메일을 입력해주세요.")

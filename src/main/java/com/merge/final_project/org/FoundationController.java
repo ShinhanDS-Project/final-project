@@ -31,4 +31,13 @@ public class FoundationController {
         foundationService.apply(requestDTO, profileImage);
         return ResponseEntity.ok().build();
     }
+
+    //관리자가 승인 전 기부단체 리스트 불러오는 경로
+
+    //관리자가 승인 후 기부단체 리스트 불러오는 경로
+
+    //관리자가 승인 전 기부단체 상세 정보 조회하는 경로
+
+    //관리자가 기부단체 review_status 상태 변환하는 경로
+
 }

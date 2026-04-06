@@ -14,6 +14,7 @@ public enum ErrorCode {
     // 기부단체 가입 관련
     DUPLICATE_BUSINESS_REGISTRATION(HttpStatus.CONFLICT, "FOUNDATION_001", "이미 신청된 사업자등록번호입니다."),
     FOUNDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "FOUNDATION_002", "존재하지 않는 기부단체입니다."),
+    CANNOT_APPROVE_ILLEGAL_FOUNDATION(HttpStatus.CONFLICT, "FOUNDATION_003", "불성실기부단체에 포함되는 단체는 가입이 안됩니다."),
 
     // 파일
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다.");
