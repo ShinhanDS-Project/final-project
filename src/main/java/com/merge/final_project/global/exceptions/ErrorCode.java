@@ -17,8 +17,10 @@ public enum ErrorCode {
     CANNOT_APPROVE_ILLEGAL_FOUNDATION(HttpStatus.CONFLICT, "FOUNDATION_003", "불성실기부단체에 포함되는 단체는 가입이 안됩니다."),
 
     // 파일
-    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다.");
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
 
+    // 메일
+    MAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MAIL_001", "메일 발송에 실패했습니다.");
 
     private final HttpStatus status;
     private final String code;

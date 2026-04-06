@@ -1,5 +1,6 @@
 package com.merge.final_project.org.dto;
 
+import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationType;
 import com.merge.final_project.org.ReviewStatus;
@@ -22,7 +23,7 @@ public class FoundationDetailResponseDTO {
     private String description;
     private String account;
     private ReviewStatus reviewStatus;   // PENDING / ILLEGAL / APPROVED / REJECTED -> 가입 상태
-    private String accountStatus;  // PRE_REGISTERED / ACTIVE / INACTIVE    -> 기부단체 계정 상태
+    private AccountStatus accountStatus;  // PRE_REGISTERED / ACTIVE / INACTIVE    -> 기부단체 계정 상태
     private String rejectReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

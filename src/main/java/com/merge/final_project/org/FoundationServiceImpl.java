@@ -3,6 +3,8 @@ package com.merge.final_project.org;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.util.FileUtil;
+import com.merge.final_project.notification.email.event.FoundationApprovedEvent;
+import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
 import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
 import com.merge.final_project.org.dto.FoundationApplyResponseDTO;
 import com.merge.final_project.org.dto.FoundationDetailResponseDTO;
@@ -14,6 +16,7 @@ import com.merge.final_project.org.illegalfoundation.IllegalFoundationResponseDT
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +39,7 @@ public class FoundationServiceImpl implements FoundationService {
     private final IllegalFoundationRepository illegalFoundationRepository;
     private final FileUtil upload;    //프로필 이미지는 위한 업로드 필드 추가
     private final PasswordEncoder passwordEncoder;  //임시 비밀번호 생성 시 암호화 하여 저장하기 위함
+    private final ApplicationEventPublisher eventPublisher; // 언제 이벤트 발행할지 설정하기 위함.
 
 
     @Override
@@ -155,7 +159,7 @@ public class FoundationServiceImpl implements FoundationService {
         return FoundationDetailResponseDTO.from(foundation);
     }
 
-    //기부 리뷰 상태 변경하는 메서드 구현 (승인 시 임시 비밀번호 생성)-> 메일 보내는 메서드 비동기로 호출,
+    // 기부단체 승인 시 임시 비밀번호 생성-> 메일 보내는 메서드 비동기로 호출,
     @Transactional
     @Override
     public Long approveFoundation(Long foundationNo) {
@@ -170,8 +174,12 @@ public class FoundationServiceImpl implements FoundationService {
         foundation.approved();
 
         //임시 비밀번호 생성한 후 해당 내용 DB에 저장.
-        String tempPassword = passwordEncoder.encode(String.valueOf(UUID.randomUUID()));
+        String sendTempPassword = String.valueOf(UUID.randomUUID());
+        String tempPassword = passwordEncoder.encode(sendTempPassword);
         foundation.updatePassword(tempPassword);
+
+        //트랜잭션 커밋 성공한 이후에만 메일 발송 -> 이벤트 기반으로 구현.
+        eventPublisher.publishEvent(new FoundationApprovedEvent(foundationNo,foundation.getFoundationEmail(), foundation.getFoundationName(), sendTempPassword));
 
         return foundation.getFoundationNo();
     }
@@ -184,6 +192,8 @@ public class FoundationServiceImpl implements FoundationService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
 
         foundation.reject(foundation.getRejectReason());
+
+        eventPublisher.publishEvent(new FoundationRejectedEvent(foundationNo, foundation.getFoundationEmail(), foundation.getFoundationName(), foundation.getRejectReason()));
         return foundation.getFoundationNo();
     }
 }
