@@ -1,5 +1,7 @@
 package com.merge.final_project.recipient.beneficiary.service;
 
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
+import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
@@ -14,12 +16,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
 public class BeneficiaryService implements UserDetailsService {
-
+    private final CampaignRepository campaignRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -78,4 +81,13 @@ public class BeneficiaryService implements UserDetailsService {
 
         beneficiaryRepository.save(beneficiary);
     }
+    public List<Campaign> getMyCampaigns(String email) {
+        // 1. 이메일로 수혜자 번호 찾기
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 없음"));
+
+        // 2. 그 번호로 등록된 캠페인들 가져오기
+        return campaignRepository.findByBeneficiaryNo(beneficiary.getBeneficiaryNo());
+    }
+
 }

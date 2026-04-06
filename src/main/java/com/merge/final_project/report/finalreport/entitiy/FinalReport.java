@@ -34,14 +34,14 @@ public class FinalReport {
     private String usagePurpose;
 
     @Column(name = "settlement_no")
-    private String settlementNo;
+    private Long settlementNo;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status")
     private ReportApprovalStatus approvalStatus;
 
     @Column(name = "beneficiary_no")
-    private int beneficiary_no;
+    private Long beneficiary_no;
 
 
     @Column(name = "created_at")
@@ -55,8 +55,8 @@ public class FinalReport {
 
 
     @Column(name = "campaign_no")
-    private int campaign_no;
+    private Long campaign_no;
 
     @Column(name = "key_no")
-    private int key_no;
+    private Long key_no;
 }
