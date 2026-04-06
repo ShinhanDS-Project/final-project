@@ -50,6 +50,7 @@ public class Foundation extends BaseEntity {
     @Column(name = "foundation_hash")
     private String foundationHash;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "account_status")
     private String accountStatus;
 

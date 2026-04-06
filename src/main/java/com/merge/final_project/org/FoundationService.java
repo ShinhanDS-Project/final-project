@@ -14,6 +14,6 @@ public interface FoundationService {
     IllegalFoundationResponseDTO checkIllegalFoundation(FoundationApplyRequestDTO requestDTO);
     boolean existByBusinessRegistrationNumber(String businessRegistrationNumber);
     FoundationApplyResponseDTO apply(FoundationApplyRequestDTO requestDTO, MultipartFile profileImage);
-    Page<FoundationListResponseDTO> getFoundationList(String reviewStatus, Pageable pageable);
+    Page<FoundationListResponseDTO> getFoundationApplicationList(String reviewStatus, Pageable pageable);
     FoundationDetailResponseDTO getFoundationDetail(Long foundationNo);
 }

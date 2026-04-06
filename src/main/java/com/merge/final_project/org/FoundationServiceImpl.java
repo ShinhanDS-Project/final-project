@@ -2,6 +2,7 @@ package com.merge.final_project.org;
 
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
+import com.merge.final_project.global.util.Upload;
 import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
 import com.merge.final_project.org.dto.FoundationApplyResponseDTO;
 import com.merge.final_project.org.dto.FoundationDetailResponseDTO;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -29,6 +31,7 @@ public class FoundationServiceImpl implements FoundationService {
 
     private final FoundationRepository foundationRepository;
     private final IllegalFoundationRepository illegalFoundationRepository;
+    private final Upload upload;    //프로필 이미지는 위한 업로드 필드 추가
 
 
     @Override
@@ -41,7 +44,7 @@ public class FoundationServiceImpl implements FoundationService {
         //정확하게 일치하지 않는 경우로만 이루어지도록 리스트 필터링.
         List<IllegalFoundation> filteredSimilar = similarList.stream()
                 .filter(f -> exactMatch.isEmpty() || !f.getIllegalNo().equals(exactMatch.get().getIllegalNo()))
-                .collect(Collectors.toList());
+                .toList();
 
         return IllegalFoundationResponseDTO.builder()
                 .exactMatch(exactMatch.isPresent())
@@ -61,33 +64,87 @@ public class FoundationServiceImpl implements FoundationService {
 
     @Override
     public FoundationApplyResponseDTO apply(FoundationApplyRequestDTO requestDTO, MultipartFile profileImage) {
+
         if (foundationRepository.existsByBusinessRegistrationNumber(requestDTO.getBusinessRegistrationNumber())) {
             throw new BusinessException(ErrorCode.DUPLICATE_BUSINESS_REGISTRATION);
         }
+
         //불법 단체 체크
         IllegalFoundationResponseDTO checkedFoundation = checkIllegalFoundation(requestDTO);
 
-        // foundation 엔티티 빌드 후 저장.
-        //불법 단체에 포함되는 단체면 review_status를 불법 단체 의심으로 변경하고 상세 보기 조회시 해당 상태값과 유사 리스트도 있으면 그것까지 보여주기
-        //불법 단체에 포함되지 않는 단체면 임시 비밀번호 메일로 발급하고 기부단체로 저장.
+        ReviewStatus reviewStatus;
+        if (checkedFoundation.isExactMatch()) {
+            reviewStatus = ReviewStatus.ILLEGAL;
+        } else if (!checkedFoundation.getSimilarFoundations().isEmpty()) {
+            reviewStatus = ReviewStatus.SIMILAR;
+        } else {
+            reviewStatus = ReviewStatus.CLEAN;
+        }
 
+        //프로필 사진
+        String profilePath = null;
+        if (profileImage != null && !profileImage.isEmpty()) {
+            try {
+                profilePath = upload.store(profileImage);
+            } catch (IOException e) {
+                log.error("프로필 이미지 저장 실패", e);
+                throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+            }
+        }
 
-        // 신청이 성공적으로 마무리 되면 repsonseDTO 반환
+        // foundation 엔티티 빌드 후 저장. (임시 비밀번호 없는 상태)
+        Foundation foundation = Foundation.builder()
+                .foundationEmail(requestDTO.getFoundationEmail())
+                .foundationPassword(null)
+                .foundationName(requestDTO.getFoundationName())
+                .businessRegistrationNumber(requestDTO.getBusinessRegistrationNumber())
+                .representativeName(requestDTO.getRepresentativeName())
+                .description(requestDTO.getDescription())
+                .profilePath(profileImage.isEmpty()
+                        ? null
+                        : profilePath)
+                .contactPhone(requestDTO.getContactPhone())
+                .account(requestDTO.getAccount())
+                .feeRate(requestDTO.getFeeRate())
+                .foundationHash(null)
+                .accountStatus("INACTIVE")
+                .reviewStatus(reviewStatus)
+                .rejectReason(checkedFoundation.isExactMatch()
+                        ? checkedFoundation.getMatchedFoundation().getReason()
+                        : null)
+                .campaignWallet1(null)
+                .campaignWallet2(null)
+                .campaignWallet3(null)
+                .bankName(requestDTO.getBankName())
+                .account(requestDTO.getAccount())
+                .walletNo(null)
+                .foundationType(requestDTO.getFoundationType())
+                .build();
 
-        return null;
-
+        foundationRepository.save(foundation);
+        return FoundationApplyResponseDTO.builder()
+                .foundationEmail(foundation.getFoundationEmail())
+                .foundationName(foundation.getFoundationName())
+                .representativeName(foundation.getRepresentativeName())
+                .build();
     }
 
     @Override
-    public Page<FoundationListResponseDTO> getFoundationList(String reviewStatus, Pageable pageable) {
-
+    public Page<FoundationListResponseDTO> getFoundationApplicationList(String reviewStatus, Pageable pageable) {
+        // 신청 해놓고 승인되지 않은 기부단체들을 볼 수 있는 목록
         return null;
     }
 
     @Override
     public FoundationDetailResponseDTO getFoundationDetail(Long foundationNo) {
+        //기부 단체 리뷰 상태에 따라 다른 정보 표시 할 것.
         Foundation foundation = foundationRepository.findById(foundationNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
         return FoundationDetailResponseDTO.from(foundation);
     }
+
+    //기부 리뷰 상태 변경하는 메서드 구현 (승인 시 임시 비밀번호 생성)-> 메일 보내는 메서드 비동기로 호출,
+    //반려 시 반려 사유를 담아 메일 보내는 메서드 비동기로 호출
+
+    //
 }

@@ -11,9 +11,13 @@ public enum ErrorCode {
     ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_002", "존재하지 않는 관리자입니다."),
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "ADMIN_003", "비밀번호가 일치하지 않습니다."),
 
-    // Foundation
+    // 기부단체 가입 관련
     DUPLICATE_BUSINESS_REGISTRATION(HttpStatus.CONFLICT, "FOUNDATION_001", "이미 신청된 사업자등록번호입니다."),
-    FOUNDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "FOUNDATION_002", "존재하지 않는 기부단체입니다.");
+    FOUNDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "FOUNDATION_002", "존재하지 않는 기부단체입니다."),
+
+    // 파일
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다.");
+
 
     private final HttpStatus status;
     private final String code;
