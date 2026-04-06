@@ -21,6 +21,14 @@ public class User {
     @Column(name="user_no")
     private Integer userNo;
 
+    @Column(name="login_type")
+    private String loginType;
+
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
+
+    @Column(name="status")
+    private String status; // active inactive, 정지
 
     @Column(name="password_hash")
     private String passwordHash;

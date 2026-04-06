@@ -38,6 +38,8 @@ public class FinalReport {
     @Column(name = "approval_status")
     private ReportApprovalStatus approvalStatus;
 
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "campaign_no", nullable = false)
     private Campaign campaign;
