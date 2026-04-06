@@ -1,4 +1,4 @@
-package com.merge.final_project.org.foundation;
+package com.merge.final_project.org;
 
 import com.merge.final_project.auth.useraccount.UsersAccount;
 import com.merge.final_project.wallet.Wallet;
@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "foundation")
@@ -16,6 +15,7 @@ import java.time.LocalDateTime;
 public class Foundation {
 
     @Id
+    @Column(name = "foundation_no")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long foundationNo;
 
@@ -34,27 +34,18 @@ public class Foundation {
     @Column(name = "contact_phone")
     private String contactPhone;
 
-    @Column(name = "description")
-    private String description;
-
     @Column(name = "fee_rate")
     private BigDecimal feeRate;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     @Column(name = "image_path")
     private String imagePath;
 
+    private String description;
+    private String account;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "login_no", nullable = false)
     private UsersAccount usersAccount;
-
-    @Column(name = "account")
-    private String account;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_no", nullable = false)
