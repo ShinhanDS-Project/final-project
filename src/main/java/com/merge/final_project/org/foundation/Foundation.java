@@ -22,7 +22,7 @@ public class Foundation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "foundation_no")
-    private Integer foundationNo;
+    private Long foundationNo;
 
     @Column(name = "foundation_email", nullable = false)
     private String foundationEmail;

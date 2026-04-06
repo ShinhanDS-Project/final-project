@@ -6,9 +6,9 @@ import lombok.Data;
 @Data
 public class UsePlanRequestDto {
     private String planContent;
-    private Integer planAmount;
+    private Long planAmount;
 
-    public UsePlan toEntity(Integer campaignNo) { // Campaign 엔티티의 ID 타입에 맞춤
+    public UsePlan toEntity(Long campaignNo) {
         return UsePlan.builder()
                 .planContent(this.planContent)
                 .planAmount(this.planAmount)

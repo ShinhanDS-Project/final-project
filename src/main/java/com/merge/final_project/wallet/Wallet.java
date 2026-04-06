@@ -1,5 +1,6 @@
 package com.merge.final_project.wallet;
 
+import com.merge.final_project.wallet.entity.WalletStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,16 +19,16 @@ public class Wallet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "wallet_no")
-    private Integer walletNo;
+    private Long walletNo;
 
     @Column(name = "key_no", nullable = false)
-    private Integer keyNo;
+    private Long keyNo;
 
     @Column(name = "wallet_type")
-    private Integer walletType;
+    private String walletType;
 
     @Column(name = "owner_no")
-    private Integer ownerNo;
+    private String ownerNo;
 
     @Column(name = "wallet_address", nullable = false, unique = true)
     private String walletAddress;
@@ -37,7 +38,8 @@ public class Wallet {
     @Column(name = "wallet_hash")
     private String walletHash;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private WalletStatus status;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

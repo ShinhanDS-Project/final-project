@@ -21,7 +21,7 @@ public class Beneficiary {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "beneficiary_no")
-    private Integer beneficiaryNo;
+    private Long beneficiaryNo;
 
     @Column(nullable = false)
     private String name;
@@ -50,9 +50,9 @@ public class Beneficiary {
     private LocalDateTime updatedAt;
 
     @Column(name = "wallet_no", nullable = false)
-    private Integer walletNo;
+    private Long walletNo;
 
     @Column(name = "key_no", nullable = false)
-    private Integer keyNo;
+    private Long keyNo;
 
 }
