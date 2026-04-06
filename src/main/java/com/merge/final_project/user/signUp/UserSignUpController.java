@@ -16,7 +16,7 @@ public class UserSignUpController {
     @Autowired
     UserSignUpService userSignUpService;
 
-    @PostMapping("/users")
+    @PostMapping("/local")
     public ResponseEntity<Void> register(@Valid @RequestBody UserSignUpRequestDTO dto) {
         userSignUpService.register(dto);
         return ResponseEntity.status(HttpStatus.CREATED).build();
