@@ -23,6 +23,9 @@ public class Transaction {
     @Column(name = "transaction_no")
     private Long transactionNo;
 
+    @Column(name = "transaction_code", length = 255)
+    private String transactionCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_wallet_no", nullable = false)
     private Wallet fromWallet;
@@ -39,7 +42,7 @@ public class Transaction {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "tx_hash", unique = true)
+    @Column(name = "tx_hash")
     private String txHash;
 
     @Column(name="block_num")

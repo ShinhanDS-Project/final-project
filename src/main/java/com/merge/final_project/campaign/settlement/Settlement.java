@@ -5,9 +5,7 @@ import com.merge.final_project.campaign.campaigns.Campaign;
 import com.merge.final_project.org.foundation.Foundation;
 import com.merge.final_project.recipient.beneficiary.Beneficiary;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +13,9 @@ import java.time.LocalDateTime;
 @Table(name="settlement")
 @Getter
 @NoArgsConstructor
+@Builder
+@Setter
+@AllArgsConstructor
 public class Settlement {
 
     @Id
@@ -22,9 +23,8 @@ public class Settlement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long settlementNo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transaction_no")
-    private Transaction transaction;
+    @Column(name = "transaction_code", length = 255)
+    private String transactionCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "foundation_no", nullable = false)
@@ -71,7 +71,7 @@ public class Settlement {
     }
 
     public void completed(Transaction transaction){
-        this.transaction = transaction;
+        this.transactionCode = transactionCode;
         this.status = SettlementStatus.COMPLETED;
         this.settledAt = LocalDateTime.now();
     }

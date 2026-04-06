@@ -1,14 +1,13 @@
 package com.merge.final_project.campaign.campaigns;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "campaign")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -25,27 +24,26 @@ public class Campaign {
     @Column(name = "image_path")
     private String imagePath;
 
-    // 🔥 전부 String으로 맞춤
     @Column(name = "start_at")
-    private String startAt;
+    private LocalDateTime startAt;
 
     @Column(name = "end_at")
-    private String endAt;
+    private LocalDateTime endAt;
 
     @Column(name = "usage_start_at")
-    private String usageStartAt;
+    private LocalDateTime usageStartAt;
 
     @Column(name = "usage_end_at")
-    private String usageEndAt;
+    private LocalDateTime usageEndAt;
 
     @Column(name = "target_amount")
-    private String targetAmount;
+    private Integer targetAmount;
 
     @Column(name = "current_amount")
-    private String currentAmount;
+    private Integer currentAmount;
 
     @Column(name = "achieved_at")
-    private String achievedAt;
+    private LocalDateTime achievedAt;
 
     private String category;
 
@@ -54,27 +52,26 @@ public class Campaign {
     private ApprovalStatus approvalStatus;
 
     @Column(name = "approved_at")
-    private String approvedAt;
+    private LocalDateTime approvedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "campaign_status")
     private CampaignStatus campaignStatus;
 
-    // 🔥 이것도 varchar라 String
     @Column(name = "wallet_no")
-    private String walletNo;
+    private Long walletNo;
 
     @Column(name = "foundation_no")
-    private String foundationNo;
+    private Long foundationNo;
 
     @Column(name = "beneficiary_no")
-    private String beneficiaryNo;
+    private Long beneficiaryNo;
 
     @Column(name = "created_at")
-    private String createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private String updatedAt;
+    private LocalDateTime updatedAt;
 
     @Column(name = "reject_reason")
     private String rejectReason;
