@@ -7,6 +7,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class VerificationServiceImpl implements VerificationService {
@@ -19,23 +20,45 @@ public class VerificationServiceImpl implements VerificationService {
     @Override
     public void sendVerificationCode(String email) {
 
+        //요청횟수 확인하기
+        Optional<EmailVerification> emailVerificationOptional = emailVerificationRepository.findByEmail(email);
+
+        int currentCount = 0;
+
+        if(emailVerificationOptional.isPresent()) {
+            EmailVerification emailVerificationObj = emailVerificationOptional.get();
+            currentCount=emailVerificationObj.getRequestCount();
+
+            //시간 확인 -> 만료시간+4분보다 크고, 횟수가 5건이상이면 인증번호 요청횟수를 초과했다라고 띄우기
+            //요청한지 1분밖에 안됐을 때
+            if(emailVerificationObj.getExpiredAt().isAfter(LocalDateTime.now().plusMinutes(4))) {
+                throw new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다.");
+            }
+            //요청 횟수 5건 이상 불가
+            if(currentCount>=5){
+                throw new IllegalStateException("인증번호 요청 횟수 (5회)를 초과했습니다. 나중에 다시 시도해주세요.");
+            }
+        }
         //코드 생성
         String code=createVerificationCode();
         LocalDateTime expiredAt=LocalDateTime.now().plusMinutes(5);
+        int newCount=currentCount+1; //횟수 증가
 
-        EmailVerification emailVerification=emailVerificationRepository.findByEmail(email)
+        EmailVerification emailVerification=emailVerificationOptional
                 .map(existing->{
                     existing.setVerificationCode(code);
                     existing.setVerified(false);
                     existing.setExpiredAt(expiredAt);
+                    existing.setRequestCount(newCount); // 증가된 횟수 저장
                     return existing;
                 })
-                .orElse(
+                .orElseGet(()->
                         EmailVerification.builder()
                         .email(email)
                         .verified(false)
                         .verificationCode(code)
                         .expiredAt(expiredAt)
+                                .requestCount(newCount)
                         .build()
                 );
 
@@ -85,7 +108,7 @@ public class VerificationServiceImpl implements VerificationService {
     private void sendEmail(String to, String code) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
-        message.setSubject("[BlueHeart] 회원가입 인증 번호입니다.");
+        message.setSubject("[giveNtoken] 회원가입 인증 번호입니다.");
         message.setText("인증 번호: " + code + "\n5분 이내에 입력해주세요.");
         mailSender.send(message);
     }

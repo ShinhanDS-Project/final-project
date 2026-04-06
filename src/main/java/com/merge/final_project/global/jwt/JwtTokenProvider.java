@@ -70,4 +70,33 @@ public class JwtTokenProvider {
 
     //리프레시 토큰 생성
 
+
+    //// 1. 소셜 가입용 임시 토큰 생성 (이메일과 이름을 담음)
+    public String createToken(String name,String email){
+        Date now = new Date();
+        //10분 제한
+        Date expiry = new Date(now.getTime() +600000);
+
+        return Jwts.builder()
+                .subject(email)
+                .claim("name",name)
+                .claim("email",email)
+                .claim("type","TEMP") //임시토큰으로 구분하기 위한 타입
+                .issuedAt(now)
+                .expiration(expiry)
+                .signWith(secretKey)
+                .compact();
+
+    }
+
+
+    //2. 토큰에서 이름 추출하는 메서드 (리액트 요청시 사용)
+     public String getNameFromToken(String token){
+        return parseClaims(token).get("name", String.class);
+     }
+     public String getEmailFromToken(String token){
+        return parseClaims(token).get("email", String.class);
+     }
+     //3. 토큰 종류 구분하기
+    public String getTokenType(String token){return parseClaims(token).get("type", String.class);}
 }

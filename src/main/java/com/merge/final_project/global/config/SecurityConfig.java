@@ -1,11 +1,16 @@
 package com.merge.final_project.global.config;
 
+import com.merge.final_project.global.exceptions.OAuth2SuccessHandler;
 import com.merge.final_project.global.jwt.JwtAccessDeniedHandler;
 import com.merge.final_project.global.jwt.JwtAuthenticationEntryPoint;
 import com.merge.final_project.global.jwt.JwtFilter;
+import com.merge.final_project.global.jwt.JwtTokenProvider;
+import com.merge.final_project.user.auth.oauth.CustomOAuth2UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,7 +18,15 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+
+
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
+
     @Bean
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
@@ -30,11 +43,18 @@ public class SecurityConfig {
                         //회원가입 경로는 인증 없이 허용합니다.
                         .requestMatchers("/api/beneficiary/signup").permitAll()
                         .requestMatchers("/admin/auth/login").permitAll()   //관리자 로그인
+                        .requestMatchers("/","/api/auth/**","/oauth2/**","/api/signup/**","/login/**","/social-info").permitAll()
                         .anyRequest().authenticated() // 그 외의 요청은 로그인이 필요함 -> 스프링 세큐리티
                 )
                 .exceptionHandling(ex -> ex     //에외처리 위함. 401/403
                     .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                     .accessDeniedHandler(jwtAccessDeniedHandler)
+                )
+                // 3. OAuth2 로그인 설정
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);    //유저네임필터보다 jwt 필터 먼저 실행할 것
 

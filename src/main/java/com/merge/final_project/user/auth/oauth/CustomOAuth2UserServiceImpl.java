@@ -17,10 +17,12 @@ public class CustomOAuth2UserServiceImpl extends DefaultOAuth2UserService implem
     //DefaultOAuth2UserService를 상속받기
     //loadUser 메서드를 오버라이드 해 email,name을 추출하기
 
-    //핵심: userRepository로 findByEmail을 조회하고, 없으면 user.builder.build()로 이름과 이메일만 넣어서 새회원ㅇ로 저장한다.
+
     private final UserSignUpRepository userSignUpRepository;
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        return super.loadUser(userRequest);
+       return super.loadUser(userRequest);
     }
+
+    //로깅 기능 추가?
 }

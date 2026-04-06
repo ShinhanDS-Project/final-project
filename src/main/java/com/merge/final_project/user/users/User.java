@@ -19,58 +19,50 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="user_no")
-    private Integer userNo;
+    private Long userNo;
 
-    @Column(name="login_type")
-    private String loginType;
+    // 중복 제거: String 타입은 지우고 Enum 타입만 남깁니다.
+    @Enumerated(EnumType.STRING)
+    @Column(name="login_type", nullable = false)
+    private LoginType loginType;
 
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
 
-    @Column(name="status")
-    private String status; // active inactive, 정지
+    // 중복 제거: String 타입은 지우고 Enum 타입만 남깁니다.
+    @Enumerated(EnumType.STRING)
+    @Column(name="status", nullable = false)
+    private UserStatus status; // ACTIVE, INACTIVE, 정지 등
 
-    @Column(name="password_hash")
-    private String passwordHash;
-
-
-    @Column(name="email",unique=true, nullable = false)
+    @Column(name="email", unique=true, nullable = false)
     private String email;
 
-    @Column(name="name_hash",unique = true, nullable = false)
+    @Column(name="name_hash", unique = true, nullable = false)
     private String nameHash;
 
-    @Column(name="name",nullable = false)
+    @Column(name="name", nullable = false)
     private String name;
 
-    @Column(name="phone",unique = true)
+    @Column(name="phone", unique = true)
     private String phone;
 
-    @Column(name="birth",nullable = false)
+    @Column(name="birth", nullable = false)
     private LocalDate birth;
 
     @Column(name="profile_path")
     private String profilePath;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_no") //null처리 가능
+    @JoinColumn(name = "wallet_no") // null 가능
     private Wallet wallet;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name="login_type",nullable = false)
-    private LoginType loginType;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name="status",nullable = false)
-    private UserStatus status;
-
     @CreationTimestamp
-    @Column(name="created_at",nullable = false)
+    @Column(name="created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name="updated_at",nullable = false)
-    private LocalDateTime updatedAt;//처음에 생성시점의 시각을 createdAt과 updatedAT 둘다 갱신해둘것
+    @Column(name="updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     @Column(name="login_count")
     private Integer loginCount;
