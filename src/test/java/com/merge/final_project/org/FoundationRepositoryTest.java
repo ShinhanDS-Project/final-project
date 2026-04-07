@@ -67,7 +67,7 @@ class FoundationRepositoryTest {
         assertThat(result.getContent())
                 .extracting(Foundation::getFoundationName)
                 .contains("승인단체")
-                .doesNotContain("검토e중단체", "유사단체");
+                .doesNotContain("검토중단체", "유사단체");
     }
 
     @Test
