@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,21 +67,24 @@ class FoundationRepositoryTest {
         assertThat(result.getContent())
                 .extracting(Foundation::getFoundationName)
                 .contains("승인단체")
-                .doesNotContain("검토중단체", "유사단체");
+                .doesNotContain("검토e중단체", "유사단체");
     }
 
     @Test
-    @DisplayName("APPROVED가 아닌 단체들만 페이징 조회된다")
+    @DisplayName("APPROVED, REJECTED를 제외한 단체(CLEAN, SIMILAR, ILLEGAL)만 조회된다")
     void 승인전_단체_목록_조회() {
         foundationRepository.save(foundation("111-11-11111", "승인단체", ReviewStatus.APPROVED));
-        foundationRepository.save(foundation("222-22-22222", "검토중단체", ReviewStatus.CLEAN));
-        foundationRepository.save(foundation("333-33-33333", "불법단체", ReviewStatus.ILLEGAL));
+        foundationRepository.save(foundation("222-22-22222", "반려단체", ReviewStatus.REJECTED));
+        foundationRepository.save(foundation("333-33-33333", "검토중단체", ReviewStatus.CLEAN));
+        foundationRepository.save(foundation("444-44-44444", "유사단체", ReviewStatus.SIMILAR));
+        foundationRepository.save(foundation("555-55-55555", "불법단체", ReviewStatus.ILLEGAL));
 
-        Page<Foundation> result = foundationRepository.findByReviewStatusNot(ReviewStatus.APPROVED, PageRequest.of(0, 10));
+        Page<Foundation> result = foundationRepository.findByReviewStatusNotIn(
+                List.of(ReviewStatus.APPROVED, ReviewStatus.REJECTED), PageRequest.of(0, 10));
 
         assertThat(result.getContent())
                 .extracting(Foundation::getFoundationName)
-                .contains("검토중단체", "불법단체")
-                .doesNotContain("승인단체");
+                .contains("검토중단체", "유사단체", "불법단체")
+                .doesNotContain("승인단체", "반려단체");
     }
 }

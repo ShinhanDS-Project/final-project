@@ -8,23 +8,23 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
+
+import java.util.concurrent.CompletableFuture;
 
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GmailServiceImpl implements GmailService{
+public class GmailServiceImpl implements GmailService {
 
     private final JavaMailSender mailSender;
-    private final SpringTemplateEngine templateEngine;  //타임리프로 만든 메일 양식 템플릿 처리용
+    private final SpringTemplateEngine templateEngine;
 
-    @Async
     @Override
-    public void sendSignupMail(String to, String foundationName, String tempPassword) {
+    public CompletableFuture<Void> sendSignupMail(String to, String foundationName, String tempPassword) {
         Context context = new Context();
         context.setVariable("foundationName", foundationName);
         context.setVariable("tempPassword", tempPassword);
@@ -38,16 +38,16 @@ public class GmailServiceImpl implements GmailService{
             helper.setSubject("[giveNtoken] 가입 신청 승인 및 임시 비밀번호 안내");
             helper.setText(html, true);
             mailSender.send(message);
-        }catch (MessagingException e ){
+        } catch (MessagingException e) {
             log.error("메일 발송 실패 - 수신주소: {}", to);
             throw new BusinessException(ErrorCode.MAIL_SEND_FAILED);
         }
 
+        return CompletableFuture.completedFuture(null);
     }
 
-    @Async
     @Override
-    public void sendRejectMail(String to, String foundationName, String rejectReason) {
+    public CompletableFuture<Void> sendRejectMail(String to, String foundationName, String rejectReason) {
         Context context = new Context();
         context.setVariable("foundationName", foundationName);
         context.setVariable("rejectReason", rejectReason);
@@ -61,16 +61,16 @@ public class GmailServiceImpl implements GmailService{
             helper.setSubject("[giveNtoken] 가입 신청 반려 안내");
             helper.setText(html, true);
             mailSender.send(message);
-        }catch (MessagingException e ){
+        } catch (MessagingException e) {
             log.error("메일 발송 실패 - 수신주소: {}", to);
             throw new BusinessException(ErrorCode.MAIL_SEND_FAILED);
         }
+
+        return CompletableFuture.completedFuture(null);
     }
 
-
-    @Async
     @Override
-    public void sendInactiveMail(String to, String subject, String content) {
-
+    public CompletableFuture<Void> sendInactiveMail(String to, String subject, String content) {
+        return CompletableFuture.completedFuture(null);
     }
 }

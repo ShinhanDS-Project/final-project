@@ -16,7 +16,8 @@ public interface FoundationService {
     boolean existByBusinessRegistrationNumber(String businessRegistrationNumber);
     FoundationApplyResponseDTO apply(FoundationApplyRequestDTO requestDTO, MultipartFile profileImage);
     Page<FoundationListResponseDTO> getFoundationApplicationList(Pageable pageable);
-    Page<FoundationListResponseDTO> getApprovedFoundationList( Pageable pageable);
+    Page<FoundationListResponseDTO> getRejectedFoundationList( Pageable pageable);
+    Page<FoundationListResponseDTO> getApprovedFoundationList(AccountStatus accountStatus, Pageable pageable);
     FoundationDetailResponseDTO getFoundationDetail(Long foundationNo);
     Long approveFoundation(Long foundationNo);
     Long rejectFoundationForIllegal(Long foundationNo);

@@ -1,6 +1,7 @@
 package com.merge.final_project.org;
 
 import com.merge.final_project.global.BaseEntity;
+import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -73,12 +74,9 @@ public class Foundation extends BaseEntity {
     @Column(name = "bank_name")
     private String bankName;
 
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "wallet_no")
-//    private Wallet wallet;
-    //추후 연관관계 맺고 난 뒤 위에 원투원으로 변경할 예정
-    @Column(name = "wallet_no")
-    private Long walletNo;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wallet_no")
+    private Wallet wallet;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "foundation_type")

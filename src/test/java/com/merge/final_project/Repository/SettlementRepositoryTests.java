@@ -15,8 +15,8 @@ import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
-import com.merge.final_project.org.foundation.Foundation;
-import com.merge.final_project.org.foundation.FoundationRepository;
+import com.merge.final_project.org.Foundation;
+import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.BeneficiaryRepository;
 import com.merge.final_project.recipient.beneficiary.BeneficiaryType;
@@ -155,8 +155,6 @@ public class SettlementRepositoryTests {
                 .contactPhone("02-1234-5678")
                 .description("아동 및 취약계층 지원 단체")
                 .feeRate(new BigDecimal("0.05"))
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .profilePath("/images/foundation1.png")
                 .account("222-333-444444")
                 .foundationEmail("foundation@test.com")

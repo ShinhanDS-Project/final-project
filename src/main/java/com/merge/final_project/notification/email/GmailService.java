@@ -1,9 +1,9 @@
 package com.merge.final_project.notification.email;
 
-import org.thymeleaf.context.Context;
+import java.util.concurrent.CompletableFuture;
 
 public interface GmailService {
-    void sendSignupMail(String to, String foundationName, String tempPassword);
-    void sendRejectMail(String to, String foundationName, String rejectReason);
-    void sendInactiveMail(String to, String subject, String content);
+    CompletableFuture<Void> sendSignupMail(String to, String foundationName, String tempPassword);
+    CompletableFuture<Void> sendRejectMail(String to, String foundationName, String rejectReason);
+    CompletableFuture<Void> sendInactiveMail(String to, String subject, String content);
 }

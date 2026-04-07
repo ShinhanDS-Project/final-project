@@ -41,10 +41,18 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.getFoundationApplicationList(pageable));
     }
 
-    // 관리자 - 승인 완료된 기부단체 리스트 조회
+    //승인 완료된 기부단체 리스트 조회 (accountStatus 파라미터로 활성화/비활성화 필터링)
     @GetMapping("/foundations")
-    public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(Pageable pageable) {
-        return ResponseEntity.ok(foundationService.getApprovedFoundationList(pageable));
+    public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
+            @RequestParam(required = false) AccountStatus accountStatus,
+            Pageable pageable) {
+        return ResponseEntity.ok(foundationService.getApprovedFoundationList(accountStatus, pageable));
+    }
+
+    // 관리자 - 반려된 기부단체 리스트 조회
+    @GetMapping("/admin/foundations-rejected")
+    public ResponseEntity<Page<FoundationListResponseDTO>> getRejectedList(Pageable pageable) {
+        return ResponseEntity.ok(foundationService.getRejectedFoundationList(pageable));
     }
 
     // 관리자 - 기부단체 상세 조회

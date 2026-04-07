@@ -2,7 +2,7 @@ package com.merge.final_project.org;
 
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
-import com.merge.final_project.global.util.FileUtil;
+import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.notification.email.event.FoundationApprovedEvent;
 import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
 import com.merge.final_project.org.dto.FoundationApplyRequestDTO;

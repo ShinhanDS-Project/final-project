@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -70,6 +71,7 @@ public class FoundationServiceImpl implements FoundationService {
         return foundationRepository.existsByBusinessRegistrationNumber(businessRegistrationNumber);
     }
 
+    @Transactional
     @Override
     public FoundationApplyResponseDTO apply(FoundationApplyRequestDTO requestDTO, MultipartFile profileImage) {
 
@@ -123,7 +125,6 @@ public class FoundationServiceImpl implements FoundationService {
                 .campaignWallet2(null)
                 .campaignWallet3(null)
                 .bankName(requestDTO.getBankName())
-                .walletNo(null)
                 .foundationType(requestDTO.getFoundationType())
                 .build();
 
@@ -137,17 +138,32 @@ public class FoundationServiceImpl implements FoundationService {
 
     @Override
     public Page<FoundationListResponseDTO> getFoundationApplicationList(Pageable pageable) {
-        // 신청 해놓고 승인되지 않은 기부단체들을 볼 수 있는 목록
-        ReviewStatus reviewStatus = ReviewStatus.APPROVED;
-        Page<Foundation> foundations = foundationRepository.findByReviewStatusNot(reviewStatus, pageable);
+        // 신청 해놓고 승인되지 않은 기부단체들을 볼 수 있는 목록 (승인인지 반려인지를 제외)
+        List<ReviewStatus> reviewStatuses = new ArrayList<>();
+        reviewStatuses.add(ReviewStatus.APPROVED);
+        reviewStatuses.add(ReviewStatus.REJECTED);
+
+        Page<Foundation> foundations = foundationRepository.findByReviewStatusNotIn(reviewStatuses, pageable);
         return foundations.map(FoundationListResponseDTO::from);
     }
 
     @Override
-    public Page<FoundationListResponseDTO> getApprovedFoundationList(Pageable pageable) {
-        //승인 된 기부단체들을 볼 수 있는 목록
-        ReviewStatus reviewStatus = ReviewStatus.APPROVED;
+    public Page<FoundationListResponseDTO> getRejectedFoundationList(Pageable pageable) {
+        //반려된 기부단체들 보기
+        ReviewStatus reviewStatus = ReviewStatus.REJECTED;
         Page<Foundation> foundations = foundationRepository.findByReviewStatus(reviewStatus, pageable);
+        return foundations.map(FoundationListResponseDTO::from);
+    }
+
+    @Override
+    public Page<FoundationListResponseDTO> getApprovedFoundationList(AccountStatus accountStatus, Pageable pageable) {
+        //승인된 기부단체들 보기 (비활성화, 활성화 필터링)
+        Page<Foundation> foundations;
+        if (accountStatus == null) {
+            foundations = foundationRepository.findByReviewStatus(ReviewStatus.APPROVED, pageable);
+        } else {
+            foundations = foundationRepository.findByReviewStatusAndAccountStatus(ReviewStatus.APPROVED, accountStatus, pageable);
+        }
         return foundations.map(FoundationListResponseDTO::from);
     }
 
