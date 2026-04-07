@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -40,7 +41,7 @@ public class CampaignServiceImpl implements CampaignService {
     // 신규 캠페인 등록
     @Override
     @Transactional
-    public void registerCampaign(CampaignRequestDto dto, MultipartFile imageFile, Long foundationNo) {
+    public void registerCampaign(CampaignRequestDto dto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo) {
         // 기부단체 정보 확인
         Foundation foundation = foundationRepository.findById(foundationNo)
                 .orElseThrow(() -> new IllegalArgumentException("Foundation not found."));
@@ -64,26 +65,13 @@ public class CampaignServiceImpl implements CampaignService {
         campaign.setCurrentAmount(0L);
         campaign.setApprovalStatus(ApprovalStatus.PENDING);
         campaign.setCampaignStatus(CampaignStatus.PENDING);
+        campaign.setImagePath(saveRepresentativeImage(imageFile));
 
         // 캠페인 정보 DB 저장
         Campaign savedCampaign = campaignRepository.save(campaign);
 
         // 이미지 파일 있을 경우 저장
-        if (imageFile != null && !imageFile.isEmpty()) {
-            try {
-                String storedName = fileUtil.saveFile(imageFile);
-                imageRepository.save(Image.builder()
-                        .imgPath("C:/uploads/" + storedName)
-                        .imgOrgName(imageFile.getOriginalFilename())
-                        .imgStoredName(storedName)
-                        .targetName("campaign")
-                        .targetNo(savedCampaign.getCampaignNo())
-                        .createdAt(LocalDateTime.now())
-                        .build());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        saveDetailImages(detailImageFiles, savedCampaign.getCampaignNo());
 
         // 지출 계획 리스트 저장
         if (dto.getUsePlans() != null) {
@@ -96,5 +84,44 @@ public class CampaignServiceImpl implements CampaignService {
         // 사용된 지갑의 상태를 ACTIVE로 변경
         availableWallet.setStatus(WalletStatus.ACTIVE);
         walletRepository.save(availableWallet);
+    }
+
+    private String saveRepresentativeImage(MultipartFile imageFile) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            return null;
+        }
+
+        try {
+            String storedName = fileUtil.saveFile(imageFile);
+            return "C:/uploads/" + storedName;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void saveDetailImages(List<MultipartFile> detailImageFiles, Long campaignNo) {
+        if (detailImageFiles == null || detailImageFiles.isEmpty()) {
+            return;
+        }
+
+        for (MultipartFile detailImageFile : detailImageFiles) {
+            if (detailImageFile == null || detailImageFile.isEmpty()) {
+                continue;
+            }
+
+            try {
+                String storedName = fileUtil.saveFile(detailImageFile);
+                imageRepository.save(Image.builder()
+                        .imgPath("C:/uploads/" + storedName)
+                        .imgOrgName(detailImageFile.getOriginalFilename())
+                        .imgStoredName(storedName)
+                        .targetName("campaign")
+                        .targetNo(campaignNo)
+                        .createdAt(LocalDateTime.now())
+                        .build());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

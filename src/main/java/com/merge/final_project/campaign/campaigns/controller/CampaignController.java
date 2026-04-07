@@ -7,6 +7,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 
 @RestController
 @RequestMapping("/campaigns/register")
@@ -19,12 +20,13 @@ public class CampaignController {
     @PostMapping(value = "/form", consumes = {"multipart/form-data"})
     public ResponseEntity<String> register(
             @RequestPart("dto") CampaignRequestDto dto,
-            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestPart(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles
     ) {
         // 이후 인증 정보 가져오도록 수정 필요
         Long foundationNo = 1L;
 
-        campaignService.registerCampaign(dto, imageFile, foundationNo);
+        campaignService.registerCampaign(dto, imageFile, detailImageFiles, foundationNo);
 
         log.info("캠페인 등록 신청 성공");
         return ResponseEntity.ok("캠페인 등록 신청 완료");
