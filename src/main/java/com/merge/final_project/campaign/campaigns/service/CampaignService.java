@@ -5,6 +5,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface CampaignService {
-    // 캠페인 등록 및 기부단체 지갑 상태 변경
-    void registerCampaign(CampaignRequestDto requestDto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo);
+    // 캠페인 비즈니스 로직 정의
+    void registerCampaign(
+            CampaignRequestDto requestDto,  // 캠페인 기본 정보
+            MultipartFile imageFile,    // 대표 이미지 파일(1장)
+            List<MultipartFile> detailImageFiles,   // 상세 페이지용(여러장)
+            Long foundationNo   // 기부단체 PK
+    );
 }

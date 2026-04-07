@@ -31,6 +31,12 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 @Log4j2
 public class CampaignServiceImpl implements CampaignService {
+    private static final String CAMPAIGN_IMAGE_TARGET_NAME = "campaign";
+    // 대표 이미지 구분
+    private static final String REPRESENTATIVE_IMAGE_PURPOSE = "REPRESENTATIVE";
+    // 상세 이미지 구분
+    private static final String DETAIL_IMAGE_PURPOSE = "DETAIL";
+
     private final FoundationRepository foundationRepository;
     private final WalletRepository walletRepository;
     private final CampaignRepository campaignRepository;
@@ -44,33 +50,36 @@ public class CampaignServiceImpl implements CampaignService {
     public void registerCampaign(CampaignRequestDto dto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo) {
         // 기부단체 정보 확인
         Foundation foundation = foundationRepository.findById(foundationNo)
-                .orElseThrow(() -> new IllegalArgumentException("Foundation not found."));
+                .orElseThrow(() -> new IllegalArgumentException("기부 단체 정보를 찾을 수 없습니다."));
 
-        // 재단 보유 지갑 주소들 중 유효한 것 필터링
+        // 기부단체 유효 지갑(INACTIVE) 필터링
         var walletAddresses = Stream.of(
                 foundation.getCampaignWallet1(),
                 foundation.getCampaignWallet2(),
                 foundation.getCampaignWallet3()
         ).filter(Objects::nonNull).toList();
 
-        // INACTIVE 상태인 지갑 하나 조회
+        // INACTIVE 지갑 하나 조회
         Wallet availableWallet = walletRepository
                 .findFirstByWalletAddressInAndStatus(walletAddresses, WalletStatus.INACTIVE)
-                .orElseThrow(() -> new IllegalStateException("No inactive wallet available."));
+                .orElseThrow(() -> new IllegalStateException("모든 지갑이 사용중 입니다."));
 
         // 캠페인 엔티티 생성
         Campaign campaign = dto.toEntity();
         campaign.setFoundationNo(foundationNo);
         campaign.setWalletNo(availableWallet.getWalletNo().longValue());
         campaign.setCurrentAmount(0L);
-        campaign.setApprovalStatus(ApprovalStatus.PENDING);
-        campaign.setCampaignStatus(CampaignStatus.PENDING);
-        campaign.setImagePath(saveRepresentativeImage(imageFile));
+        campaign.setApprovalStatus(ApprovalStatus.PENDING); // 승인 대기 상태
+        campaign.setCampaignStatus(CampaignStatus.PENDING); // 캠페인 대기 상태
+        campaign.setImagePath(null);
 
-        // 캠페인 정보 DB 저장
+        // 캠페인 기본 정보 DB 저장
         Campaign savedCampaign = campaignRepository.save(campaign);
 
-        // 이미지 파일 있을 경우 저장
+        // (대표 이미지) image 테이블에 저장
+        saveCampaignImage(imageFile, savedCampaign.getCampaignNo(), REPRESENTATIVE_IMAGE_PURPOSE);
+
+        // (상세 이미지) image 테이블에 저장(반복문 활용)
         saveDetailImages(detailImageFiles, savedCampaign.getCampaignNo());
 
         // 지출 계획 리스트 저장
@@ -81,47 +90,43 @@ public class CampaignServiceImpl implements CampaignService {
             });
         }
 
-        // 사용된 지갑의 상태를 ACTIVE로 변경
+        // 캠페인 등록 시 INACTIVE 지갑의 상태 ACTIVE로 변경
         availableWallet.setStatus(WalletStatus.ACTIVE);
         walletRepository.save(availableWallet);
     }
 
-    private String saveRepresentativeImage(MultipartFile imageFile) {
-        if (imageFile == null || imageFile.isEmpty()) {
-            return null;
-        }
-
-        try {
-            String storedName = fileUtil.saveFile(imageFile);
-            return "C:/uploads/" + storedName;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    // 상세 이미지 리스트 각각 저장(1개 당 1개 row 로 저장)
     private void saveDetailImages(List<MultipartFile> detailImageFiles, Long campaignNo) {
         if (detailImageFiles == null || detailImageFiles.isEmpty()) {
             return;
         }
 
         for (MultipartFile detailImageFile : detailImageFiles) {
-            if (detailImageFile == null || detailImageFile.isEmpty()) {
-                continue;
-            }
+            saveCampaignImage(detailImageFile, campaignNo, DETAIL_IMAGE_PURPOSE);
+        }
+    }
 
-            try {
-                String storedName = fileUtil.saveFile(detailImageFile);
-                imageRepository.save(Image.builder()
-                        .imgPath("C:/uploads/" + storedName)
-                        .imgOrgName(detailImageFile.getOriginalFilename())
-                        .imgStoredName(storedName)
-                        .targetName("campaign")
-                        .targetNo(campaignNo)
-                        .createdAt(LocalDateTime.now())
-                        .build());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    // utils 패키지 FileUtil.java 사용 (대표/상세 이미지 저장)
+    private void saveCampaignImage(MultipartFile imageFile, Long campaignNo, String purpose) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            return;
+        }
+
+        try {
+            String storedName = fileUtil.saveFile(imageFile);
+
+            // image 엔티티 사용해 DB에 저장
+            imageRepository.save(Image.builder()
+                    .imgPath("C:/uploads/" + storedName)
+                    .imgOrgName(imageFile.getOriginalFilename())
+                    .imgStoredName(storedName)
+                    .targetName(CAMPAIGN_IMAGE_TARGET_NAME)
+                    .targetNo(campaignNo)
+                    .createdAt(LocalDateTime.now())
+                    .purpose(purpose)
+                    .build());
+        } catch (IOException e) {
+            throw new RuntimeException("이미지 저장 실패",e);
         }
     }
 }

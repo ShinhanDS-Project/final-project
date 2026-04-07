@@ -7,6 +7,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// React가 보낸 JSON 데이터 이 객체에 매핑
 @Data
 public class CampaignRequestDto {
     private String title;
@@ -22,7 +23,7 @@ public class CampaignRequestDto {
 
     private List<UsePlanRequestDto> usePlans;
 
-    // 서비스 계층에서 DB 저장 시 사용
+    // DTO 데이터 바탕으로 DB 저장 객체 생성
     public Campaign toEntity() {
         return Campaign.builder()
                 .title(this.title)

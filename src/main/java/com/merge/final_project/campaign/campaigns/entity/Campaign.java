@@ -25,6 +25,7 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // 대표 이미지 경로(캠페인 목록 조회 시 이 경로 사용해 썸네일 바로 띄움)
     private String imagePath;
 
     private LocalDateTime startAt;
@@ -38,6 +39,7 @@ public class Campaign extends BaseCreatedAtEntity {
     private LocalDateTime achievedAt;
     private String category;
 
+    // 승인 상태
     @Enumerated(EnumType.STRING)
     private ApprovalStatus approvalStatus;
 
@@ -46,6 +48,7 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 캠페인 진행 상태
     @Enumerated(EnumType.STRING)
     private CampaignStatus campaignStatus;
 

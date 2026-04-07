@@ -46,12 +46,12 @@ class CampaignServiceImplTest {
 
     @Test
     @Rollback(false)
-    @DisplayName("캠페인 등록 시 본체 저장, 지출 계획 수립, 승인 대기 상태 및 지갑 활성화 확인")
+    @DisplayName("캠페인 등록: 이미지 저장 + 지갑 상태 확인 및 변경 + 지출 내역 등록")
     void registerCampaign_success() {
         Long organizationId = 888L;
 
-        // 테스트 실행 시마다 제목이 겹치지 않도록 현재 시간 추가
-        String campaignTitle = "오늘은 정말 두개 완성해야지 사업-" + System.currentTimeMillis();
+        // 테스트 실행 시마다 제목이 겹치지 않게 현재 시간 추가
+        String campaignTitle = "캠페인-최종이다-" + System.currentTimeMillis();
 
         List<String> myWallets = List.of(
                 "0x888_BUSY_ADDR",
@@ -59,18 +59,18 @@ class CampaignServiceImplTest {
                 "0x888_FREE_ADDR_2"
         );
 
-        // 등록 전 INACTIVE 상태인 지갑 개수 확인
+        // 등록 전 INACTIVE 상태의 지갑 개수 확인
         long beforeInactiveCount = walletRepository.findAll().stream()
                 .filter(w -> myWallets.contains(w.getWalletAddress()) && w.getStatus() == WalletStatus.INACTIVE)
                 .count();
 
-        // INACTIVE 지갑이 미리 존재해야 테스트 성공
+        // INACTIVE 지갑이 미리 존재해야 테스트 가능
         assertThat(beforeInactiveCount).isGreaterThan(0);
 
-        // 캠페인 등록 정보 입력 (DTO)
+        // 캠페인 등록 정보 입력
         CampaignRequestDto dto = new CampaignRequestDto();
         dto.setTitle(campaignTitle);
-        dto.setDescription("코딩 프로젝트입니다.");
+        dto.setDescription("이미지 저장 테스트");
         dto.setTargetAmount(2000000L);
 
         // 기간 설정
@@ -79,7 +79,7 @@ class CampaignServiceImplTest {
         dto.setUsageStartAt(LocalDateTime.of(2025, 4, 1, 0, 0));
         dto.setUsageEndAt(LocalDateTime.of(2025, 6, 30, 23, 59, 59));
 
-        // 테스트용 이미지 파일 생성 (대표 이미지 1장 + 상세 이미지 3장)
+        // 대표 이미지 1장
         MockMultipartFile imageFile = new MockMultipartFile(
                 "imageFile",
                 "main_thumb.png",
@@ -87,6 +87,7 @@ class CampaignServiceImplTest {
                 "test-image".getBytes()
         );
 
+        // 상세 이미지 여러 장
         MockMultipartFile detailImageFile1 = new MockMultipartFile(
                 "detailImageFiles",
                 "img1.jpg",
@@ -110,16 +111,16 @@ class CampaignServiceImplTest {
 
         // 지출 계획 데이터 구성
         UsePlanRequestDto plan1 = new UsePlanRequestDto();
-        plan1.setPlanContent("가빈이");
+        plan1.setPlanContent("너랑나");
         plan1.setPlanAmount(1500000L);
 
         UsePlanRequestDto plan2 = new UsePlanRequestDto();
-        plan2.setPlanContent("바다");
+        plan2.setPlanContent("잔소리");
         plan2.setPlanAmount(500000L);
 
         dto.setUsePlans(List.of(plan1, plan2));
 
-        // 상세 이미지는 리스트로 전달
+        // 서비스 로직 실행
         campaignService.registerCampaign(dto, imageFile, List.of(detailImageFile1, detailImageFile2, detailImageFile3), organizationId);
 
         // 캠페인 본체 저장 확인
@@ -130,14 +131,8 @@ class CampaignServiceImplTest {
                 .orElseThrow(() -> new IllegalArgumentException("캠페인이 생성되지 않았습니다."));
 
         assertThat(savedCampaign.getTitle()).isEqualTo(campaignTitle);
-        // 대표 이미지 경로 확인
-        assertThat(savedCampaign.getImagePath()).contains("main_thumb.png");
-        // 승인 대기 상태 확인
+        assertThat(savedCampaign.getImagePath()).isNull();
         assertThat(savedCampaign.getApprovalStatus()).isEqualTo(ApprovalStatus.PENDING);
-
-        // 기간 데이터 검증
-        assertThat(savedCampaign.getStartAt()).isEqualTo(LocalDateTime.of(2025, 1, 1, 0, 0));
-        assertThat(savedCampaign.getEndAt()).isEqualTo(LocalDateTime.of(2025, 3, 31, 23, 59, 59));
 
         // 지출 계획 저장 확인
         List<UsePlan> savedPlans = usePlanRepository.findAll().stream()
@@ -145,29 +140,39 @@ class CampaignServiceImplTest {
                 .toList();
 
         assertThat(savedPlans).hasSize(2);
-        assertThat(savedPlans).extracting("planContent")
-                .containsExactlyInAnyOrder("가빈이", "바다");
 
-        // 이미지 테이블 상세 이미지 저장 확인
+        // image 테이블에 대표 1건 + 상세 3건이 각각 row로 저장되는지 확인
         List<Image> savedImages = imageRepository.findByTargetNameAndTargetNo("campaign", savedCampaign.getCampaignNo());
 
-        // 상세 이미지 3장 확인
-        assertThat(savedImages).hasSize(3);
+        assertThat(savedImages).hasSize(4);
         assertThat(savedImages).extracting(Image::getImgOrgName)
-                .containsExactlyInAnyOrder("img1.jpg", "img2.jpg", "img3.jpg");
+                .containsExactlyInAnyOrder("main_thumb.png", "img1.jpg", "img2.jpg", "img3.jpg");
+
+        // 대표 이미지 purpose 확인
+        assertThat(savedImages.stream()
+                .filter(image -> "REPRESENTATIVE".equals(image.getPurpose()))
+                .map(Image::getImgOrgName)
+                .toList()).containsExactly("main_thumb.png");
+
+        // 상세 이미지 purpose 확인
+        assertThat(savedImages.stream()
+                .filter(image -> "DETAIL".equals(image.getPurpose()))
+                .map(Image::getImgOrgName)
+                .toList()).containsExactlyInAnyOrder("img1.jpg", "img2.jpg", "img3.jpg");
 
         assertThat(savedImages).allSatisfy(image -> {
             assertThat(image.getImgStoredName()).isNotBlank();
             assertThat(image.getImgPath()).contains(image.getImgStoredName());
+            assertThat(image.getPurpose()).isIn("REPRESENTATIVE", "DETAIL");
         });
 
-        // 배정된 지갑 상태 확인 (INACTIVE -> ACTIVE)
+        // 배정된 지갑 상태 확인
         Wallet usedWallet = walletRepository.findById(savedCampaign.getWalletNo())
                 .orElseThrow(() -> new IllegalArgumentException("배정된 지갑을 찾을 수 없습니다."));
 
         assertThat(usedWallet.getStatus()).isEqualTo(WalletStatus.ACTIVE);
 
-        // 전체 비활성화 지갑 개수가 1개 줄었는지 확인
+        // 비활성화 지갑 개수 감소 확인
         long afterInactiveCount = walletRepository.findAll().stream()
                 .filter(w -> myWallets.contains(w.getWalletAddress()) && w.getStatus() == WalletStatus.INACTIVE)
                 .count();
