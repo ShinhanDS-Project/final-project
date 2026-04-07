@@ -20,6 +20,7 @@ public class AdminJwtFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    // JwtFilter.java의 doFilterInternal 메서드 수정 내용
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
