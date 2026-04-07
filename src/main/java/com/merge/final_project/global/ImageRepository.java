@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ImageRepository extends JpaRepository<Image, Integer> {
+public interface ImageRepository extends JpaRepository<Image, Long> {
 
     List<Image> findByTargetNameAndTargetNo(String targetName, Long targetNo);
 }
