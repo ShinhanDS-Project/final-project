@@ -15,4 +15,4 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     // 모금액 많은 순 조회
     @EntityGraph(attributePaths = "foundation")
     List<Campaign> findByApprovalStatusOrderByCurrentAmountDescCampaignNoDesc(ApprovalStatus approvalStatus);
-}
+    }
