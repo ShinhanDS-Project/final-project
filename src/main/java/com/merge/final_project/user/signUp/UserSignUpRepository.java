@@ -13,7 +13,5 @@ public interface UserSignUpRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmailAndLoginType(String email, LoginType loginType);
 
-    boolean findByPhoneAndLoginType(String phone, LoginType loginType);
-
     boolean existsByNameHash(String hash);
 }

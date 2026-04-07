@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
-@Transactional // 테스트 후 DB를 자동으로 롤백해줍니다.
+//@Transactional // 테스트 후 DB를 자동으로 롤백해줍니다.
 public class UserSignUpIntegrationTest {
 
     @Autowired

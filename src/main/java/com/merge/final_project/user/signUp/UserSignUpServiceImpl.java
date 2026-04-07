@@ -8,6 +8,7 @@ import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
 import com.merge.final_project.user.verify.VerificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
@@ -58,8 +59,10 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .loginCount(0)
                 .build();
 
-        userSignUpRepository.save(user);
+        saveWithRetry(user);
     }
+
+
 
     @Override
     public void registerGoogle(UserSignUpRequestDTO dto) {
@@ -76,10 +79,17 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .loginCount(0)
                 .build();
 
-        userSignUpRepository.save(user);
+        saveWithRetry(user);
     }
     // 로컬 가입 전용 검증
     private void validateLocalUser(UserSignUpRequestDTO dto) {
+        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+            throw new IllegalArgumentException("이메일은 필수입니다.");
+        }
+        if (dto.getName() == null || dto.getName().isBlank()) {
+            throw new IllegalArgumentException("이름은 필수입니다.");
+
+        }
         if (dto.getPassword() == null || dto.getPassword().isBlank()) {
             throw new IllegalArgumentException("비밀번호는 필수입니다.");
         }
@@ -88,13 +98,6 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         }
         if (!verificationService.isVerifiedEmail(dto.getEmail())) {
             throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다.");
-        }
-        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
-            throw new IllegalArgumentException("이메일은 필수입니다.");
-        }
-        if (dto.getName() == null || dto.getName().isBlank()) {
-            throw new IllegalArgumentException("이름은 필수입니다.");
-
         }
     }
 
@@ -109,8 +112,9 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         if (userSignUpRepository.existsByEmailAndLoginType(dto.getEmail(), LoginType.GOOGLE)) {
             throw new IllegalArgumentException("이미 가입된 구글 계정입니다.");
         }
-        // 구글은 이미 인증된 이메일을 사용하므로 verificationService를 생략합니다.
+        // 구글은 이미 인증된 이메일을 사용하므로 verificationService를 생략.
     }
+
     // 중복되지 않는 해시가 나올 때까지 반복 생성
     private String generateUniqueHash() {
         String hash;
@@ -120,4 +124,31 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         return hash;
     }
 
+    private static final int MAX_HASH_RETRY = 10;
+
+    //바로 저장하지 않고 namehash 중복 체크 다시하고 저장하는 코드(중복 마지막 확인)
+    private void saveWithRetry(User user) {
+        for (int i = 0; i < MAX_HASH_RETRY; i++) {
+            try {
+                userSignUpRepository.save(user);
+                return;
+            } catch (DataIntegrityViolationException e) {
+                if (isNameHashDuplicateException(e)) {
+                    user.updateNameHash(generateUniqueHash());
+                    continue;
+                }
+                throw e;
+            }
+        }
+        throw new IllegalStateException("nameHash 중복이 계속 발생해서 회원가입에 실패했습니다.");
+
+    }
+
+    //예외처리 ->db 저장 실패시 실패 원인이 nameHash 중복인지 판별하는 용도
+    private boolean isNameHashDuplicateException(DataIntegrityViolationException e) {
+        Throwable cause = e.getMostSpecificCause();
+        return cause != null
+                && cause.getMessage() != null
+                && cause.getMessage().contains("name_hash");
+    }
 }

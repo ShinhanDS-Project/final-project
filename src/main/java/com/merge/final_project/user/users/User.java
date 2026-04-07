@@ -10,7 +10,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 @Entity
-@Table(name = "users")
+@Table(name = "users",uniqueConstraints = {
+        @UniqueConstraint(name = "uk_user_email_login_type", columnNames = {"email", "login_type"})
+}) //로그인 타입,별로 이메일 중복 허용ㅇ
 @Getter
 @Builder
 @AllArgsConstructor
@@ -34,7 +36,7 @@ public class User {
     @Column(name="status", nullable = false)
     private UserStatus status; // ACTIVE, INACTIVE, 정지 등
 
-    @Column(name="email", unique=true, nullable = false)
+    @Column(name="email", nullable = false)
     private String email;
 
     @Column(name="name_hash", unique = true, nullable = false)
@@ -66,4 +68,9 @@ public class User {
 
     @Column(name="login_count")
     private Integer loginCount;
+
+    //namehash 바꿔야함
+    public void updateNameHash(String nameHash) {
+        this.nameHash = nameHash;
+    }
 }

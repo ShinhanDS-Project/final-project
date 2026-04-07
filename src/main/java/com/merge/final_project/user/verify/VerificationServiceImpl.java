@@ -6,6 +6,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -15,7 +16,8 @@ public class VerificationServiceImpl implements VerificationService {
     EmailVerificationRepository emailVerificationRepository;
     @Autowired
     JavaMailSender mailSender;
-
+@Autowired
+private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     @Transactional
     @Override
     public void sendVerificationCode(String email) {
@@ -64,9 +66,8 @@ public class VerificationServiceImpl implements VerificationService {
 
         emailVerificationRepository.save(emailVerification);
         //여기서 이메일 발송 코드 짜기 (부가기능 2)
-
         sendEmail(email,code);
-        System.out.println("인증코드:"+code);
+
 
     }
 
@@ -115,6 +116,6 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     private String createVerificationCode() {
-        return String.format("%06d", (int) (Math.random() * 1000000));
+        return String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
     }
 }
