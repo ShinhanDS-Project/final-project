@@ -56,6 +56,8 @@ public class SettlementTransactionService {
             return;
         }
 
+        // 이미 같은 캠페인에 대해 정산이 진행 중이거나 완료된 경우
+        // 스케줄러가 다시 집더라도 중복 정산이 일어나지 않도록 바로 종료한다.
         if (settlementRepository.existsByCampaignAndStatusIn(
                 managedCampaign,
                 List.of(SettlementStatus.PENDING, SettlementStatus.COMPLETED)
@@ -105,6 +107,9 @@ public class SettlementTransactionService {
 
         String transactionCode = UUID.randomUUID().toString();
 
+        // 온체인 호출 전에 정산 레코드를 먼저 PENDING 으로 생성한다.
+        // 이렇게 해두면 체인 호출 실패 시 어떤 정산이 실패했는지 DB에 남길 수 있고,
+        // 이후 재시도 여부를 판단할 기준도 확보할 수 있다.
         Settlement settlement = settlementCommandService.createPendingSettlement(
                 transactionCode,
                 foundation,
@@ -117,6 +122,9 @@ public class SettlementTransactionService {
 
         TransactionReceipt receipt;
         try {
+            // 실제 스마트컨트랙트 정산 호출 구간이다.
+            // 이 단계에서 예외가 나면 아직 온체인 정산이 완료되지 않은 것이므로
+            // settlement 를 FAILED 로 바꿔 다음 배치/재시도 대상이 되게 한다.
             BigInteger feeBps = feeRatePercent
                     .multiply(BigDecimal.valueOf(100))
                     .toBigIntegerExact();
@@ -136,6 +144,10 @@ public class SettlementTransactionService {
         }
 
         try {
+            // 온체인 정산이 성공했으면 영수증(txHash, blockNumber, gasUsed)을 기준으로
+            // 재단/수혜자 분배 내역과 캠페인 상태를 DB에 반영한다.
+            // 이 후처리 단계에서 예외가 나더라도 체인 정산 자체는 이미 끝난 상태일 수 있으므로
+            // settlement 를 FAILED 로 바꾸지 않고 예외만 올려 중복 온체인 호출을 피한다.
             String txHash = receipt.getTransactionHash();
             Long blockNum = receipt.getBlockNumber() != null ? receipt.getBlockNumber().longValue() : null;
             BigDecimal gasFee = receipt.getGasUsed() != null
