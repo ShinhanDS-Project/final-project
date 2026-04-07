@@ -33,7 +33,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
                         .requestMatchers("/error").permitAll()
 
-                        // 2. 보고서 관련: 테스트 중에는 permitAll, 완성 후에는 .hasRole("BENEFICIARY") 권장
+                        // 2. 보고서 관련 로그인 후 접속 허용
                         .requestMatchers("/finalReport/**").authenticated()
 
                         // 3. 그 외 나머지는 인증 필요

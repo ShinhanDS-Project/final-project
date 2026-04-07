@@ -32,10 +32,7 @@ public class FinalReportService {
     private final ImageRepository imageRepository;
     private final FileUtil fileUtil;
 
-    /**
-     * [캡슐화된 메인 메서드]
-     * 보고서 본문과 이미지를 하나의 트랜잭션으로 묶어 저장합니다.
-     */
+
     @Transactional(rollbackFor = Exception.class)
     public void saveFullReport(FinalReportRequestDTO dto, List<MultipartFile> files,List<String> purposes, String email) throws IOException {
 

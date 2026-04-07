@@ -33,20 +33,7 @@ public class BeneficiaryController {
         return ResponseEntity.ok(beneficiaryNo);
     }
 
-    //    @PostMapping("/signin")
-//    public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto) {
-//        // 1. 토큰 생성
-//        UsernamePasswordAuthenticationToken token =
-//                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword());
-//
-//        // 2. 실제 인증 (여기서 UserDetailsService의 loadUserByUsername이 돌아감)
-//        Authentication authentication = authenticationManager.authenticate(token);
-//
-//        // 3. 인증 정보를 세션에 저장
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-//
-//        return ResponseEntity.ok("수혜자  로그인 성공 (JSESSIONID 발급됨)");
-//    }
+
     @PostMapping("/signin")
     public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto, HttpServletRequest request) {
         // 1. 토큰 생성 및 인증
