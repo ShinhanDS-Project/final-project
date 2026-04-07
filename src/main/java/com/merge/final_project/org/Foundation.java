@@ -1,14 +1,11 @@
-package com.merge.final_project.org.foundation;
+package com.merge.final_project.org;
 
+import com.merge.final_project.global.BaseEntity;
 import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "foundation")
@@ -16,14 +13,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Foundation {
+public class Foundation extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "foundation_no")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long foundationNo;
 
-    @Column(name = "foundation_email", nullable = false)
+    @Column(name = "foundation_email")
     private String foundationEmail;
 
     @Column(name = "foundation_password")
@@ -38,11 +35,15 @@ public class Foundation {
     @Column(name = "representative_name")
     private String representativeName;
 
+    private String description;
+
+    @Column(name = "profile_path")
+    private String profilePath;
+
     @Column(name = "contact_phone")
     private String contactPhone;
 
-    @Column(name = "description")
-    private String description;
+    private String account;
 
     @Column(name = "fee_rate")
     private BigDecimal feeRate;
@@ -50,23 +51,16 @@ public class Foundation {
     @Column(name = "foundation_hash")
     private String foundationHash;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "account_status")
-    private String accountStatus;
+    private AccountStatus accountStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "review_status")
-    private String reviewStatus;
+    private ReviewStatus reviewStatus;
 
-    @Column(name = "reject_reason", columnDefinition = "TEXT")
+    @Column(name = "reject_reason")
     private String rejectReason;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "profile_path")
-    private String profilePath;
 
     @Column(name = "campaign_wallet1")
     private String campaignWallet1;
@@ -77,14 +71,30 @@ public class Foundation {
     @Column(name = "campaign_wallet3")
     private String campaignWallet3;
 
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "login_no", nullable = false)
-//    private UsersAccount usersAccount;
-
-    @Column(name = "account")
-    private String account;
+    @Column(name = "bank_name")
+    private String bankName;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_no", nullable = false)
+    @JoinColumn(name = "wallet_no")
     private Wallet wallet;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "foundation_type")
+    private FoundationType foundationType;
+
+
+    public void approved() {
+        this.reviewStatus = ReviewStatus.APPROVED;
+        this.accountStatus = AccountStatus.ACTIVE;
+    }
+
+    public void reject(String rejectReason) {
+        this.reviewStatus = ReviewStatus.REJECTED;
+        this.rejectReason = rejectReason;
+    }
+
+    public void updatePassword(String encodedPassword) {
+        this.foundationPassword = encodedPassword;
+    }
+
 }
