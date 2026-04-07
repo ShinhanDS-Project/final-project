@@ -33,6 +33,10 @@ public class AdminJwtFilter extends OncePerRequestFilter {
             String adminId = jwtTokenProvider.getAdminId(token);
             String role = jwtTokenProvider.getAdminRole(token);
 
+            if (!"ROLE_ADMIN".equals(role)) { // 이미 꺼낸 값 재사용 → 추가 비용 없음
+                filterChain.doFilter(request, response);
+                return;
+            }
             //관리자 식별 정보 추출해서 해당 정보로 관리자 권한 객체 생성
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
