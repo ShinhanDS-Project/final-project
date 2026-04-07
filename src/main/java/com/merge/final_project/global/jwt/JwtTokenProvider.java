@@ -80,8 +80,9 @@ public class JwtTokenProvider {
     //4. 로그인 토큰 생성(일반사용자, 수혜자, 기업용)
     public String createGeneralAccessToken(String name,String email,String role){
         Date now = new Date();
-        //10분 제한-> 제한을 없앨지 고민중. 로그인 타임 아웃되면 로그인 하도록 할지 고민중
-        Date expiry = new Date(now.getTime() +600000);
+        //
+        Date expiry = new Date(now.getTime() + jwtProperties.getAccessTokenExpiration());
+
 
         return Jwts.builder()
                 .subject(email)
