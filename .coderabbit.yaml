@@ -1,0 +1,21 @@
+reviews:
+  enabled: true
+  review_status: true
+  language: ko
+
+  auto_review:
+    enabled: true
+    branches:
+      - "*"
+
+  summary:
+    enabled: true
+
+  path_filters:
+    exclude:
+      - "*.md"
+      - "*.yml"
+      - "*.json"
+      - "node_modules/**"
+      - "build/**"
+      - "dist/**"
