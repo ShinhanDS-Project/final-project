@@ -1,11 +1,9 @@
-package com.merge.final_project.recipient.beneficiary;
+package com.merge.final_project.recipient.beneficiary.entity;
 
+import com.merge.final_project.recipient.beneficiary.BeneficiaryType;
 import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class Beneficiary {
 
     @Id
@@ -52,9 +51,8 @@ public class Beneficiary {
     @Column(name = "entry_code", nullable = false)
     private Integer entryCode;
 
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "login_no", nullable = false)
-//    private UsersAccount usersAccount;
+    @Column(name = "key_no")
+    private Long key_no;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_no", nullable = false)

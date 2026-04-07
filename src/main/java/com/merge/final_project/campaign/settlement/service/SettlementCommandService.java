@@ -5,7 +5,7 @@ import com.merge.final_project.campaign.settlement.Repository.SettlementReposito
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
 import com.merge.final_project.org.foundation.Foundation;
-import com.merge.final_project.recipient.beneficiary.Beneficiary;
+import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
