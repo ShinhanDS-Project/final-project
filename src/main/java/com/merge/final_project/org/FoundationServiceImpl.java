@@ -166,8 +166,8 @@ public class FoundationServiceImpl implements FoundationService {
         Foundation foundation = foundationRepository.findById(foundationNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
 
-        //불법 단체는 승인 불가 하도록 한 번 더 조회
-        if (foundation.getReviewStatus() == ReviewStatus.ILLEGAL) {
+        //불법 단체는 승인 불가 하도록 한 번 더 조회 + 반려되는 경우는 비활성화랑 다름. 재가입 불가. 따라서 반려되는 경우도 조회.
+        if (foundation.getReviewStatus() == ReviewStatus.ILLEGAL || foundation.getReviewStatus() == ReviewStatus.REJECTED) {
             throw new BusinessException(ErrorCode.CANNOT_APPROVE_ILLEGAL_FOUNDATION);
         }
 
