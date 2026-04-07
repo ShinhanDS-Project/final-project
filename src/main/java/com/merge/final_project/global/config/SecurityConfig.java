@@ -76,8 +76,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
                         .requestMatchers("/admin/auth/login").permitAll()
                         .requestMatchers("/error").permitAll()
-
-                        // 2. [각하의 코드] 보고서 관련: 로그인한 사용자만 접근 허용
+                        .requestMatchers("/foundation/signup").permitAll()
+                        .requestMatchers("/foundation/check-brn").permitAll()
+                        // 2.보고서 관련: 로그인한 사용자만 접근 허용
                         .requestMatchers("/finalReport/**").authenticated()
 
                         // 3. 그 외 모든 요청은 인증 필요

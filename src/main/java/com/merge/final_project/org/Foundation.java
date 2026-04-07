@@ -90,6 +90,7 @@ public class Foundation extends BaseEntity {
 
     public void reject(String rejectReason) {
         this.reviewStatus = ReviewStatus.REJECTED;
+        this.accountStatus = AccountStatus.INACTIVE;
         this.rejectReason = rejectReason;
     }
 
