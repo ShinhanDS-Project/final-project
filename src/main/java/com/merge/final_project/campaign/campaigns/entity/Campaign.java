@@ -1,5 +1,7 @@
-package com.merge.final_project.campaign.campaigns;
+package com.merge.final_project.campaign.campaigns.entity;
 
+import com.merge.final_project.campaign.campaigns.ApprovalStatus;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

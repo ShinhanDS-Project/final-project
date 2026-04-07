@@ -1,7 +1,7 @@
 package com.merge.final_project.campaign.settlement;
 
 import com.merge.final_project.blockchain.entity.Transaction;
-import com.merge.final_project.campaign.campaigns.Campaign;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.org.foundation.Foundation;
 import com.merge.final_project.recipient.beneficiary.Beneficiary;
 import jakarta.persistence.*;

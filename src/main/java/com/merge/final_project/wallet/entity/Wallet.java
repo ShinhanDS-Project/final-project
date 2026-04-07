@@ -1,7 +1,7 @@
 package com.merge.final_project.wallet.entity;
 
 import com.merge.final_project.blockchain.entity.Key;
-import com.merge.final_project.campaign.campaigns.Campaign;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.*;

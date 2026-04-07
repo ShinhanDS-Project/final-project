@@ -1,6 +1,6 @@
 package com.merge.final_project.campaign.settlement.service;
 
-import com.merge.final_project.campaign.campaigns.Campaign;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;

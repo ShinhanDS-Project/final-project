@@ -1,8 +1,8 @@
 package com.merge.final_project.campaign.settlement.service;
 
 import com.merge.final_project.blockchain.service.SettlementTransactionService;
-import com.merge.final_project.campaign.campaigns.Campaign;
-import com.merge.final_project.campaign.campaigns.CampaignRepository;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
+import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
