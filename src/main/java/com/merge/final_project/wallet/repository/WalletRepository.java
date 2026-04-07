@@ -1,5 +1,6 @@
-package com.merge.final_project.wallet;
+package com.merge.final_project.wallet.repository;
 
+import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 

@@ -1,31 +1,39 @@
 package com.merge.final_project.campaign.campaigns.service;
 
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
-import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDto;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
-import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDto;
-import com.merge.final_project.campaign.useplan.entity.UsePlan;
-import com.merge.final_project.campaign.useplan.repository.UsePlanRepository;
+import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDTO;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
+import com.merge.final_project.global.utils.FileUtil;
+import com.merge.final_project.org.foundation.Foundation;
+import com.merge.final_project.org.foundation.FoundationRepository;
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletStatus;
+import com.merge.final_project.wallet.entity.WalletType;
 import com.merge.final_project.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(properties = "blockchain.rpc.url=http://localhost:8545")
 @Transactional
 class CampaignServiceImplTest {
 
@@ -36,116 +44,158 @@ class CampaignServiceImplTest {
     private CampaignRepository campaignRepository;
 
     @Autowired
-    private UsePlanRepository usePlanRepository;
-
-    @Autowired
-    private ImageRepository imageRepository;
+    private FoundationRepository foundationRepository;
 
     @Autowired
     private WalletRepository walletRepository;
 
+    @Autowired
+    private ImageRepository imageRepository;
+
     @Test
-    @Rollback(false)
-    @DisplayName("캠페인 등록 시 본체, 지출 계획, 승인 대기 상태 및 지갑 활성화 확인")
+    @DisplayName("registerCampaign uses inactive wallet and saves campaign images")
     void registerCampaign_success() {
-        Long organizationId = 888L;
+        Wallet foundationWallet = walletRepository.save(Wallet.builder()
+                .walletType(WalletType.FOUNDATION)
+                .ownerNo(0L)
+                .walletAddress("foundation-main-" + System.nanoTime())
+                .balance(BigDecimal.ZERO)
+                .walletHash("foundation-hash")
+                .status(WalletStatus.ACTIVE)
+                .build());
 
-        // 테스트 실행 시마다 제목이 겹치지 않게 현재 시간 추가
-        String campaignTitle = "깨끗한 식수 지원 사업-" + System.currentTimeMillis();
+        String activeAddress = "campaign-active-" + System.nanoTime();
+        String inactiveAddress = "campaign-inactive-" + System.nanoTime();
+        String reserveAddress = "campaign-reserve-" + System.nanoTime();
 
-        List<String> myWallets = List.of(
-                "0x888_BUSY_ADDR",
-                "0x888_FREE_ADDR_1",
-                "0x888_FREE_ADDR_2"
-        );
+        Foundation foundation = foundationRepository.save(Foundation.builder()
+                .foundationEmail("foundation-" + System.nanoTime() + "@test.com")
+                .foundationName("Hope Foundation")
+                .campaignWallet1(activeAddress)
+                .campaignWallet2(inactiveAddress)
+                .campaignWallet3(reserveAddress)
+                .wallet(foundationWallet)
+                .build());
 
-        // 등록 전 비활성화 지갑 개수 확인
-        long beforeInactiveCount = walletRepository.findAll().stream()
-                .filter(w -> myWallets.contains(w.getWalletAddress()) && w.getStatus() == WalletStatus.INACTIVE)
-                .count();
+        walletRepository.save(Wallet.builder()
+                .walletType(WalletType.FOUNDATION)
+                .ownerNo(foundation.getFoundationNo())
+                .walletAddress(activeAddress)
+                .balance(BigDecimal.ZERO)
+                .walletHash("active-hash")
+                .status(WalletStatus.ACTIVE)
+                .build());
 
-        // 주의: DB에 해당 주소의 INACTIVE 지갑이 미리 존재해야 합니다.
-        assertThat(beforeInactiveCount).isGreaterThan(0);
+        Wallet inactiveWallet = walletRepository.save(Wallet.builder()
+                .walletType(WalletType.FOUNDATION)
+                .ownerNo(foundation.getFoundationNo())
+                .walletAddress(inactiveAddress)
+                .balance(BigDecimal.ZERO)
+                .walletHash("inactive-hash")
+                .status(WalletStatus.INACTIVE)
+                .build());
 
-        // 캠페인 등록 정보 입력 (DTO)
-        CampaignRequestDto dto = new CampaignRequestDto();
-        dto.setTitle(campaignTitle);
-        dto.setDescription("아프리카 지역의 우물 굴착 및 식수 시설 구축 프로젝트입니다.");
-        dto.setTargetAmount(2000000L);
+        walletRepository.save(Wallet.builder()
+                .walletType(WalletType.FOUNDATION)
+                .ownerNo(foundation.getFoundationNo())
+                .walletAddress(reserveAddress)
+                .balance(BigDecimal.ZERO)
+                .walletHash("reserve-hash")
+                .status(WalletStatus.ACTIVE)
+                .build());
 
-        // 기간 설정
-        dto.setStartAt(LocalDateTime.of(2025, 1, 1, 0, 0));
-        dto.setEndAt(LocalDateTime.of(2025, 3, 31, 23, 59, 59));
-        dto.setUsageStartAt(LocalDateTime.of(2025, 4, 1, 0, 0));
-        dto.setUsageEndAt(LocalDateTime.of(2025, 6, 30, 23, 59, 59));
+        CampaignRequestDTO dto = new CampaignRequestDTO();
+        dto.setTitle("campaign-test-" + System.nanoTime());
+        dto.setDescription("campaign register integration test");
+        dto.setCategory("medical");
+        dto.setTargetAmount(2_000_000L);
+        dto.setStartAt(LocalDateTime.of(2026, 4, 1, 0, 0));
+        dto.setEndAt(LocalDateTime.of(2026, 4, 30, 23, 59, 59));
+        dto.setUsageStartAt(LocalDateTime.of(2026, 5, 1, 0, 0));
+        dto.setUsageEndAt(LocalDateTime.of(2026, 5, 31, 23, 59, 59));
 
-        // 테스트용 이미지 파일 생성
-        MockMultipartFile imageFile = new MockMultipartFile(
+        UsePlanRequestDTO usePlan = new UsePlanRequestDTO();
+        usePlan.setPlanContent("medical support");
+        usePlan.setPlanAmount(2_000_000L);
+        dto.setUsePlans(List.of(usePlan));
+
+        MockMultipartFile representativeImage = new MockMultipartFile(
                 "imageFile",
-                "images.png",
+                "thumb.png",
                 "image/png",
-                "test-image".getBytes()
+                "thumb-image".getBytes()
         );
 
-        // 지출 계획 데이터 구성
-        UsePlanRequestDto plan1 = new UsePlanRequestDto();
-        plan1.setPlanContent("우물 굴착 장비 대여비");
-        plan1.setPlanAmount(1500000L);
+        MockMultipartFile detailImage1 = new MockMultipartFile(
+                "detailImageFiles",
+                "detail-1.jpg",
+                "image/jpeg",
+                "detail-image-1".getBytes()
+        );
 
-        UsePlanRequestDto plan2 = new UsePlanRequestDto();
-        plan2.setPlanContent("현지 활동가 활동비 및 식비");
-        plan2.setPlanAmount(500000L);
+        MockMultipartFile detailImage2 = new MockMultipartFile(
+                "detailImageFiles",
+                "detail-2.jpg",
+                "image/jpeg",
+                "detail-image-2".getBytes()
+        );
 
-        dto.setUsePlans(List.of(plan1, plan2));
+        campaignService.registerCampaign(
+                dto,
+                representativeImage,
+                List.of(detailImage1, detailImage2),
+                foundation.getFoundationNo()
+        );
 
-        // 서비스 로직 실행
-        campaignService.registerCampaign(dto, imageFile, organizationId);
-
-        // 캠페인 본체 저장 확인
         Campaign savedCampaign = campaignRepository.findAll().stream()
-                .filter(c -> campaignTitle.equals(c.getTitle()))
-                .filter(c -> organizationId.equals(c.getFoundationNo()))
-                .max((left, right) -> Long.compare(left.getCampaignNo(), right.getCampaignNo()))
-                .orElseThrow(() -> new IllegalArgumentException("캠페인이 생성되지 않았습니다."));
+                .filter(campaign -> foundation.getFoundationNo().equals(campaign.getFoundationNo()))
+                .filter(campaign -> dto.getTitle().equals(campaign.getTitle()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("campaign not saved"));
 
-        assertThat(savedCampaign.getTitle()).isEqualTo(campaignTitle);
-        assertThat(savedCampaign.getImagePath()).isNull(); // 이미지 테이블을 따로 쓰므로 본체 경로는 null
+        assertThat(savedCampaign.getFoundationNo()).isEqualTo(foundation.getFoundationNo());
+        assertThat(savedCampaign.getWalletNo()).isEqualTo(inactiveWallet.getWalletNo());
         assertThat(savedCampaign.getApprovalStatus()).isEqualTo(ApprovalStatus.PENDING);
+        assertThat(savedCampaign.getCampaignStatus()).isEqualTo(CampaignStatus.PENDING);
+        assertThat(savedCampaign.getCurrentAmount()).isZero();
 
-        // 기간 저장 검증
-        assertThat(savedCampaign.getStartAt()).isEqualTo(LocalDateTime.of(2025, 1, 1, 0, 0));
-        assertThat(savedCampaign.getEndAt()).isEqualTo(LocalDateTime.of(2025, 3, 31, 23, 59, 59));
-        assertThat(savedCampaign.getUsageStartAt()).isEqualTo(LocalDateTime.of(2025, 4, 1, 0, 0));
-        assertThat(savedCampaign.getUsageEndAt()).isEqualTo(LocalDateTime.of(2025, 6, 30, 23, 59, 59));
-
-        // 지출 계획 저장 확인
-        List<UsePlan> savedPlans = usePlanRepository.findAll().stream()
-                .filter(plan -> savedCampaign.getCampaignNo().equals(plan.getCampaignNo()))
-                .toList();
-
-        assertThat(savedPlans).hasSize(2);
-        assertThat(savedPlans).extracting("planContent")
-                .containsExactlyInAnyOrder("우물 굴착 장비 대여비", "현지 활동가 활동비 및 식비");
-
-        // 이미지 테이블 저장 확인
-        List<Image> savedImages = imageRepository.findByTargetNameAndTargetNo("campaign", savedCampaign.getCampaignNo());
-
-        assertThat(savedImages).hasSize(1);
-        assertThat(savedImages.get(0).getImgOrgName()).isEqualTo("images.png");
-        assertThat(savedImages.get(0).getImgStoredName()).contains("_images.png");
-        assertThat(savedImages.get(0).getImgPath()).contains(savedImages.get(0).getImgStoredName());
-
-        // 배정된 지갑 상태 확인
-        Wallet usedWallet = walletRepository.findById(savedCampaign.getWalletNo())
-                .orElseThrow(() -> new IllegalArgumentException("배정된 지갑을 찾을 수 없습니다."));
+        Wallet usedWallet = walletRepository.findByWalletNo(inactiveWallet.getWalletNo())
+                .orElseThrow(() -> new AssertionError("wallet not found"));
 
         assertThat(usedWallet.getStatus()).isEqualTo(WalletStatus.ACTIVE);
 
-        // 비활성화 지갑 개수 감소 확인
-        long afterInactiveCount = walletRepository.findAll().stream()
-                .filter(w -> myWallets.contains(w.getWalletAddress()) && w.getStatus() == WalletStatus.INACTIVE)
-                .count();
+        List<Image> savedImages = imageRepository.findByTargetNameAndTargetNo("campaign", savedCampaign.getCampaignNo());
 
-        assertThat(afterInactiveCount).isEqualTo(beforeInactiveCount - 1);
+        assertThat(savedImages).hasSize(3);
+        assertThat(savedImages).extracting(Image::getImgOrgName)
+                .containsExactlyInAnyOrder("thumb.png", "detail-1.jpg", "detail-2.jpg");
+        assertThat(savedImages).extracting(Image::getPurpose)
+                .containsExactlyInAnyOrder("REPRESENTATIVE", "DETAIL", "DETAIL");
+        assertThat(savedImages).extracting(Image::getImgStoredName)
+                .containsExactlyInAnyOrder(
+                        "stored-thumb.png",
+                        "stored-detail-1.jpg",
+                        "stored-detail-2.jpg"
+                );
+        assertThat(savedImages).allSatisfy(image -> {
+            assertThat(image.getTargetName()).isEqualTo("campaign");
+            assertThat(image.getTargetNo()).isEqualTo(savedCampaign.getCampaignNo());
+            assertThat(image.getImgPath()).startsWith("C:/uploads/");
+        });
+    }
+
+    @TestConfiguration
+    static class FileUtilTestConfig {
+
+        @Bean
+        @Primary
+        FileUtil fileUtil() {
+            return new FileUtil() {
+                @Override
+                public String saveFile(MultipartFile file) throws IOException {
+                    return "stored-" + file.getOriginalFilename();
+                }
+            };
+        }
     }
 }
