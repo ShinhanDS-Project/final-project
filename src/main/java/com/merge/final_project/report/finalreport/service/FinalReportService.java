@@ -37,7 +37,7 @@ public class FinalReportService {
      * 보고서 본문과 이미지를 하나의 트랜잭션으로 묶어 저장합니다.
      */
     @Transactional(rollbackFor = Exception.class)
-    public void saveFullReport(FinalReportRequestDTO dto, List<MultipartFile> files, String email) throws IOException {
+    public void saveFullReport(FinalReportRequestDTO dto, List<MultipartFile> files,List<String> purposes, String email) throws IOException {
 
         // 1. 필수 검증: 사진이 없으면 진행 불가
         validateImages(files);
@@ -46,7 +46,7 @@ public class FinalReportService {
         FinalReport report = saveReportEntity(dto, email);
 
         // 3. 이미지 파일 및 정보 저장
-        saveImageEntities(report, files);
+        saveImageEntities(report, files, purposes);
     }
 
     // --- 아래는 내부 세부 공정 (Private) ---
@@ -81,8 +81,13 @@ public class FinalReportService {
         return finalReportRepository.save(report);
     }
 
-    private void saveImageEntities(FinalReport report, List<MultipartFile> files) throws IOException {
-        for (MultipartFile file : files) {
+    private void saveImageEntities(FinalReport report, List<MultipartFile> files, List<String> purposes) throws IOException {
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+
+            // 목적(purpose) 매칭: 리스트가 부족하면 "GENERAL"로 기본값 부여
+            String purpose = (purposes != null && purposes.size() > i) ? purposes.get(i) : "GENERAL";
+
             String storedName = fileUtil.saveFile(file);
 
             Image imageEntity = Image.builder()
@@ -90,7 +95,8 @@ public class FinalReportService {
                     .imgStoredName(storedName)
                     .imgPath("C:/uploads/reports/" + storedName)
                     .targetName("final_report")
-                    .targetNo(report.getReportNo()) // 저장된 보고서의 PK 사용
+                    .targetNo(report.getReportNo())
+                    .purpose(purpose) // 💡 목적 저장
                     .createdAt(LocalDateTime.now())
                     .build();
 
@@ -126,5 +132,26 @@ public class FinalReportService {
 
         // 3. DTO로 변환해서 반환
         return new FinalReportResponseDTO(report, images);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updateReport(Long reportNo, FinalReportRequestDTO dto,
+                             List<MultipartFile> files, List<String> purposes) throws IOException {
+
+        // 1. 기존 보고서 존재 확인
+        FinalReport report = finalReportRepository.findById(reportNo)
+                .orElseThrow(() -> new RuntimeException("수정할 보고서가 없습니다."));
+
+        // 2. 보고서 본문 내용 업데이트 (Dirty Checking 활용)
+        // 별도의 save 호출 없이 객체의 값만 바꿔도 DB에 반영됩니다.
+        report.updateContent(dto.getTitle(), dto.getContent(), dto.getUsagePurpose());
+
+        // 3. 기존 사진 정보 삭제 (DB에서 지우고, 필요하다면 실제 파일도 삭제)
+        imageRepository.deleteByTargetNameAndTargetNo("final_report", reportNo);
+
+        // 4. 새 사진들 저장 (기존에 만든 메서드 재사용!)
+        if (files != null && !files.isEmpty() && !files.get(0).isEmpty()) {
+            saveImageEntities(report, files, purposes);
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.merge.final_project.report.finalreport.dto;
 
+import com.merge.final_project.global.ImageDTO;
 import com.merge.final_project.report.finalreport.ReportApprovalStatus;
 import com.merge.final_project.report.finalreport.entitiy.FinalReport;
 import com.merge.final_project.global.Image;
@@ -45,20 +46,5 @@ public class FinalReportResponseDTO {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 이미지 정보만 따로 담을 내부 클래스 (필요한 정보만 노출)
-     */
-    @Getter
-    @NoArgsConstructor
-    public static class ImageDTO {
-        private String imgOrgName;
-        private String imgStoredName;
-        private String imgPath;
 
-        public ImageDTO(Image entity) {
-            this.imgOrgName = entity.getImgOrgName();
-            this.imgStoredName = entity.getImgStoredName();
-            this.imgPath = entity.getImgPath();
-        }
-    }
 }

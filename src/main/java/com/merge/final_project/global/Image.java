@@ -33,4 +33,7 @@ public class Image {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "purpose",nullable = true)
+    private String purpose;
 }

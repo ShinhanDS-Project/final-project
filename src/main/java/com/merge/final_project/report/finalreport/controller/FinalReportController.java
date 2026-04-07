@@ -33,10 +33,12 @@ public class FinalReportController {
     public ResponseEntity<String> submitReport(
             @RequestPart("dto") FinalReportRequestDTO dto,           // 1. JSON 데이터
             @RequestPart("files") List<MultipartFile> files,        // 2. 이미지 파일 리스트
+            @RequestPart("purposes") List<String> purposes,
             @AuthenticationPrincipal User user) throws IOException { // 3. 로그인 정보
 
+
         // 캡슐화된 서비스 호출 (데이터 + 파일 + 이메일)
-        finalReportService.saveFullReport(dto, files, user.getUsername());
+        finalReportService.saveFullReport(dto, files,purposes, user.getUsername());
 
         return ResponseEntity.ok("보고서와 사진이 성공적으로 제출되었습니다.");
     }
@@ -74,4 +76,15 @@ public class FinalReportController {
 
         return ResponseEntity.ok(detail);
     }
+    @PutMapping("/update/{reportNo}")
+    public ResponseEntity<String> updateReport(
+            @PathVariable("reportNo") Long reportNo,
+            @RequestPart("dto") FinalReportRequestDTO dto,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @RequestPart(value = "purposes", required = false) List<String> purposes) throws IOException {
+
+        finalReportService.updateReport(reportNo, dto, files, purposes);
+        return ResponseEntity.ok("보고서 수정 완료");
+    }
 }
+

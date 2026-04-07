@@ -59,4 +59,13 @@ public class FinalReport {
 
     @Column(name = "key_no")
     private Long key_no;
+
+
+    public void updateContent(String title, String content, String usagePurpose) {
+        this.title = title;
+        this.content = content;
+        this.usagePurpose = usagePurpose;
+        //수정하면 다시 대기 상태
+        this.approvalStatus = ReportApprovalStatus.PENDING;
+    }
 }

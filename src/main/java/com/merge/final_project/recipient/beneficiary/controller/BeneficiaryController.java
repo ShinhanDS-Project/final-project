@@ -57,7 +57,7 @@ public class BeneficiaryController {
         // 2. SecurityContext 설정
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // ⭐️ 3. 세션에 SecurityContext를 명시적으로 저장 (Spring Security 6 필수 권장)
+        // 3. 세션에 SecurityContext를 명시적으로 저장 (Spring Security 6 필수 권장)
         HttpSession session = request.getSession(true);
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
 
