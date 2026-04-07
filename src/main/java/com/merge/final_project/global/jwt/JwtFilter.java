@@ -20,7 +20,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    // JwtFilter.java의 doFilterInternal 메서드 수정 내용
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -28,20 +27,18 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
 
-        // 토큰이 유효하다면 인증 처리 시작
         if (token != null && jwtTokenProvider.validateToken(token)) {
             String email = jwtTokenProvider.getAdminId(token);
             String role = jwtTokenProvider.getAdminRole(token);
 
             if (email != null && role != null) {
-                // [수정] 단순 문자열 대신 User 객체를 생성해서 담아줍니다.
                 org.springframework.security.core.userdetails.User user =
                         new org.springframework.security.core.userdetails.User(
                                 email, "", List.of(new SimpleGrantedAuthority(role))
                         );
 
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()); // principal에 user 객체 전달
+                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
@@ -50,6 +47,7 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     private String resolveToken(HttpServletRequest request) {
+        // 다시 헤더만 확인하도록 복구
         String bearer = request.getHeader("Authorization");
         if (bearer != null && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);

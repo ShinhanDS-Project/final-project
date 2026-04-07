@@ -115,39 +115,61 @@ public class FinalReportService {
         }).collect(Collectors.toList());
     }
     /**
-     * 보고서 상세 조회 (보고서 본문 + 이미지 리스트)
+     * 보고서 상세 조회 (보고서 본문 + 이미지 리스트) - 작성자 본인만 가능
      */
     @Transactional(readOnly = true)
-    public FinalReportResponseDTO getReportDetail(Long reportNo) {
+    public FinalReportResponseDTO getReportDetail(Long reportNo, String email) {
 
         // 1. 보고서 본문 찾기 (없으면 에러)
         FinalReport report = finalReportRepository.findById(reportNo)
                 .orElseThrow(() -> new RuntimeException("해당 보고서를 찾을 수 없습니다."));
 
-        // 2. 이 보고서에 달린 이미지들 찾기 (글로벌 규격: target_name, target_no 활용)
+        // 2. 작성자 본인 확인
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
+
+        if (!report.getBeneficiary_no().equals(beneficiary.getBeneficiaryNo())) {
+            throw new RuntimeException("해당 보고서를 조회할 권한이 없습니다.");
+        }
+
+        // 3. 이 보고서에 달린 이미지들 찾기 (글로벌 규격: target_name, target_no 활용)
         List<Image> images = imageRepository.findByTargetNameAndTargetNo("final_report", reportNo);
 
-        // 3. DTO로 변환해서 반환
+        // 4. DTO로 변환해서 반환
         return new FinalReportResponseDTO(report, images);
     }
 
     @Transactional(rollbackFor = Exception.class)
     public void updateReport(Long reportNo, FinalReportRequestDTO dto,
-                             List<MultipartFile> files, List<String> purposes) throws IOException {
+                             List<MultipartFile> files, List<String> purposes, String email) throws IOException {
 
-        // 1. 기존 보고서 존재 확인
+        // 1. 기존 보고서 존재 확인 및 권한 검증
         FinalReport report = finalReportRepository.findById(reportNo)
                 .orElseThrow(() -> new RuntimeException("수정할 보고서가 없습니다."));
 
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
+
+        // 작성자(수혜자 번호) 비교를 통한 권한 체크
+        if (!report.getBeneficiary_no().equals(beneficiary.getBeneficiaryNo())) {
+            throw new RuntimeException("해당 보고서를 수정할 권한이 없습니다.");
+        }
+
         // 2. 보고서 본문 내용 업데이트 (Dirty Checking 활용)
-        // 별도의 save 호출 없이 객체의 값만 바꿔도 DB에 반영됩니다.
         report.updateContent(dto.getTitle(), dto.getContent(), dto.getUsagePurpose());
 
-        // 3. 기존 사진 정보 삭제 (DB에서 지우고, 필요하다면 실제 파일도 삭제)
-        imageRepository.deleteByTargetNameAndTargetNo("final_report", reportNo);
-
-        // 4. 새 사진들 저장 (기존에 만든 메서드 재사용!)
+        // 3. 새 사진이 들어온 경우에만 기존 사진 교체 (물리 파일 삭제 포함)
         if (files != null && !files.isEmpty() && !files.get(0).isEmpty()) {
+            // 3-1. 기존 이미지 목록 조회하여 실제 파일 삭제
+            List<Image> oldImages = imageRepository.findByTargetNameAndTargetNo("final_report", reportNo);
+            for (Image img : oldImages) {
+                fileUtil.deleteFile(img.getImgStoredName());
+            }
+
+            // 3-2. 기존 DB 정보 삭제
+            imageRepository.deleteByTargetNameAndTargetNo("final_report", reportNo);
+
+            // 3-3. 새 사진들 저장
             saveImageEntities(report, files, purposes);
         }
     }

@@ -29,4 +29,16 @@ public class FileUtil {
 
         return storedName; // DB에 저장할 이름을 반환
     }
+
+    /**
+     * 실제 물리 파일을 삭제합니다.
+     */
+    public void deleteFile(String storedName) {
+        if (storedName == null || storedName.isEmpty()) return;
+
+        File file = new File(uploadPath, storedName);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
 }

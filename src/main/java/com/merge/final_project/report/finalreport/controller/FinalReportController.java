@@ -73,22 +73,46 @@ public class FinalReportController {
         return "finalReport/submit"; // src/main/resources/templates/finalReport/submit.html
     }
     @GetMapping("/{reportNo}")
-    public ResponseEntity<FinalReportResponseDTO> getReportDetail(
-            @PathVariable("reportNo") Long reportNo) {
+    public ResponseEntity<?> getReportDetail(
+            @PathVariable("reportNo") Long reportNo,
+            java.security.Principal principal) {
 
-        // 서비스에서 특정 보고서 하나를 DTO로 변환해 가져옵니다.
-        FinalReportResponseDTO detail = finalReportService.getReportDetail(reportNo);
+        if (principal == null) {
+            return ResponseEntity.status(401).body("로그인 정보가 없습니다.");
+        }
+
+        // 서비스에서 본인 확인 후 상세 정보를 가져옵니다.
+        FinalReportResponseDTO detail = finalReportService.getReportDetail(reportNo, principal.getName());
 
         return ResponseEntity.ok(detail);
+    }
+
+    /**
+     * 내가 쓴 보고서 목록 조회 API
+     */
+    @GetMapping("/my")
+    @ResponseBody
+    public ResponseEntity<?> getMyReports(java.security.Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body("로그인 정보가 없습니다.");
+        }
+
+        List<FinalReportResponseDTO> myReports = finalReportService.getMyReports(principal.getName());
+        return ResponseEntity.ok(myReports);
     }
     @PutMapping("/update/{reportNo}")
     public ResponseEntity<String> updateReport(
             @PathVariable("reportNo") Long reportNo,
             @RequestPart("dto") FinalReportRequestDTO dto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @RequestPart(value = "purposes", required = false) List<String> purposes) throws IOException {
+            @RequestPart(value = "purposes", required = false) List<String> purposes,
+            java.security.Principal principal) throws IOException {
 
-        finalReportService.updateReport(reportNo, dto, files, purposes);
+        if (principal == null) {
+            return ResponseEntity.status(401).body("로그인 정보가 없습니다.");
+        }
+
+        finalReportService.updateReport(reportNo, dto, files, purposes, principal.getName());
         return ResponseEntity.ok("보고서 수정 완료");
     }
 }
