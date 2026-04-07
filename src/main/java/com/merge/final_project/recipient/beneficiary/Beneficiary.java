@@ -1,7 +1,6 @@
 package com.merge.final_project.recipient.beneficiary;
 
-import com.merge.final_project.auth.useraccount.UsersAccount;
-import com.merge.final_project.wallet.Wallet;
+import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,37 +10,38 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "beneficiary")
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "beneficiary")
+@Builder
 public class Beneficiary {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "beneficiary_no")
     private Long beneficiaryNo;
 
-    @Column(nullable = false)
+    @Column(name = "name")
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "email")
     private String email;
 
+    @Column(name = "password")
     private String password;
 
-    @Column(name = "entry_code")
-    private Integer entryCode;
-
+    @Column(name = "phone")
     private String phone;
+
+    @Column(name = "account")
     private String account;
 
     @Column(name = "beneficiary_hash")
     private String beneficiaryHash;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "beneficiary_type")
-    private String beneficiaryType;
+    private BeneficiaryType beneficiaryType;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -49,10 +49,14 @@ public class Beneficiary {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "wallet_no", nullable = false)
-    private Long walletNo;
+    @Column(name = "entry_code", nullable = false)
+    private Integer entryCode;
 
-    @Column(name = "key_no", nullable = false)
-    private Long keyNo;
+//    @OneToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "login_no", nullable = false)
+//    private UsersAccount usersAccount;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wallet_no", nullable = false)
+    private Wallet wallet;
 }
