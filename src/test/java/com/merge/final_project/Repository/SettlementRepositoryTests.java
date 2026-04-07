@@ -150,7 +150,7 @@ public class SettlementRepositoryTests {
         Foundation foundation = Foundation.builder()
                 .foundationHash("hash_foundation_001")
                 .foundationName("굿네이버재단")
-                .businessRegistrationNumber(1234654)
+                .businessRegistrationNumber("1234654")
                 .representativeName("홍길동")
                 .contactPhone("02-1234-5678")
                 .description("아동 및 취약계층 지원 단체")
@@ -198,8 +198,8 @@ public class SettlementRepositoryTests {
                 .usageStartAt(LocalDateTime.of(2026, 5, 4, 10, 0, 0))
                 .usageEndAt(LocalDateTime.of(2026, 6, 4, 10, 0, 0))
 
-                .targetAmount(1000000)
-                .currentAmount(0)
+                .targetAmount(1000000L)
+                .currentAmount(0L)
                 .achievedAt(null)
 
                 .category("DONATION")

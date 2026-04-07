@@ -1,5 +1,6 @@
 package com.merge.final_project.org.foundation;
 
+import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
