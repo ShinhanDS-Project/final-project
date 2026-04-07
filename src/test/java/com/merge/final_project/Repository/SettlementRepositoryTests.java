@@ -34,6 +34,7 @@ import org.springframework.context.annotation.Primary;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -94,7 +95,7 @@ public class SettlementRepositoryTests {
                 .walletType(WalletType.BENEFICIARY)
                 .key(key3)
                 .ownerNo(null)
-                .walletAddress("0xbeneficiary123")
+                .walletAddress("0xbeneficiary_" + UUID.randomUUID())
                 .balance(new BigDecimal("0"))
                 .walletHash("hash_beneficiary_123")
                 .status(WalletStatus.ACTIVE)
@@ -108,7 +109,7 @@ public class SettlementRepositoryTests {
                 .walletType(WalletType.FOUNDATION)
                 .key(key4)
                 .ownerNo(null)
-                .walletAddress("0xfoundation123")
+                .walletAddress("0xfoundation_" + UUID.randomUUID())
                 .balance(new BigDecimal("0"))
                 .walletHash("hash_foundation_123")
                 .status(WalletStatus.ACTIVE)
@@ -179,7 +180,7 @@ public class SettlementRepositoryTests {
                 Wallet.builder()
                         .walletType(WalletType.CAMPAIGN)
                         .key(key)
-                        .walletAddress("0xcampaign_wallet_003")
+                        .walletAddress("0xcampaign_wallet_" + UUID.randomUUID())
                         .balance(BigDecimal.ZERO)
                         .walletHash("hash_campaign_wallet_001")
                         .status(WalletStatus.ACTIVE)
@@ -315,6 +316,12 @@ public class SettlementRepositoryTests {
         when(blockchainService.settleCampaignOnChain(
                 any(), any(), any(), any(), any(), any(), any()
         )).thenReturn(receipt);
+        when(blockchainService.getTokenBalance(campaignWallet.getWalletAddress()))
+                .thenReturn(BigDecimal.ZERO.toBigInteger());
+        when(blockchainService.getTokenBalance(foundationWallet.getWalletAddress()))
+                .thenReturn(BigInteger.valueOf(100));
+        when(blockchainService.getTokenBalance(beneficiaryWallet.getWalletAddress()))
+                .thenReturn(BigInteger.valueOf(900));
 
         // when
         settlementTransactionService.processSettlement(campaign);
@@ -349,6 +356,12 @@ public class SettlementRepositoryTests {
 
         Wallet savedCampaignWallet = walletRepository.findById(campaignWallet.getWalletNo()).orElseThrow();
         assertThat(savedCampaignWallet.getBalance()).isEqualByComparingTo(BigDecimal.ZERO);
+
+        Wallet savedFoundationWallet = walletRepository.findById(foundationWallet.getWalletNo()).orElseThrow();
+        assertThat(savedFoundationWallet.getBalance()).isEqualByComparingTo(new BigDecimal("100"));
+
+        Wallet savedBeneficiaryWallet = walletRepository.findById(beneficiaryWallet.getWalletNo()).orElseThrow();
+        assertThat(savedBeneficiaryWallet.getBalance()).isEqualByComparingTo(new BigDecimal("900"));
     }
 
     @Test

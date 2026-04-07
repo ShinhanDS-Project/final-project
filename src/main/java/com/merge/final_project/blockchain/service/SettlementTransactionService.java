@@ -6,9 +6,9 @@ import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
 import com.merge.final_project.blockchain.repository.KeyRepository;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
-import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
@@ -56,11 +56,11 @@ public class SettlementTransactionService {
             return;
         }
 
-        // 이미 같은 캠페인에 대해 정산이 진행 중이거나 완료된 경우
-        // 스케줄러가 다시 집더라도 중복 정산이 일어나지 않도록 바로 종료한다.
+        // 이미 같은 캠페인에 대해 정산 대기, 처리 중, 완료 이력이 있으면
+        // 스케줄러가 다시 집어가더라도 중복 정산을 막기 위해 즉시 종료한다.
         if (settlementRepository.existsByCampaignAndStatusIn(
                 managedCampaign,
-                List.of(SettlementStatus.PENDING, SettlementStatus.COMPLETED)
+                List.of(SettlementStatus.PENDING, SettlementStatus.PROCESSING, SettlementStatus.COMPLETED)
         )) {
             return;
         }
@@ -107,9 +107,8 @@ public class SettlementTransactionService {
 
         String transactionCode = UUID.randomUUID().toString();
 
-        // 온체인 호출 전에 정산 레코드를 먼저 PENDING 으로 생성한다.
-        // 이렇게 해두면 체인 호출 실패 시 어떤 정산이 실패했는지 DB에 남길 수 있고,
-        // 이후 재시도 여부를 판단할 기준도 확보할 수 있다.
+        // 온체인 정산 전에도 시도 이력을 남겨야
+        // 체인 실패와 로컬 후처리 실패를 DB 에서 구분해서 볼 수 있다.
         Settlement settlement = settlementCommandService.createPendingSettlement(
                 transactionCode,
                 foundation,
@@ -120,11 +119,14 @@ public class SettlementTransactionService {
                 managedCampaign
         );
 
+        // 실제 체인 호출에 들어가기 직전 PROCESSING 으로 바꿔둔다.
+        // 이후 체인 성공 후 DB 반영만 실패해도 PENDING 과 구분할 수 있다.
+        settlementCommandService.markProcessing(settlement.getSettlementNo());
+
         TransactionReceipt receipt;
         try {
-            // 실제 스마트컨트랙트 정산 호출 구간이다.
-            // 이 단계에서 예외가 나면 아직 온체인 정산이 완료되지 않은 것이므로
-            // settlement 를 FAILED 로 바꿔 다음 배치/재시도 대상이 되게 한다.
+            // 실제 스마트 컨트랙트 정산 호출 구간이다.
+            // 여기서 예외가 나면 온체인 정산 자체가 실패한 것이므로 FAILED 로 바꾼다.
             BigInteger feeBps = feeRatePercent
                     .multiply(BigDecimal.valueOf(100))
                     .toBigIntegerExact();
@@ -144,10 +146,9 @@ public class SettlementTransactionService {
         }
 
         try {
-            // 온체인 정산이 성공했으면 영수증(txHash, blockNumber, gasUsed)을 기준으로
-            // 재단/수혜자 분배 내역과 캠페인 상태를 DB에 반영한다.
-            // 이 후처리 단계에서 예외가 나더라도 체인 정산 자체는 이미 끝난 상태일 수 있으므로
-            // settlement 를 FAILED 로 바꾸지 않고 예외만 올려 중복 온체인 호출을 피한다.
+            // 온체인 정산이 성공한 뒤에만 영수증 값으로 로컬 트랜잭션을 남긴다.
+            // 여기서 실패했다는 것은 체인은 이미 성공했고, 우리 DB 반영만 실패한 상태이므로
+            // FAILED 로 바꾸지 않고 PROCESSING 으로 남겨 중복 정산을 막는다.
             String txHash = receipt.getTransactionHash();
             Long blockNum = receipt.getBlockNumber() != null ? receipt.getBlockNumber().longValue() : null;
             BigDecimal gasFee = receipt.getGasUsed() != null
@@ -185,12 +186,32 @@ public class SettlementTransactionService {
                             .createdAt(now)
                             .build()
             );
-
+            // 캠페인 상태를 정산 완료 상태로 변경
             managedCampaign.setCampaignStatus(CampaignStatus.SETTLED);
-            campaignWallet.setBalance(BigDecimal.ZERO);
+
+            // 캠페인 지갑 온체인 잔액 조회 후 로컬 DB에 반영
+            campaignWallet.updateBalance(
+                    BigDecimal.valueOf(blockchainService.getTokenBalance(campaignWallet.getWalletAddress()).longValue())
+            );
+            // 지갑 사용 시간 갱신
+            campaignWallet.updateLastUsedAt();
+
+            // 기부단체 지갑 온체인 잔액 반영
+            foundationWallet.updateBalance(
+                    BigDecimal.valueOf(blockchainService.getTokenBalance(foundationWallet.getWalletAddress()).longValue())
+            );
+            foundationWallet.updateLastUsedAt();
+
+            // 수혜자 지갑 온체인 잔액 반영
+            beneficiaryWallet.updateBalance(
+                    BigDecimal.valueOf(blockchainService.getTokenBalance(beneficiaryWallet.getWalletAddress()).longValue())
+            );
+            beneficiaryWallet.updateLastUsedAt();
+
+            // 정산 상태를 COMPLETED로 변경
             settlementCommandService.markCompleted(settlement.getSettlementNo());
         } catch (Exception e) {
-            throw new RuntimeException("정산 후처리 저장에 실패했습니다.", e);
+            throw new RuntimeException("정산 후처리에 실패했습니다.", e);
         }
     }
 }

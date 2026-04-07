@@ -64,6 +64,8 @@ public class CampaignServiceImpl implements CampaignService {
         campaign.setCurrentAmount(0L);
         campaign.setApprovalStatus(ApprovalStatus.PENDING);
         campaign.setCampaignStatus(CampaignStatus.PENDING);
+        campaign.setCreatedAt(LocalDateTime.now());
+        campaign.setUpdatedAt(LocalDateTime.now());
 
         // 캠페인 정보 DB 저장
         Campaign savedCampaign = campaignRepository.save(campaign);

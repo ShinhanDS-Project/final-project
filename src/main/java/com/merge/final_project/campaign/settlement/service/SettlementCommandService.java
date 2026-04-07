@@ -19,7 +19,8 @@ public class SettlementCommandService {
 
     private final SettlementRepository settlementRepository;
 
-    //정산 생성
+    // 정산 원본은 체인 처리와 분리해서 먼저 저장해야
+    // 체인 호출 실패가 나도 어떤 정산 시도가 실패했는지 남길 수 있다.
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Settlement createPendingSettlement(
             String transactionCode,
@@ -44,20 +45,28 @@ public class SettlementCommandService {
         return settlementRepository.save(settlement);
     }
 
-    //정산 완료 처리
+    // 실제 온체인 정산을 시작하기 직전에 PROCESSING 으로 바꿔두면,
+    // 체인 성공 후 로컬 저장만 실패한 건을 PENDING 과 구분해서 볼 수 있다.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markProcessing(Long settlementNo) {
+        Settlement settlement = settlementRepository.findById(settlementNo)
+                .orElseThrow(() -> new IllegalArgumentException("정산 정보를 찾을 수 없습니다."));
+
+        settlement.markProcessing();
+    }
+
     @Transactional
     public void markCompleted(Long settlementNo) {
         Settlement settlement = settlementRepository.findById(settlementNo)
-                .orElseThrow(() -> new IllegalArgumentException("정산 없음"));
+                .orElseThrow(() -> new IllegalArgumentException("정산 정보를 찾을 수 없습니다."));
         settlement.setStatus(SettlementStatus.COMPLETED);
         settlement.setSettledAt(LocalDateTime.now());
     }
 
-    //정산 실패 처리
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markFailed(Long settlementNo) {
         Settlement settlement = settlementRepository.findById(settlementNo)
-                .orElseThrow(() -> new IllegalArgumentException("정산 없음"));
+                .orElseThrow(() -> new IllegalArgumentException("정산 정보를 찾을 수 없습니다."));
 
         settlement.failed();
     }

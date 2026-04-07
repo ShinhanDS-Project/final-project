@@ -59,6 +59,7 @@ public class Transaction {
     @Column(name = "event_type", nullable = false)
     private TransactionEventType eventType;
 
+    // 트랜잭션 생성 (초기 상태: PENDING)
     public Transaction(
             Wallet fromWallet,
             Wallet toWallet,
@@ -73,10 +74,12 @@ public class Transaction {
         this.createdAt = LocalDateTime.now();
     }
 
+    // 트랜잭션 처리 중 상태로 변경 (온체인 실행 시작)
     public void markProcessing() {
         this.status = TransactionStatus.PROCESSING;
     }
 
+    // 온체인 성공 후 완료 처리 + 해시/블록/가스 정보 저장
     public void complete(String txHash, Long blockNum, BigDecimal gasFee) {
         this.txHash = txHash;
         this.blockNum = blockNum;
@@ -85,6 +88,7 @@ public class Transaction {
         this.sentAt = LocalDateTime.now();
     }
 
+    // 온체인 실패 시 상태 변경
     public void fail() {
         this.status = TransactionStatus.FAILED;
     }

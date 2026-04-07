@@ -67,5 +67,7 @@ Thumbs.db
 docker-compose.override.yml
 
 src/main/resources/application.yml
+src/test/resources/application.properties
 
 node_modules/
+.tools/

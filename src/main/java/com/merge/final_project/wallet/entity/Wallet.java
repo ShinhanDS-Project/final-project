@@ -59,6 +59,7 @@ public class Wallet {
     @JoinColumn(name = "campaign_no")
     private Campaign campaign;
 
+    // 지갑 생성 (기본 정보 설정 및 생성 시간 기록)
     public Wallet(
             WalletType walletType,
             Long ownerNo,
@@ -78,14 +79,17 @@ public class Wallet {
         this.createdAt = LocalDateTime.now();
     }
 
+    // 지갑 마지막 사용 시간 갱신
     public void updateLastUsedAt() {
         this.lastUsedAt = LocalDateTime.now();
     }
 
+    // 지갑 상태 변경 (ACTIVE, INACTIVE 등)
     public void changeStatus(WalletStatus status) {
         this.status = status;
     }
 
+    // 지갑 잔액 업데이트 (온체인 결과 반영)
     public void updateBalance(BigDecimal balance) {
         this.balance = balance;
     }
