@@ -3,6 +3,7 @@ package com.merge.final_project.global.config;
 import com.merge.final_project.global.jwt.JwtAccessDeniedHandler;
 import com.merge.final_project.global.jwt.JwtAuthenticationEntryPoint;
 import com.merge.final_project.global.jwt.AdminJwtFilter;
+import com.merge.final_project.global.jwt.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -38,8 +39,6 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())    //브라우저 팝업이나 로그인 방식 비활성화
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))   //jwt발급으로 로그인 하니까 세션 안 쓸 것.
                 .authorizeHttpRequests(auth -> auth
-                        //회원가입 경로는 인증 없이 허용합니다.
-                        .requestMatchers("/api/beneficiary/signup").permitAll()
                         .requestMatchers("/admin/auth/login").permitAll()   //관리자 로그인
                         .anyRequest().authenticated() // 그 외의 요청은 로그인이 필요함 -> 스프링 세큐리티
                 )
