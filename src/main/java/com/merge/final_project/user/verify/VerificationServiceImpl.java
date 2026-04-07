@@ -100,6 +100,7 @@ public class VerificationServiceImpl implements VerificationService {
                 .orElse(false);
     }
 
+    @Transactional
     @Override
     public void deleteVerification(String email) {
         //배치코드? 또는 삭제

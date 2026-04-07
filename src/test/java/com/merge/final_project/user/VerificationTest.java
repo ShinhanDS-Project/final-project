@@ -162,13 +162,13 @@ class VerificationTest {
         verify(verificationService, times(1)).sendVerificationCode("same@gmail.com");
     }
 
-    @Test
-    @DisplayName("실제 내 이메일로 인증 메일 발송 테스트")
-    void sendRealVerificationEmailTest() {
-        String email = "dlcodnjs667@gmail.com"; // 여기 네 이메일로 바꿔
-
-        verificationService.sendVerificationCode(email);
-
-        System.out.println("인증 메일 발송 완료: " + email);
-    }
+//    @Test
+//    @DisplayName("실제 내 이메일로 인증 메일 발송 테스트")
+//    void sendRealVerificationEmailTest() {
+//
+//
+//        verificationService.sendVerificationCode(email);
+//
+//        System.out.println("인증 메일 발송 완료: " + email);
+//    }
 }

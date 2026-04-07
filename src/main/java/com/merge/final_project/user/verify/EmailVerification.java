@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class EmailVerification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer emailVerifyNo;
+    private Long emailVerifyNo;
 
     @Column(name="email")
     private String email;
