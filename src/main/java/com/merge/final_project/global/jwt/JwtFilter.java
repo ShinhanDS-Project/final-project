@@ -28,24 +28,30 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
 
-        // 토큰이 유효하다면 인증 처리 시작
+        // 1. 토큰이 존재하고 유효한지 먼저 체크
         if (token != null && jwtTokenProvider.validateToken(token)) {
-            String email = jwtTokenProvider.getAdminId(token);
-            String role = jwtTokenProvider.getAdminRole(token);
 
-            if (email != null && role != null) {
-                // [수정] 단순 문자열 대신 User 객체를 생성해서 담아줍니다.
-                org.springframework.security.core.userdetails.User user =
-                        new org.springframework.security.core.userdetails.User(
-                                email, "", List.of(new SimpleGrantedAuthority(role))
+            // 2. 토큰 타입 추출 (ACCESS vs TEMP)
+            String type = jwtTokenProvider.getTokenType(token);
+
+            // 중요: ACCESS 타입일 때만 SecurityContext에 인증 정보 저장
+            // TEMP(소셜 가입 대기) 토큰은 인증이 필요한 API에 접근하면 안 됨
+            if ("ACCESS".equals(type)) {
+                String email = jwtTokenProvider.getEmailFromToken(token);
+                String role = jwtTokenProvider.getAdminRole(token); // Claims에서 "role" 꺼내기
+
+                // 3. 권한 객체 생성 (사용자가 USER든 BENEFICIARY든 토큰 내 role에 따라 생성)
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                email, null, List.of(new SimpleGrantedAuthority(role))
                         );
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()); // principal에 user 객체 전달
-
+                // 4. 시큐리티 컨텍스트에 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
+
+        // 다음 필터로 진행
         filterChain.doFilter(request, response);
     }
 

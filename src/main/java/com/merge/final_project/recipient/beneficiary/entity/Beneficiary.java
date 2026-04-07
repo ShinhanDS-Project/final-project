@@ -48,16 +48,11 @@ public class Beneficiary {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-<<<<<<< HEAD:src/main/java/com/merge/final_project/recipient/beneficiary/Beneficiary.java
-    @Column(name = "privatekey_no", nullable = false)
-    private Integer privatekeyNo;
-=======
     @Column(name = "entry_code", nullable = false)
     private Integer entryCode;
 
     @Column(name = "key_no")
     private Long key_no;
->>>>>>> d0eea12c7f5c255142fd75caee5ce2e90226e0c8:src/main/java/com/merge/final_project/recipient/beneficiary/entity/Beneficiary.java
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_no", nullable = false)

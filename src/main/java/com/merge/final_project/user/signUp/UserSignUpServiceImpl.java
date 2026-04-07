@@ -1,5 +1,6 @@
 package com.merge.final_project.user.signUp;
 
+import com.merge.final_project.user.signUp.dto.UserSignUpResponseDTO;
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.users.User;
 import com.merge.final_project.user.users.UserStatus;
@@ -7,6 +8,7 @@ import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
 import com.merge.final_project.user.verify.VerificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
@@ -15,42 +17,31 @@ public class UserSignUpServiceImpl implements UserSignUpService{
 
 
     private final UserSignUpRepository userSignUpRepository;
-private final VerificationService verificationService;
+    private final VerificationService verificationService;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
     @Override
     public void register(UserSignUpRequestDTO requestDto)  {
-        if(requestDto.getLoginType()==null){
-            throw new IllegalArgumentException("잘못된 접근입니다.");
+        // 1. 공통 검증: 전화번호 중복 체크
+        if (requestDto.getLoginType() == null) {
+            throw new IllegalArgumentException("로그인 타입은 필수입니다.");
         }
-        if(userSignUpRepository.existsByPhone(requestDto.getPhone())){
-            throw new IllegalArgumentException("이미 존재하는 회원 정보입니다.");
+        if (userSignUpRepository.existsByPhone(requestDto.getPhone())) {
+            throw new IllegalArgumentException("이미 가입된 전화번호입니다.");
         }
-        if (requestDto.getLoginType() == LoginType.LOCAL &&
-                (requestDto.getPassword() == null || requestDto.getPassword().isBlank())) {
-            throw new IllegalArgumentException("비밀번호는 필수입니다.");
-        }
+
+        // 로그인 타입에 따른 특화 검증 로직 호출
         if (requestDto.getLoginType() == LoginType.LOCAL) {
-            //부가기능 추가 : 이메일 인증
-            if (userSignUpRepository.existsByEmailAndLoginType(requestDto.getEmail(), LoginType.LOCAL)) {
-                throw new IllegalArgumentException("이미 존재하는 이메일입니다..");
-            }
-            if (!verificationService.isVerifiedEmail(requestDto.getEmail())) {
-                throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다.");
-            }
+            validateLocalUser(requestDto);
             registerLocal(requestDto);
-            return;
-        }
-        if (requestDto.getLoginType() == LoginType.GOOGLE) {
-            //부가기능 추가 : 이메일 인증
-            if (userSignUpRepository.existsByEmailAndLoginType(requestDto.getEmail(), LoginType.GOOGLE)) {
-                throw new IllegalArgumentException("이미 존재하는 이메일입니다..");
-            }
+        } else if (requestDto.getLoginType() == LoginType.GOOGLE) {
+            validateGoogleUser(requestDto);
             registerGoogle(requestDto);
-            return;
+        } else {
+            throw new IllegalArgumentException("잘못된 로그인 타입입니다.");
         }
-        throw new IllegalArgumentException("잘못된 접근입니다.");
+
     }
 
     @Override
@@ -68,8 +59,10 @@ private final VerificationService verificationService;
                 .loginCount(0)
                 .build();
 
-        userSignUpRepository.save(user);
+        saveWithRetry(user);
     }
+
+
 
     @Override
     public void registerGoogle(UserSignUpRequestDTO dto) {
@@ -86,8 +79,42 @@ private final VerificationService verificationService;
                 .loginCount(0)
                 .build();
 
-        userSignUpRepository.save(user);
+        saveWithRetry(user);
     }
+    // 로컬 가입 전용 검증
+    private void validateLocalUser(UserSignUpRequestDTO dto) {
+        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+            throw new IllegalArgumentException("이메일은 필수입니다.");
+        }
+        if (dto.getName() == null || dto.getName().isBlank()) {
+            throw new IllegalArgumentException("이름은 필수입니다.");
+
+        }
+        if (dto.getPassword() == null || dto.getPassword().isBlank()) {
+            throw new IllegalArgumentException("비밀번호는 필수입니다.");
+        }
+        if (userSignUpRepository.existsByEmailAndLoginType(dto.getEmail(), LoginType.LOCAL)) {
+            throw new IllegalArgumentException("이미 존재하는 로컬 계정입니다.");
+        }
+        if (!verificationService.isVerifiedEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다.");
+        }
+    }
+
+    // 구글 가입 전용 검증
+    private void validateGoogleUser(UserSignUpRequestDTO dto) {
+        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+            throw new IllegalArgumentException("구글 계정 이메일이 없습니다.");
+        }
+        if (dto.getName() == null || dto.getName().isBlank()) {
+            throw new IllegalArgumentException("구글 계정 이름이 없습니다.");
+        }
+        if (userSignUpRepository.existsByEmailAndLoginType(dto.getEmail(), LoginType.GOOGLE)) {
+            throw new IllegalArgumentException("이미 가입된 구글 계정입니다.");
+        }
+        // 구글은 이미 인증된 이메일을 사용하므로 verificationService를 생략.
+    }
+
     // 중복되지 않는 해시가 나올 때까지 반복 생성
     private String generateUniqueHash() {
         String hash;
@@ -97,4 +124,31 @@ private final VerificationService verificationService;
         return hash;
     }
 
+    private static final int MAX_HASH_RETRY = 10;
+
+    //바로 저장하지 않고 namehash 중복 체크 다시하고 저장하는 코드(중복 마지막 확인)
+    private void saveWithRetry(User user) {
+        for (int i = 0; i < MAX_HASH_RETRY; i++) {
+            try {
+                userSignUpRepository.save(user);
+                return;
+            } catch (DataIntegrityViolationException e) {
+                if (isNameHashDuplicateException(e)) {
+                    user.updateNameHash(generateUniqueHash());
+                    continue;
+                }
+                throw e;
+            }
+        }
+        throw new IllegalStateException("nameHash 중복이 계속 발생해서 회원가입에 실패했습니다.");
+
+    }
+
+    //예외처리 ->db 저장 실패시 실패 원인이 nameHash 중복인지 판별하는 용도
+    private boolean isNameHashDuplicateException(DataIntegrityViolationException e) {
+        Throwable cause = e.getMostSpecificCause();
+        return cause != null
+                && cause.getMessage() != null
+                && cause.getMessage().contains("name_hash");
+    }
 }
