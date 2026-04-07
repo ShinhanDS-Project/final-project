@@ -18,6 +18,7 @@ import org.web3j.tx.gas.ContractGasProvider;
 public class DonationToken extends Contract {
 
     public static final String BINARY = "";
+    // Solidity 컨트랙트의 settleCampaign 함수명과 맞춰 호출한다.
     private static final String FUNC_SETTLE_CAMPAIGN = "settleCampaign";
 
     protected DonationToken(
@@ -44,6 +45,7 @@ public class DonationToken extends Contract {
             Credentials credentials,
             ContractGasProvider contractGasProvider
     ) {
+        // 배포된 컨트랙트 주소에 바인딩해서 이후 함수 호출에 사용한다.
         return new DonationToken(contractAddress, web3j, credentials, contractGasProvider);
     }
 
@@ -64,6 +66,8 @@ public class DonationToken extends Contract {
             BigInteger campaignId,
             BigInteger settlementId
     ) {
+        // 컨트랙트 함수 인자 순서를 Solidity 시그니처와 동일하게 맞춘다.
+        // feeBps 는 퍼센트가 아니라 basis points 단위 값이다.
         Function function = new Function(
                 FUNC_SETTLE_CAMPAIGN,
                 Arrays.asList(
@@ -77,6 +81,7 @@ public class DonationToken extends Contract {
                 Collections.<TypeReference<?>>emptyList()
         );
 
+        // send() 시점에 실제 트랜잭션이 전송되고, 여기서는 호출 객체만 생성한다.
         return executeRemoteCallTransaction(function);
     }
 }
