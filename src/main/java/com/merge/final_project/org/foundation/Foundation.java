@@ -1,7 +1,5 @@
 package com.merge.final_project.org.foundation;
 
-import com.merge.final_project.auth.useraccount.UsersAccount;
-import com.merge.final_project.wallet.Wallet;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,11 +10,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "foundation")
 @Getter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "foundation")
+@Builder
 public class Foundation {
 
     @Id
@@ -33,25 +31,20 @@ public class Foundation {
     @Column(name = "foundation_name")
     private String foundationName;
 
+    @Column(name = "business_registration_number")
+    private String businessRegistrationNumber;
+
     @Column(name = "representative_name")
     private String representativeName;
-
-    @Column(name = "business_registration_number")
-    private Integer businessRegistrationNumber;
-
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    @Column(name = "profile_path")
-    private String profilePath;
 
     @Column(name = "contact_phone")
     private String contactPhone;
 
-    private String account;
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "fee_rate")
-    private Integer feeRate;
+    private BigDecimal feeRate;
 
     @Column(name = "foundation_hash")
     private String foundationHash;
@@ -71,7 +64,26 @@ public class Foundation {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "profile_path")
+    private String profilePath;
+
+    @Column(name = "campaign_wallet1")
     private String campaignWallet1;
+
+    @Column(name = "campaign_wallet2")
     private String campaignWallet2;
+
+    @Column(name = "campaign_wallet3")
     private String campaignWallet3;
+
+//    @OneToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "login_no", nullable = false)
+//    private UsersAccount usersAccount;
+
+    @Column(name = "account")
+    private String account;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wallet_no", nullable = false)
+    private Wallet wallet;
 }

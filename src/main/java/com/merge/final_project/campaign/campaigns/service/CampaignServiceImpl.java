@@ -12,8 +12,6 @@ import com.merge.final_project.global.ImageRepository;
 import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.org.foundation.Foundation;
 import com.merge.final_project.org.foundation.FoundationRepository;
-import com.merge.final_project.wallet.Wallet;
-import com.merge.final_project.wallet.WalletRepository;
 import com.merge.final_project.wallet.entity.WalletStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

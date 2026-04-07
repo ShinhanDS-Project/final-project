@@ -9,8 +9,6 @@ import com.merge.final_project.campaign.useplan.entity.UsePlan;
 import com.merge.final_project.campaign.useplan.repository.UsePlanRepository;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
-import com.merge.final_project.wallet.Wallet;
-import com.merge.final_project.wallet.WalletRepository;
 import com.merge.final_project.wallet.entity.WalletStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
