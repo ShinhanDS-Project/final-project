@@ -1,15 +1,21 @@
 package com.merge.final_project.campaign.campaigns.service;
 
-import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDto;
+import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 public interface CampaignService {
-    // 캠페인 비즈니스 로직 정의
+    // 캠페??비즈?�스 로직 ?�의
     void registerCampaign(
-            CampaignRequestDto requestDto,  // 캠페인 기본 정보
-            MultipartFile imageFile,    // 대표 이미지 파일(1장)
-            List<MultipartFile> detailImageFiles,   // 상세 페이지용(여러장)
-            Long foundationNo   // 기부단체 PK
+            CampaignRequestDTO requestDto,  // 캠페??기본 ?�보
+            MultipartFile imageFile,    // ?�???��?지 ?�일 (1??
+            List<MultipartFile> detailImageFiles,   // ?�세 ?�이지???��?지 ?�일 리스??(?�러 ??
+            Long foundationNo
     );
+
+    // 캠페??목록 조회
+    List<CampaignListResponseDTO> getCampaignList(String sort);
 }
+

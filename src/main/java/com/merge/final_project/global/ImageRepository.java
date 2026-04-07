@@ -9,4 +9,6 @@ import java.util.List;
 public interface ImageRepository extends JpaRepository<Image, Long> {
 
     List<Image> findByTargetNameAndTargetNo(String targetName, Long targetNo);
+
+    List<Image> findByTargetNameAndPurposeAndTargetNoIn(String targetName, String purpose, List<Long> targetNos);
 }

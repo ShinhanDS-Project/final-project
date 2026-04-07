@@ -1,15 +1,15 @@
 package com.merge.final_project.campaign.campaigns.dto;
 
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
-import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDto;
+import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDTO;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-// React가 보낸 JSON 데이터 이 객체에 매핑
+// React가 보낸 JSON ?�이????객체??매핑
 @Data
-public class CampaignRequestDto {
+public class CampaignRequestDTO {
     private String title;
     private String description;
     private String imagePath;
@@ -21,9 +21,9 @@ public class CampaignRequestDto {
     private LocalDateTime usageStartAt;
     private LocalDateTime usageEndAt;
 
-    private List<UsePlanRequestDto> usePlans;
+    private List<UsePlanRequestDTO> usePlans;
 
-    // DTO 데이터 바탕으로 DB 저장 객체 생성
+    // DTO ?�이??바탕?�로 DB ?�??객체 ?�성
     public Campaign toEntity() {
         return Campaign.builder()
                 .title(this.title)
@@ -37,3 +37,4 @@ public class CampaignRequestDto {
                 .build();
     }
 }
+
