@@ -1,5 +1,6 @@
 package com.merge.final_project.recipient.beneficiary.controller;
 
+import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySignupRequestDTO;
 import com.merge.final_project.recipient.beneficiary.service.BeneficiaryService;
@@ -26,30 +27,35 @@ public class BeneficiaryController {
 
     private final BeneficiaryService beneficiaryService;
     private final AuthenticationManager authenticationManager;
-
-    @PostMapping("/signup")
-    public ResponseEntity<Long> signup(@RequestBody BeneficiarySignupRequestDTO dto) {
-        Long beneficiaryNo = beneficiaryService.signup(dto);
-        return ResponseEntity.ok(beneficiaryNo);
-    }
-
+    private final JwtTokenProvider jwtTokenProvider; // 1. 주입 추가
 
     @PostMapping("/signin")
-    public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto, HttpServletRequest request) {
-        // 1. 토큰 생성 및 인증
-        UsernamePasswordAuthenticationToken token =
-                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword());
-        Authentication authentication = authenticationManager.authenticate(token);
+    public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto) {
+        // 2. 인증 시도
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
+        );
 
-        // 2. SecurityContext 설정
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        // 3. 인증 정보를 기반으로 JWT 토큰 생성
+        // (주의: 현재 JwtTokenProvider에 관리자용 메서드만 있다면 수혜자용으로 이름을 바꾸거나 공용화가 필요할 수 있습니다.)
+        String accessToken = jwtTokenProvider.createAdminAccessToken(
+                authentication.getName(),
+                authentication.getAuthorities().iterator().next().getAuthority()
+        );
 
-        // 3. 세션에 SecurityContext를 명시적으로 저장 (Spring Security 6 필수 권장)
-        HttpSession session = request.getSession(true);
-        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+        log.info("수혜자 로그인 성공 및 JWT 발급 완료: {}", loginDto.getEmail());
 
-        log.info("수혜자 로그인 성공 및 세션 저장 완료: {}", loginDto.getEmail());
-        return ResponseEntity.ok("수혜자 로그인 성공 (JSESSIONID 발급됨)");
+        // 4. 세션 대신 토큰을 반환
+        return ResponseEntity.ok(accessToken);
     }
+    @PostMapping("/signup")
+    public ResponseEntity<Long> signup(@RequestBody BeneficiarySignupRequestDTO dto) {
+        log.info("수혜자 회원가입 시도: {}", dto.getEmail());
 
+        // BeneficiaryService의 signup 메서드를 호출하여 회원가입 처리
+        Long beneficiaryNo = beneficiaryService.signup(dto);
+
+        log.info("수혜자 회원가입 성공. 번호: {}", beneficiaryNo);
+        return ResponseEntity.ok(beneficiaryNo);
+    }
 }

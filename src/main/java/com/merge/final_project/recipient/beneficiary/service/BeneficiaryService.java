@@ -39,7 +39,7 @@ public class BeneficiaryService implements UserDetailsService {
                 .name(dto.getName())
                 .phone(dto.getPhone())
                 .account(dto.getAccount())
-                .entry_code(generatedEntryCode())
+                .entryCode(generatedEntryCode())
                 .beneficiaryType(dto.getBeneficiaryType())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())

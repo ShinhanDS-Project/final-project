@@ -9,4 +9,6 @@ public interface BeneficiaryRepository extends JpaRepository<Beneficiary, Long> 
     boolean existsByEmail(String email);
 
     Optional<Beneficiary> findByEmail(String email);
+
+    Optional<Beneficiary> findByEntryCode(Integer entryCode);
 }

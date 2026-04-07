@@ -1,6 +1,9 @@
 package com.merge.final_project.report.finalreport.entitiy;
 
 import com.merge.final_project.report.finalreport.ReportApprovalStatus;
+import com.merge.final_project.auth.useraccount.UsersAccount;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
+import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

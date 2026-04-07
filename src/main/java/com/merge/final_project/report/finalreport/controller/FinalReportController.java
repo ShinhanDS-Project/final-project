@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.List;
 
 @Controller
@@ -29,30 +30,34 @@ public class FinalReportController {
     private final BeneficiaryService beneficiaryService;
 
     @PostMapping("/submit")
-    @ResponseBody // 💡 성공 메시지를 보내기 위해 필요합니다.
+    @ResponseBody
     public ResponseEntity<String> submitReport(
-            @RequestPart("dto") FinalReportRequestDTO dto,           // 1. JSON 데이터
-            @RequestPart("files") List<MultipartFile> files,        // 2. 이미지 파일 리스트
+            @RequestPart("dto") FinalReportRequestDTO dto,
+            @RequestPart("files") List<MultipartFile> files,
             @RequestPart("purposes") List<String> purposes,
-            @AuthenticationPrincipal User user) throws IOException { // 3. 로그인 정보
+            java.security.Principal principal) throws IOException { // [수정] User 대신 Principal 사용
 
+        if (principal == null) {
+            return ResponseEntity.status(401).body("로그인 정보가 없습니다.");
+        }
 
-        // 캡슐화된 서비스 호출 (데이터 + 파일 + 이메일)
-        finalReportService.saveFullReport(dto, files,purposes, user.getUsername());
+        String email = principal.getName(); // 이제 여기서 null 에러가 나지 않습니다.
+        finalReportService.saveFullReport(dto, files, purposes, email);
 
         return ResponseEntity.ok("보고서와 사진이 성공적으로 제출되었습니다.");
     }
 
 
     @GetMapping({"/", "/list"})
+    public String list(Model model, Principal principal) { // [수정] User 대신 Principal 사용
+        if (principal == null) {
+            return "redirect:/api/beneficiary/signin"; // 로그인 안 됐으면 로그인 페이지로
+        }
 
-    public String list(Model model, @AuthenticationPrincipal User user) {
-        log.info("수혜자 캠페인 리스트 조회 중: {}", user.getUsername());
+        String email = principal.getName(); // 인증된 사용자의 이메일(ID) 추출
+        log.info("수혜자 캠페인 리스트 조회 중: {}", email);
 
-        // 1. 로그인한 이메일로 수혜자 정보 및 해당 캠페인 리스트 가져오기
-        List<Campaign> myCampaigns = beneficiaryService.getMyCampaigns(user.getUsername());
-
-        // 2. 화면(HTML)으로 데이터 전달
+        List<Campaign> myCampaigns = beneficiaryService.getMyCampaigns(email);
         model.addAttribute("campaignList", myCampaigns);
 
         return "finalReport/list";

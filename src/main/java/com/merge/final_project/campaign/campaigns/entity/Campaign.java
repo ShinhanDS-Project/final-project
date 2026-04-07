@@ -2,24 +2,24 @@ package com.merge.final_project.campaign.campaigns.entity;
 
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
-import com.merge.final_project.global.BaseEntity;
+import com.merge.final_project.global.BaseCreatedAtEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@Table(name = "campaign")
 @Getter
 @Setter
-@Table(name = "campaign")
-public class Campaign extends BaseEntity {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Campaign extends BaseCreatedAtEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "campaign_no")
-    private Integer campaignNo;
+    private Long campaignNo;
 
     private String title;
 
@@ -42,13 +42,13 @@ public class Campaign extends BaseEntity {
     private LocalDateTime usageEndAt;
 
     @Column(name = "target_amount")
-    private Integer targetAmount;
+    private Long targetAmount;
+
+    @Column(name = "current_amount")
+    private Long currentAmount;
 
     @Column(name = "achieved_at")
     private LocalDateTime achievedAt;
-
-    @Column(name = "current_amount")
-    private Integer currentAmount;
 
     private String category;
 
@@ -59,19 +59,25 @@ public class Campaign extends BaseEntity {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "campaign_status")
     private CampaignStatus campaignStatus;
 
-    @Column(name = "reject_reason", columnDefinition = "TEXT")
-    private String rejectReason;
-
-    @Column(name = "beneficiary_no")
-    private Integer beneficiaryNo;
+    @Column(name = "wallet_no")
+    private Long walletNo;
 
     @Column(name = "foundation_no")
-    private Integer foundationNo;
+    private Long foundationNo;
 
-    @Column(name = "wallet_no")
-    private Integer walletNo;
+    @Column(name = "beneficiary_no")
+    private Long beneficiaryNo;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "reject_reason")
+    private String rejectReason;
 }

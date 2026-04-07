@@ -1,4 +1,5 @@
 HELP.md
+CLAUDE.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -64,3 +65,7 @@ Thumbs.db
 
 ### 로컬 도커 ###
 docker-compose.override.yml
+
+src/main/resources/application.yml
+
+node_modules/

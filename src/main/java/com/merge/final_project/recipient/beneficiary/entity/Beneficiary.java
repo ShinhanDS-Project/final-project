@@ -1,6 +1,7 @@
 package com.merge.final_project.recipient.beneficiary.entity;
 
 import com.merge.final_project.recipient.beneficiary.BeneficiaryType;
+import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,9 +32,6 @@ public class Beneficiary {
     @Column(name = "phone")
     private String phone;
 
-    @Column(name = "entry_code")
-    private int entry_code;
-
     @Column(name = "account")
     private String account;
 
@@ -50,10 +48,13 @@ public class Beneficiary {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-
-    @Column(name = "wallet_no")
-    private Long wallet_no;
+    @Column(name = "entry_code", nullable = false)
+    private Integer entryCode;
 
     @Column(name = "key_no")
     private Long key_no;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wallet_no", nullable = false)
+    private Wallet wallet;
 }
