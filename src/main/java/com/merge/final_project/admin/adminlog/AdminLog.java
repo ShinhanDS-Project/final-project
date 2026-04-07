@@ -1,20 +1,21 @@
 package com.merge.final_project.admin.adminlog;
 
-import com.merge.final_project.global.BaseEntity;
+import com.merge.final_project.admin.Admin;
+import com.merge.final_project.global.BaseCreatedAtEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
 @Table(name = "admin_log")
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class AdminLog extends BaseEntity {
+public class AdminLog extends BaseCreatedAtEntity {
 
     @Id
-    @Column(name = "log_no")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "log_no")
     private Long logNo;
 
     @Enumerated(EnumType.STRING)
@@ -22,14 +23,15 @@ public class AdminLog extends BaseEntity {
     private ActionType actionType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "target_type")
+    @Column(name = "target_type", nullable = false)
     private TargetType targetType;
 
-    @Column(name = "target_no")
+    @Column(name = "target_no", nullable = false)
     private Long targetNo;
 
     private String description;
 
-    @Column(name = "admin_no")
-    private Long adminNo;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_no", nullable = false)
+    private Admin admin;
 }

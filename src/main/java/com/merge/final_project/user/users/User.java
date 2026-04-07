@@ -1,7 +1,7 @@
 package com.merge.final_project.user.users;
 
-
-import com.merge.final_project.wallet.Wallet;
+import com.merge.final_project.auth.useraccount.UsersAccount;
+import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -19,7 +19,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="user_no")
-    private Integer userNo;
+    private Long userNo;
 
 
     @Column(name="password_hash")
