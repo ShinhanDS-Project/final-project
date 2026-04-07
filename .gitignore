@@ -64,3 +64,5 @@ Thumbs.db
 
 ### 로컬 도커 ###
 docker-compose.override.yml
+
+src/main/resources/application.yml
