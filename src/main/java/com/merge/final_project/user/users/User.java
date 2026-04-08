@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
         @UniqueConstraint(name = "uk_user_email_login_type", columnNames = {"email", "login_type"})
 }) //로그인 타입,별로 이메일 중복 허용ㅇ
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

@@ -1,6 +1,6 @@
 package com.merge.final_project.user.users;
 
-import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
+import com.merge.final_project.user.users.dto.support.EmailResponseDTO;
 import com.merge.final_project.user.users.dto.login.UserLoginRequestDTO;
 
 public interface UserService {
@@ -8,7 +8,7 @@ public interface UserService {
     public String login(UserLoginRequestDTO dto);
 
     //2.로그인 -부가기능 1: 아이디 찾기 (핸드폰 번호+ 이름)
-
+    public EmailResponseDTO findEmail(String phone, String name);
     //3.로그인- 부가기능 2: 비밀번호 재설정 ( 로그인전에 비밀번호를 잃어버렸을 경우에 )
 
     //4.마이페이지 -부가기능 : 비밀번호 변경 (마이페이지에서 변경하는 경우)

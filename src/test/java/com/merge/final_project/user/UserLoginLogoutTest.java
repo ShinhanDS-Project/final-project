@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.TestPropertySource;
@@ -24,14 +25,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(UserAuthController.class)
+//@WebMvcTest(UserAuthController.class) //컨트롤러만 가볍게 테스트할때
 @TestPropertySource(properties = "cookie.secure=false")
 @Transactional
-//@SpringBootTest
+@AutoConfigureMockMvc // 자동으로 mockmvc 빈 생성
+@SpringBootTest //--> db까지 엮어서 테스트
 public class UserLoginLogoutTest {
     @Autowired
     private MockMvc mockMvc;
@@ -56,7 +59,8 @@ public class UserLoginLogoutTest {
 
         mockMvc.perform(post("/api/auth/login/user/local")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content("{\"email\":\"test@gmail.com\",\"password\":\"1234\"}")
+                .with(csrf())) // <--- 이 한 줄이 핵심!
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("mock-access-token"))
                 .andExpect(jsonPath("$.message").value("로그인이 성공하였습니다"));
@@ -77,7 +81,7 @@ public class UserLoginLogoutTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Set-Cookie",
                         org.hamcrest.Matchers.containsString("accessToken=")))
-                .andExpect(content().string("소셜 로그아웃 되었습니다."));
+                .andExpect(jsonPath("$.message").value("소셜 로그아웃되었습니다."));
     }
 
     @Test
@@ -111,7 +115,7 @@ public class UserLoginLogoutTest {
 
         given(jwtTokenProvider.validateToken(token)).willReturn(true);
         given(jwtTokenProvider.getTokenType(token)).willReturn("ACCESS");
-
+        given(jwtTokenProvider.getAdminRole(token)).willReturn("ROLE_USER");
         mockMvc.perform(get("/api/auth/social-info")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isUnauthorized())
