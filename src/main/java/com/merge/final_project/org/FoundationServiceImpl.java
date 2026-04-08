@@ -13,7 +13,6 @@ import com.merge.final_project.org.illegalfoundation.IllegalFoundation;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationDTO;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationRepository;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationResponseDTO;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -21,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -128,7 +128,12 @@ public class FoundationServiceImpl implements FoundationService {
                 .foundationType(requestDTO.getFoundationType())
                 .build();
 
-        foundationRepository.save(foundation);
+        //기부단체 저장할 때 중복 오류 발생하면 에러코드 발생.
+        try {
+            foundationRepository.save(foundation);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.DUPLICATE_BUSINESS_REGISTRATION);
+        }
         return FoundationApplyResponseDTO.builder()
                 .foundationEmail(foundation.getFoundationEmail())
                 .foundationName(foundation.getFoundationName())
