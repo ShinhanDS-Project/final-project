@@ -78,11 +78,12 @@ public class SecurityConfig {
                                 "/api/signup/**", 
                                 "/api/beneficiary/signup",
                                 "/api/beneficiary/signin",
-                                "/api/foundation/**",
-                                "/oauth2/**",
-                                "/login/**",
-                                "/social-info",
-                                "/error"
+                                "/oauth2/**", 
+                                "/login/**", 
+                                "/social-info", 
+                                "/error",
+                                "/users/support/**",
+                                "/api/foundation/**"
                         ).permitAll() // 인증 없이 접근 가능한 경로들
                         .requestMatchers("/finalReport/**").authenticated() // 인증이 필요한 경로
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필수

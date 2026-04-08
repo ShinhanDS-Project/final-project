@@ -17,9 +17,9 @@ import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
-import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
-import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
+
 import com.merge.final_project.recipient.beneficiary.BeneficiaryType;
+import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletStatus;

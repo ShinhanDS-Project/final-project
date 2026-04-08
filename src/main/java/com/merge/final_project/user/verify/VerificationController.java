@@ -56,7 +56,9 @@ public class VerificationController {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(UserVerifyResponseDTO.builder()
                             .success(false)
-                            .available(true)
+                            /*rabbit->재요청 제한/대기 시간 때문에 실패한 상태는 지금 바로 인증을 진행할 수 없는 상태인데, available=true로 내려가면 클라이언트가 “사용 가능”으로 오해하기 쉽습니다.
+                            실패 케이스에서는 false로 맞추거나 필드를 빼는 편이 안전합니다*/
+                            .available(false)
                             .message(e.getMessage())
                             .build());
         }

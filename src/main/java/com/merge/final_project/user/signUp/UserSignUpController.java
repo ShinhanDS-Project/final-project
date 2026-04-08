@@ -30,9 +30,13 @@ public class UserSignUpController {
     @PostMapping("/google")
     public ResponseEntity <Void> registerGoogle(@RequestHeader("Authorization") String bearerToken, @Valid @RequestBody UserSignUpRequestDTO dto) {
         //보안 처리
-        String token=bearerToken.replace("Bearer ", "");
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+            // bearer로 시작하지 않는 경우 예외처리
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String token=bearerToken.substring(7);
         if(!jwtTokenProvider.validateToken(token)){
-            return ResponseEntity.status(HttpsURLConnection.HTTP_UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         //임시토큰이아니라 기존에 있는 정보가 접근하는 경우
         if (!"TEMP".equals(jwtTokenProvider.getTokenType(token))) {
