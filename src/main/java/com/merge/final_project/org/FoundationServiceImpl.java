@@ -202,6 +202,8 @@ public class FoundationServiceImpl implements FoundationService {
         //트랜잭션 커밋 성공한 이후에만 메일 발송 -> 이벤트 기반으로 구현.
         eventPublisher.publishEvent(new FoundationApprovedEvent(foundationNo,foundation.getFoundationEmail(), foundation.getFoundationName(), sendTempPassword));
 
+        String description = "기부단체 승인 후 이메일 발송";
+
         return foundation.getFoundationNo();
     }
 
