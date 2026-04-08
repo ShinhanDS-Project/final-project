@@ -51,7 +51,7 @@ public class FinalReportController {
     @GetMapping({"/", "/list"})
     public String list(Model model, Principal principal) {
         if (principal == null) {
-            return "redirect:/api/beneficiary/signin";
+            return "redirect:/api/beneficiary/test/login";
         }
 
         String email = principal.getName();
@@ -85,7 +85,7 @@ public class FinalReportController {
             org.springframework.ui.Model model) {
 
         if (principal == null) {
-            return "redirect:/api/beneficiary/signin";
+            return "redirect:/api/beneficiary/test/login";
         }
 
         // 서비스에서 본인 확인 후 상세 정보를 가져옵니다.
@@ -122,12 +122,6 @@ public class FinalReportController {
         finalReportService.updateReport(reportNo, dto, files, dto.getPurposes(), principal.getName());
         return ResponseEntity.ok("보고서 수정 완료");
     }
-    // 1. 로그인 테스트 페이지 연결
-    @GetMapping("/test/login")
-    public String testLoginPage() {
-        return "beneficiary/test-login";
-    }
-
     // 2. 보고서 제출 테스트 페이지 연결
     @GetMapping("/test/submit")
     public String testSubmitPage() {
@@ -141,7 +135,7 @@ public class FinalReportController {
                                 org.springframework.ui.Model model) {
         
         if (principal == null) {
-            return "redirect:/api/beneficiary/signin";
+            return "redirect:/api/beneficiary/test/login";
         }
 
         // 기존 보고서 상세 정보를 가져와서 모델에 담습니다.

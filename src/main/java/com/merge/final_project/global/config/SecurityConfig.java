@@ -47,7 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
                         .requestMatchers("/admin/auth/login").permitAll()
                         .requestMatchers("/error").permitAll()
-
+                        .requestMatchers("/api/beneficiary/test/**").permitAll()
                         .requestMatchers("/finalReport/test/**").permitAll()
                         .requestMatchers("/finalReport/**").authenticated()
                         .anyRequest().authenticated()

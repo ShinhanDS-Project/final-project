@@ -10,9 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@RestController // 다시 RestController로 복구
+@Controller // HTML 뷰 반환을 위해 Controller 사용
 @RequestMapping("/api/beneficiary")
 @RequiredArgsConstructor
 @Log4j2
@@ -22,34 +23,55 @@ public class BeneficiaryController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
 
+    /**
+     * 로그인 테스트 페이지 이동
+     */
+    @GetMapping("/test/login")
+    public String testLoginPage() {
+        return "beneficiary/test-login";
+    }
+
+    /**
+     * 회원가입 테스트 페이지 이동
+     */
+    @GetMapping("/test/signup")
+    public String signupPage() {
+        return "beneficiary/test-signup";
+    }
+
+    /**
+     * 로그인 처리 (API)
+     */
     @PostMapping("/signin")
+    @ResponseBody // JSON 응답
     public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto, 
                                  jakarta.servlet.http.HttpServletResponse response) {
-        // 1. 인증 시도
+        
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
         );
 
-        // 2. JWT 토큰 생성
         String accessToken = jwtTokenProvider.createAdminAccessToken(
                 authentication.getName(),
                 authentication.getAuthorities().iterator().next().getAuthority()
         );
 
-        // 3. 💡 서버에서 직접 쿠키 발급 (브라우저 주소창 이동 시 인증 유지용)
         jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("accessToken", accessToken);
         cookie.setPath("/");
-        cookie.setHttpOnly(true); // JS에서 접근 불가 (보안)
-        cookie.setMaxAge(60 * 60 * 24); // 1일 유지
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(60 * 60 * 24);
         response.addCookie(cookie);
 
         log.info("수혜자 로그인 성공 및 쿠키 발급 완료: {}", loginDto.getEmail());
 
-        // 토큰 문자열 반환 (필요 시 클라이언트에서 사용 가능)
         return ResponseEntity.ok(accessToken);
     }
 
+    /**
+     * 회원가입 처리 (API)
+     */
     @PostMapping("/signup")
+    @ResponseBody // JSON 응답
     public ResponseEntity<Long> signup(@RequestBody BeneficiarySignupRequestDTO dto) {
         log.info("수혜자 회원가입 시도: {}", dto.getEmail());
         Long beneficiaryNo = beneficiaryService.signup(dto);

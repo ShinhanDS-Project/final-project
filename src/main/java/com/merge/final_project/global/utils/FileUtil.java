@@ -1,44 +1,31 @@
 package com.merge.final_project.global.utils;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.UUID;
 
+/**
+ * 기존에 FileUtil을 사용하던 팀원들을 위한 유틸리티 클래스입니다.
+ * 내부적으로는 FileService(현재 LocalFileService)를 호출하여 동작합니다.
+ */
 @Component
+@RequiredArgsConstructor
 public class FileUtil {
-    // 💡 파일을 저장할 경로
-    private final String uploadPath = "C:/uploads/";
+
+    private final FileService fileService;
 
     public String saveFile(MultipartFile file) throws IOException {
-        if (file.isEmpty()) return null;
-
-        // 1. 폴더 생성
-        File folder = new File(uploadPath);
-        if (!folder.exists()) folder.mkdirs();
-
-        // 2. 중복 방지 이름 생성 (UUID)
-        String originalName = file.getOriginalFilename();
-        String storedName = UUID.randomUUID().toString() + "_" + originalName;
-
-        // 3. 물리적 저장
-        File saveFile = new File(uploadPath, storedName);
-        file.transferTo(saveFile);
-
-        return storedName; // DB에 저장할 이름을 반환
+        return fileService.saveFile(file);
     }
 
-    /**
-     * 실제 물리 파일을 삭제합니다.
-     */
     public void deleteFile(String storedName) {
-        if (storedName == null || storedName.isEmpty()) return;
+        fileService.deleteFile(storedName);
+    }
 
-        File file = new File(uploadPath, storedName);
-        if (file.exists()) {
-            file.delete();
-        }
+    // DB에 저장할 경로가 필요할 때 사용
+    public String getFilePath(String storedName) {
+        return fileService.getFilePath(storedName);
     }
 }
