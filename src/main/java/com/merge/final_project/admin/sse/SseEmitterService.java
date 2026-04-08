@@ -43,7 +43,10 @@ public class SseEmitterService {
             //해당 접속자에게 connect라는 이벤트 이름으로 data 전송
             emitter.send(SseEmitter.event().name("connect").data("connected"));
         } catch (IOException e) {
+            //초기 이벤트 실패 시 아래 구문 로그찍음.
             emitters.remove(emitterId);
+            emitter.completeWithError(e);
+            log.warn("초기 SSE connect 이벤트 전송 실패: {}", emitterId, e);
         }
 
         return emitter;
