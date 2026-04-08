@@ -55,7 +55,7 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.getRejectedFoundationList(pageable));
     }
 
-    // 관리자 - 기부단체 상세 조회
+    //기부단체 상세 조회
     @GetMapping("/foundation/{foundationNo}")
     public ResponseEntity<FoundationDetailResponseDTO> getDetail(@PathVariable Long foundationNo) {
         return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));

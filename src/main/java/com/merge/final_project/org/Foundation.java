@@ -29,7 +29,8 @@ public class Foundation extends BaseEntity {
     @Column(name = "foundation_name")
     private String foundationName;
 
-    @Column(name = "business_registration_number")
+    //사업자등록번호로 중복체크 하기에 unique로 설정할 것.
+    @Column(name = "business_registration_number", unique = true)
     private String businessRegistrationNumber;
 
     @Column(name = "representative_name")
@@ -90,6 +91,7 @@ public class Foundation extends BaseEntity {
 
     public void reject(String rejectReason) {
         this.reviewStatus = ReviewStatus.REJECTED;
+        this.accountStatus = AccountStatus.INACTIVE;
         this.rejectReason = rejectReason;
     }
 

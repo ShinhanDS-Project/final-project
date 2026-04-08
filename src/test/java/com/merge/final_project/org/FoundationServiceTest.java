@@ -218,6 +218,7 @@ class FoundationServiceTest {
         foundationService.rejectFoundationForIllegal(1L);
 
         assertThat(foundation.getReviewStatus()).isEqualTo(ReviewStatus.REJECTED);
+        assertThat(foundation.getAccountStatus()).isEqualTo(AccountStatus.INACTIVE);
         verify(eventPublisher).publishEvent(any(FoundationRejectedEvent.class));
     }
 
