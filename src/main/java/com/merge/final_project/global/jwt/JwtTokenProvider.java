@@ -61,8 +61,8 @@ public class JwtTokenProvider {
     //3. 소셜 접근 로그인 토큰 생성(일반사용자 -구글용)
     public String createSocialAccessToken(String name,String email){
         Date now = new Date();
-        //10분 제한
-        Date expiry = new Date(now.getTime() +600000);
+        //general과 동일한 로그인 토큰 시간 정책 적용
+        Date expiry = new Date(now.getTime() + jwtProperties.getAccessTokenExpiration());
 
         return Jwts.builder()
                 .subject(email)

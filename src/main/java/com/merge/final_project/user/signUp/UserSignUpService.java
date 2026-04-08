@@ -6,6 +6,5 @@ import com.merge.final_project.user.signUp.dto.UserSignUpResponseDTO;
 public interface UserSignUpService {
     void register(UserSignUpRequestDTO requestDto);
 
-    public void registerLocal(UserSignUpRequestDTO dto);
-    public void registerGoogle(UserSignUpRequestDTO dto);
+
 }

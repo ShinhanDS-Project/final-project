@@ -9,7 +9,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByPhone(String phone);
 
+    Optional<User> findByEmailAndLoginType(String email, LoginType loginType);
     Optional<User> findByEmail(String email);
+    Optional<User> findByPhoneAndName(String email,String name);
     //4. 마이페이지 -1. 개인정보 불러오기 :
     //5. 마이페이지 -1. 계정별 기부 결과 불러오기:
     //6. 기부내역 -1. 기부 증서 조회하기
