@@ -144,7 +144,7 @@ public class FinalReportService {
     }
 
     /**
-     * 보고서의 승인 상태를 변경하는 공정입니다. (관리자 전용)
+     * 보고서의 승인 상태 변경. (관리자 전용)
      */
     @Transactional
     public void updateReportStatus(Long reportNo, ReportApprovalStatus newStatus, String rejectReason) {
@@ -159,13 +159,11 @@ public class FinalReportService {
             }
         }
 
-        // 3. 엔티티의 상태를 변경합니다.
-        // (영속성 컨텍스트 덕분에 따로 save를 호출하지 않아도 트랜잭션 종료 시 DB에 반영됩니다.)
+        // 3. 엔티티의 상태를 변경.
         report.changeStatus(newStatus, rejectReason);
 
         log.info("보고서 번호 {}의 상태가 {}로 변경되었습니다.", reportNo, newStatus);
     }
-
 
 
 }
