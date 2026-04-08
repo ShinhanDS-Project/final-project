@@ -44,8 +44,8 @@ public class UserSignUpServiceImpl implements UserSignUpService{
 
     }
 
-    @Override
-    public void registerLocal(UserSignUpRequestDTO dto) {
+
+    private void registerLocal(UserSignUpRequestDTO dto) {
         User user = User.builder()
                 .email(dto.getEmail())
                 .passwordHash(passwordEncoder.encode(dto.getPassword()))
@@ -64,8 +64,8 @@ public class UserSignUpServiceImpl implements UserSignUpService{
 
 
 
-    @Override
-    public void registerGoogle(UserSignUpRequestDTO dto) {
+
+    private void registerGoogle(UserSignUpRequestDTO dto) {
         User user = User.builder()
                 .email(dto.getEmail())
                 .passwordHash(null)
@@ -131,6 +131,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         for (int i = 0; i < MAX_HASH_RETRY; i++) {
             try {
                 userSignUpRepository.save(user);
+                userSignUpRepository.flush();
                 return;
             } catch (DataIntegrityViolationException e) {
                 if (isNameHashDuplicateException(e)) {
