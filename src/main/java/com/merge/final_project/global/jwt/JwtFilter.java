@@ -47,10 +47,19 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     private String resolveToken(HttpServletRequest request) {
-        // 다시 헤더만 확인하도록 복구
+        // 1. 헤더 확인 (Postman 등 API 요청용)
         String bearer = request.getHeader("Authorization");
         if (bearer != null && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
+        }
+
+        // 2. 쿠키 확인 (브라우저 주소창 직접 이동 및 테스트용)
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                if ("accessToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
         }
         return null;
     }

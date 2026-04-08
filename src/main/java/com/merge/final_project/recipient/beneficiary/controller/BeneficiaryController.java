@@ -23,21 +23,29 @@ public class BeneficiaryController {
     private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/signin")
-    public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto) {
-        // 인증 시도
+    public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto, 
+                                 jakarta.servlet.http.HttpServletResponse response) {
+        // 1. 인증 시도
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
         );
 
-        // JWT 토큰 생성 (기존 방식 유지)
+        // 2. JWT 토큰 생성
         String accessToken = jwtTokenProvider.createAdminAccessToken(
                 authentication.getName(),
                 authentication.getAuthorities().iterator().next().getAuthority()
         );
 
-        log.info("수혜자 로그인 성공 및 JWT 발급 완료: {}", loginDto.getEmail());
+        // 3. 💡 서버에서 직접 쿠키 발급 (브라우저 주소창 이동 시 인증 유지용)
+        jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("accessToken", accessToken);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true); // JS에서 접근 불가 (보안)
+        cookie.setMaxAge(60 * 60 * 24); // 1일 유지
+        response.addCookie(cookie);
 
-        // 다시 토큰 문자열만 반환
+        log.info("수혜자 로그인 성공 및 쿠키 발급 완료: {}", loginDto.getEmail());
+
+        // 토큰 문자열 반환 (필요 시 클라이언트에서 사용 가능)
         return ResponseEntity.ok(accessToken);
     }
 

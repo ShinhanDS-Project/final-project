@@ -10,4 +10,5 @@ public class FinalReportRequestDTO {
     private String title;       // 보고서 제목
     private String content;     // 보고서 내용
     private String usagePurpose; // 사용 목적 (엔티티에 있던 필드)
+    private java.util.List<String> purposes; // 사진별 목적 리스트 추가
 }
