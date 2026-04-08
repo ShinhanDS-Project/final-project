@@ -5,6 +5,7 @@ import com.merge.final_project.admin.AdminRepository;
 import com.merge.final_project.admin.adminlog.ActionType;
 import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.admin.adminlog.TargetType;
+import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
@@ -140,6 +141,13 @@ public class FoundationServiceImpl implements FoundationService {
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.DUPLICATE_BUSINESS_REGISTRATION);
         }
+
+        // 관리자에게 새 가입 신청 SSE 알림 (커밋 후 전송)
+        eventPublisher.publishEvent(new ApprovalRequestEvent(
+                TargetType.FOUNDATION,
+                foundation.getFoundationNo(),
+                foundation.getFoundationName() + " 기부단체 가입 신청"));
+
         return FoundationApplyResponseDTO.builder()
                 .foundationEmail(foundation.getFoundationEmail())
                 .foundationName(foundation.getFoundationName())
