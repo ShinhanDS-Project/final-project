@@ -101,6 +101,7 @@ public class Redemption {
     // 실제 현금 지급 완료 시간 기록 (관리자 처리용)
     //계좌 구현이 아니면 사용되지 않음 (현재)
     public void markCashPaid() {
+        this.status = RedemptionStatus.PAID;
         this.cashPaidAt = LocalDateTime.now();
     }
 }

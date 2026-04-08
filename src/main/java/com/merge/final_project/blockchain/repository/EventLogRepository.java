@@ -1,4 +1,7 @@
 package com.merge.final_project.blockchain.repository;
 
-public interface EventLogRepository {
+import com.merge.final_project.blockchain.entity.Eventlog;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface EventLogRepository extends JpaRepository<Eventlog, Long> {
 }

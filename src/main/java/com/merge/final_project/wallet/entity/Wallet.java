@@ -1,12 +1,8 @@
 package com.merge.final_project.wallet.entity;
 
 import com.merge.final_project.blockchain.entity.Key;
-import com.merge.final_project.campaign.campaigns.entity.Campaign;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.*;
-
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -55,10 +51,6 @@ public class Wallet {
     @Column(name = "last_used_at")
     private LocalDateTime lastUsedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "campaign_no")
-    private Campaign campaign;
-
     // 지갑 생성 (기본 정보 설정 및 생성 시간 기록)
     public Wallet(
             WalletType walletType,
@@ -66,8 +58,7 @@ public class Wallet {
             String walletAddress,
             BigDecimal balance,
             String walletHash,
-            WalletStatus status,
-            Campaign campaign
+            WalletStatus status
     ) {
         this.walletType = walletType;
         this.ownerNo = ownerNo;
@@ -75,7 +66,6 @@ public class Wallet {
         this.balance = balance;
         this.walletHash = walletHash;
         this.status = status;
-        this.campaign = campaign;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -84,7 +74,7 @@ public class Wallet {
         this.lastUsedAt = LocalDateTime.now();
     }
 
-    // 지갑 상태 변경 (ACTIVE, INACTIVE 등)
+    // 지갑 상태 변경(ACTIVE, INACTIVE 등)
     public void changeStatus(WalletStatus status) {
         this.status = status;
     }

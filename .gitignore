@@ -68,6 +68,7 @@ docker-compose.override.yml
 
 src/main/resources/application.yml
 src/test/resources/application.properties
+src/test/resources/application-*.properties
 
 node_modules/
 .tools/

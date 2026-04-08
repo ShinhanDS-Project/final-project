@@ -16,17 +16,14 @@ public class RedemptionCommandService {
 
     private final RedemptionRepository redemptionRepository;
 
-    // 현금화 요청 원본은 온체인 처리와 분리해서 먼저 저장해야
-    // 체인 호출 자체가 실패해도 어떤 요청이 실패했는지 추적할 수 있다.
+    // 현금화 요청 생성 (PENDING)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Redemption createPending(RequesterType requesterType, Long requesterNo, Long amount, Wallet wallet) {
         return redemptionRepository.save(
                 Redemption.create(requesterType, requesterNo, amount, wallet)
         );
     }
-
-    // 실제 체인 호출 직전에 PROCESSING 으로 바꿔두면
-    // 이후 로컬 후처리 실패를 PENDING 과 구분해서 볼 수 있다.
+    // 처리 시작 (PROCESSING)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markProcessing(Long redemptionNo) {
         Redemption redemption = redemptionRepository.findById(redemptionNo)
@@ -34,7 +31,7 @@ public class RedemptionCommandService {
 
         redemption.markProcessing();
     }
-
+    // 실패 처리 (FAILED)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markFailed(Long redemptionNo, String failureReason) {
         Redemption redemption = redemptionRepository.findById(redemptionNo)
@@ -42,12 +39,20 @@ public class RedemptionCommandService {
 
         redemption.markFailed(failureReason);
     }
-
+    // 온체인 성공 → 완료 처리 (COMPLETED)
     @Transactional
     public void markCompleted(Long redemptionNo, Transaction transaction, Long blockNumber) {
         Redemption redemption = redemptionRepository.findById(redemptionNo)
                 .orElseThrow(() -> new IllegalArgumentException("현금화 요청 정보를 찾을 수 없습니다."));
 
         redemption.markCompleted(transaction, blockNumber);
+    }
+    // 실제 현금 지급 완료 (PAID)
+    @Transactional
+    public void markPaid(Long redemptionNo) {
+        Redemption redemption = redemptionRepository.findById(redemptionNo)
+                .orElseThrow(() -> new IllegalArgumentException("현금화 요청 정보를 찾을 수 없습니다."));
+
+        redemption.markCashPaid();
     }
 }
