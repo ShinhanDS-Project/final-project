@@ -11,7 +11,7 @@ import java.util.UUID;
 @Component
 public class FileUtil {
     // 💡 파일을 저장할 경로
-    @Value("{FILE_UPLOAD_PATH}")
+    @Value("${FILE_UPLOAD_PATH}")
     private String uploadPath;
 
     public String saveFile(MultipartFile file) throws IOException {
