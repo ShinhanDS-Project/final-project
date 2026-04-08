@@ -66,9 +66,6 @@ Thumbs.db
 ### 로컬 도커 ###
 docker-compose.override.yml
 
-##oauth##
-src/main/resources/application-oauth.properties
-.env
 src/main/resources/application.yml
-
+src/main/resources/application-oauth.properties
 node_modules/

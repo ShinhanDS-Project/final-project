@@ -3,6 +3,7 @@ package com.merge.final_project.donation.payment;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,16 +16,17 @@ public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer paymentNo;
+    private Long paymentNo;
 
     @Column(name="payment_method")
-    private String payment_method; //결제수단 : 계좌이체 / 페이 / 카드 결제 -> enum 만들어주세요
+    private PaymentMethod payment_method; //결제수단 : / 페이 / 카드 결제 -> enum 만들어주세요
 
+    @Enumerated(EnumType.STRING)
    @Column(name="payment_status")
     private PaymentStatus status;
 
    @Column(name="amount")
-    private String amount;
+    private BigDecimal amount;
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;

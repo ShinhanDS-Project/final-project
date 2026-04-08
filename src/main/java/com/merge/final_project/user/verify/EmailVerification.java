@@ -16,14 +16,17 @@ import java.time.LocalDateTime;
 public class EmailVerification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer emailVerificationNo;
+    private Long emailVerifyNo;
 
     @Column(name="email")
     private String email;
 
-    @CreationTimestamp
     @Column(name="verification_code",nullable = false, length = 20)
     private String verificationCode;
+
+    @CreationTimestamp
+    @Column(name="created_at",nullable=false)
+     private LocalDateTime createdAt;
 
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt;
@@ -31,7 +34,10 @@ public class EmailVerification {
     @Column(name="verified",nullable = false)
     private boolean verified;
 
-    // EmailVerification 엔티티 내부에 추가
+    @Column(name="request_count", nullable = false)
+    @Builder.Default // Builder 패턴 사용 시 기본값 지정에 필요함
+    private int requestCount=0;
+
     public void updateVerification(String code, LocalDateTime expiredAt) {
         this.verificationCode = code;
         this.expiredAt = expiredAt;
