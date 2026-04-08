@@ -18,6 +18,7 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+    web3jCodegen
 }
 
 repositories {
@@ -59,6 +60,34 @@ dependencies {
             'com.querydsl:querydsl-apt:5.1.0:jakarta'
     )
     implementation 'org.web3j:core:4.10.3'
+    web3jCodegen 'org.web3j:codegen:4.10.3'
+}
+
+def generatedWeb3jDir = "$buildDir/generated/sources/web3j/main/java"
+
+sourceSets {
+    main {
+        java {
+            srcDir generatedWeb3jDir
+        }
+    }
+}
+
+tasks.register('generateGiveNTokenWrapper', JavaExec) {
+    group = 'web3j'
+    description = 'Generate Web3j wrapper from ABI/BIN'
+    classpath = configurations.web3jCodegen
+    mainClass = 'org.web3j.codegen.SolidityFunctionWrapperGenerator'
+    args = [
+            '-a', "$projectDir/src/main/resources/contracts/GiveNToken.abi",
+            '-b', "$projectDir/src/main/resources/contracts/GiveNToken.bin",
+            '-o', generatedWeb3jDir,
+            '-p', 'com.merge.final_project.blockchain.generated'
+    ]
+}
+
+tasks.named('compileJava') {
+    dependsOn tasks.named('generateGiveNTokenWrapper')
 }
 
 tasks.named('test') {

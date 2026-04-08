@@ -57,4 +57,12 @@ public class Beneficiary {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_no", nullable = false)
     private Wallet wallet;
+
+    /**
+     * 회원가입 훅에서 생성된 지갑을 수혜자 엔티티에 연결한다.
+     */
+    public void assignWallet(Wallet wallet) {
+        this.wallet = wallet;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
