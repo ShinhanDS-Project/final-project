@@ -28,6 +28,7 @@ public class AdminLogServiceImpl implements AdminLogService{
 
     }
 
+    //필터링적용한 목록 조회 기능. 각 타입들이 있으면 해당 조건으로 필터링 걸 것이고, null이면 제외. 즉 필터 조건이 다 null이면 전체 조회.
     @Override
     public Page<AdminLogResponseDTO> getLogsWithFilter(ActionType actionType, TargetType targetType, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
         return adminLogRepository.findByFilter(
