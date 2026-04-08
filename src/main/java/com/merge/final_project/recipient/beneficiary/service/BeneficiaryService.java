@@ -1,5 +1,6 @@
 package com.merge.final_project.recipient.beneficiary.service;
 
+import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
@@ -25,6 +26,7 @@ public class BeneficiaryService implements UserDetailsService {
     private final CampaignRepository campaignRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SignupWalletHookService signupWalletHookService;
 
     @Transactional
     public Long signup(BeneficiarySignupRequestDTO dto){
@@ -46,6 +48,7 @@ public class BeneficiaryService implements UserDetailsService {
                 .beneficiaryHash("init_hash")
                 .build();
         Beneficiary saved = beneficiaryRepository.save(beneficiary);
+        signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
         return saved.getBeneficiaryNo();
     }
 
@@ -79,7 +82,8 @@ public class BeneficiaryService implements UserDetailsService {
                 .password(encodedPassword) // 암호화된 비번 세팅!
                 .build();
 
-        beneficiaryRepository.save(beneficiary);
+        Beneficiary saved = beneficiaryRepository.save(beneficiary);
+        signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
     }
     public List<Campaign> getMyCampaigns(String email) {
         // 1. 이메일로 수혜자 번호 찾기
