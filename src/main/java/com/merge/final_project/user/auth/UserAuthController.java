@@ -100,7 +100,7 @@ public class UserAuthController {
                 .build();
         //HttpServletResponse -> 서버가 브라우저에게 보내는 응답객체
         // HttpServletRequest: 브라우저가 서버에게 보낸 요청
-        response.addHeader("Set-Cookie",deleteCookie.toString());
+
 
         Map<String,String> body=new HashMap<>();
         body.put("message","소셜 로그아웃되었습니다.");
