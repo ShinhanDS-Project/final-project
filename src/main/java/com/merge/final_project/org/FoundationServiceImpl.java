@@ -1,5 +1,10 @@
 package com.merge.final_project.org;
 
+import com.merge.final_project.admin.Admin;
+import com.merge.final_project.admin.AdminRepository;
+import com.merge.final_project.admin.adminlog.ActionType;
+import com.merge.final_project.admin.adminlog.AdminLogService;
+import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
@@ -18,16 +23,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -41,6 +44,8 @@ public class FoundationServiceImpl implements FoundationService {
     private final FileUtil upload;    //프로필 이미지는 위한 업로드 필드 추가
     private final PasswordEncoder passwordEncoder;  //임시 비밀번호 생성 시 암호화 하여 저장하기 위함
     private final ApplicationEventPublisher eventPublisher; // 언제 이벤트 발행할지 설정하기 위함.
+    private final AdminLogService adminLogService;
+    private final AdminRepository adminRepository;
 
 
     @Override
@@ -66,6 +71,7 @@ public class FoundationServiceImpl implements FoundationService {
                 .build();
     }
 
+    //사업자 등록번호로 중복 체크
     @Override
     public boolean existByBusinessRegistrationNumber(String businessRegistrationNumber) {
         return foundationRepository.existsByBusinessRegistrationNumber(businessRegistrationNumber);
@@ -174,13 +180,13 @@ public class FoundationServiceImpl implements FoundationService {
 
     @Override
     public FoundationDetailResponseDTO getFoundationDetail(Long foundationNo) {
-        //기부 단체 리뷰 상태에 따라 다른 정보 표시 할 것.
+        //기부 단체 상세보기 페이지
         Foundation foundation = foundationRepository.findById(foundationNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
         return FoundationDetailResponseDTO.from(foundation);
     }
 
-    // 기부단체 승인 시 임시 비밀번호 생성-> 메일 보내는 메서드 비동기로 호출,
+    // 기부단체 승인 시 임시 비밀번호 생성 후 메일 보내는 메서드 비동기로 호출,
     @Transactional
     @Override
     public Long approveFoundation(Long foundationNo) {
@@ -197,12 +203,20 @@ public class FoundationServiceImpl implements FoundationService {
         //임시 비밀번호 생성한 후 해당 내용 DB에 저장.
         String sendTempPassword = String.valueOf(UUID.randomUUID());
         String tempPassword = passwordEncoder.encode(sendTempPassword);
+
         foundation.updatePassword(tempPassword);
 
         //트랜잭션 커밋 성공한 이후에만 메일 발송 -> 이벤트 기반으로 구현.
         eventPublisher.publishEvent(new FoundationApprovedEvent(foundationNo,foundation.getFoundationEmail(), foundation.getFoundationName(), sendTempPassword));
 
-        String description = "기부단체 승인 후 이메일 발송";
+        //관리자 활동 로그 기록부분
+        //인가 토큰에서 adminId 추출해와서 그걸로 관리자 정보 찾고 로그 기옥
+        String adminId = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
+        Admin admin = adminRepository.findByAdminId(adminId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
+        //활동 상세 내역 적어서 로그 기록 남길 것.
+        String description = foundation.getFoundationName() + " 기부단체 승인 후 임시 비밀번호 메일 전송";
+        adminLogService.log(ActionType.APPROVE, TargetType.FOUNDATION, foundationNo, description, admin);
 
         return foundation.getFoundationNo();
     }
@@ -216,7 +230,19 @@ public class FoundationServiceImpl implements FoundationService {
 
         foundation.reject(foundation.getRejectReason());
 
+        //메일 발송
         eventPublisher.publishEvent(new FoundationRejectedEvent(foundationNo, foundation.getFoundationEmail(), foundation.getFoundationName(), foundation.getRejectReason()));
+
+        //관리자 활동 로그 기록부분
+        //인가 토큰에서 adminId 추출해와서 그걸로 관리자 정보 찾고 로그 기옥
+        String adminId = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
+        Admin admin = adminRepository.findByAdminId(adminId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
+
+        //활동 상세 내역 적어서 로그 기록 남길 것.
+        String description = foundation.getFoundationName() + " 기부단체 반려 후 메일 전송. 반려사유: " + foundation.getRejectReason();
+        adminLogService.log(ActionType.REJECT, TargetType.FOUNDATION, foundationNo, description, admin);
+
         return foundation.getFoundationNo();
     }
 }

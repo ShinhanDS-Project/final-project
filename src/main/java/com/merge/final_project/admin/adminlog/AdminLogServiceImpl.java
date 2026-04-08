@@ -2,7 +2,11 @@ package com.merge.final_project.admin.adminlog;
 
 import com.merge.final_project.admin.Admin;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -23,4 +27,16 @@ public class AdminLogServiceImpl implements AdminLogService{
         adminLogRepository.save(log);
 
     }
+
+    @Override
+    public Page<AdminLogResponseDTO> getLogsWithFilter(ActionType actionType, TargetType targetType, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+        return adminLogRepository.findByFilter(
+                        actionType != null ? actionType.name() : null,
+                        targetType != null ? targetType.name() : null,
+                        startDate,
+                        endDate,
+                        pageable)
+                .map(AdminLogResponseDTO::from);
+    }
+
 }

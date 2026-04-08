@@ -41,6 +41,7 @@ public class AdminJwtFilter extends OncePerRequestFilter {
             //관리자 식별 정보 추출해서 해당 정보로 관리자 권한 객체 생성
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
+                            //authentication.getName()시 첫번째 인자값 adminId가 반환
                             adminId, null, List.of(new SimpleGrantedAuthority(role))
                     );
 
