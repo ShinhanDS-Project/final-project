@@ -14,10 +14,13 @@ import java.util.Optional;
 public class VerificationServiceImpl implements VerificationService {
     @Autowired
     EmailVerificationRepository emailVerificationRepository;
+
+    //메일 전송을 위한 JavaMailSender
     @Autowired
     JavaMailSender mailSender;
-@Autowired
-private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom(); // NAMEHASH 만들어주는 난수값
+
     @Transactional
     @Override
     public void sendVerificationCode(String email) {

@@ -1,5 +1,6 @@
 package com.merge.final_project.global.config;
 
+
 import com.merge.final_project.global.exceptions.OAuth2SuccessHandler;
 import com.merge.final_project.global.jwt.*;
 import com.merge.final_project.user.auth.oauth.CustomOAuth2UserService;
@@ -25,7 +26,10 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtTokenProvider jwtTokenProvider;
-
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+    private final AdminJwtFilter adminJwtFilter;
+    private final JwtFilter  jwtFilter;
     @Bean
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
@@ -54,44 +58,55 @@ public class SecurityConfig {
 
         return http.build();
     }
+         //은선이 코드랑 채원 코드 섞음
+   @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                // 1. 기본 보안 설정 비활성화 (Stateless API)
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-// 사용자 / OAuth2 전용 체인
-@Bean
-@Order(2)
-public SecurityFilterChain userFilterChain(HttpSecurity http,JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint, JwtAccessDeniedHandler jwtAccessDeniedHandler,JwtFilter jwtFilter) throws Exception {
-    http
-            .csrf(csrf -> csrf.disable())
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable())
-            .sessionManagement(session ->
-                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(
-                            "/",
-                            "/api/auth/**",
-                            "/api/signup/**",
-                            "/oauth2/**",
-                            "/login/**",
-                            "/social-info",
-                            "/api/beneficiary/signup"
-                    ).permitAll()
-                    .anyRequest().authenticated()
-            )
-            .exceptionHandling(ex -> ex
-                    .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                    .accessDeniedHandler(jwtAccessDeniedHandler)
-            )
-            .oauth2Login(oauth2 -> oauth2
-                    .userInfoEndpoint(userInfo ->
-                            userInfo.userService(customOAuth2UserService)
-                    )
-                    .successHandler(oAuth2SuccessHandler)
-            )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                // 2. 경로별 권한 설정 (두 체인의 경로 통합)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/", 
+                                "/api/auth/**", 
+                                "/api/signup/**", 
+                                "/api/beneficiary/signup", 
+                                "/api/beneficiary/signin",
+                                "/oauth2/**", 
+                                "/login/**", 
+                                "/social-info", 
+                                "/error"
+                        ).permitAll() // 인증 없이 접근 가능한 경로들
+                        .requestMatchers("/finalReport/**").authenticated() // 인증이 필요한 경로
+                        .anyRequest().authenticated() // 그 외 모든 요청은 인증 필수
+                )
+
+                // 3. OAuth2 로그인 설정
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+                )
+
+                // 4. JWT 필터 및 예외 처리
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler)
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // 5. 로그아웃 설정(은선이꺼만 추가됨)
+                .logout(logout -> logout
+                        .logoutUrl("/api/beneficiary/logout")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll()
+                );
 
         return http.build();
     }
-
 
 }
