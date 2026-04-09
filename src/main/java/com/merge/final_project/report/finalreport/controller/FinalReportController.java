@@ -34,62 +34,115 @@ public class FinalReportController {
     public ResponseEntity<String> submitReport(
             @RequestPart("dto") FinalReportRequestDTO dto,
             @RequestPart("files") List<MultipartFile> files,
-            @RequestPart("purposes") List<String> purposes,
-            java.security.Principal principal) throws IOException { // [수정] User 대신 Principal 사용
+            java.security.Principal principal) throws IOException {
 
         if (principal == null) {
             return ResponseEntity.status(401).body("로그인 정보가 없습니다.");
         }
 
-        String email = principal.getName(); // 이제 여기서 null 에러가 나지 않습니다.
-        finalReportService.saveFullReport(dto, files, purposes, email);
+        String email = principal.getName();
+        // 💡 DTO 내부에서 purposes 리스트를 꺼내서 서비스에 전달
+        finalReportService.saveFullReport(dto, files, dto.getPurposes(), email);
 
         return ResponseEntity.ok("보고서와 사진이 성공적으로 제출되었습니다.");
     }
 
 
     @GetMapping({"/", "/list"})
-    public String list(Model model, Principal principal) { // [수정] User 대신 Principal 사용
+    public String list(Model model, Principal principal) {
         if (principal == null) {
-            return "redirect:/api/beneficiary/signin"; // 로그인 안 됐으면 로그인 페이지로
+            return "redirect:/api/beneficiary/test/login";
         }
 
-        String email = principal.getName(); // 인증된 사용자의 이메일(ID) 추출
+        String email = principal.getName();
         log.info("수혜자 캠페인 리스트 조회 중: {}", email);
 
+        // 1. 참여 중인 캠페인 목록 가져오기
         List<Campaign> myCampaigns = beneficiaryService.getMyCampaigns(email);
+
+        // 2. 각 캠페인별로 작성된 보고서가 있는지 확인 (보고서 번호 맵핑)
+        // [수정] 템플릿에서 편하게 쓰기 위해 DTO나 별도의 맵을 활용할 수 있지만, 
+        // 여기서는 서비스에서 처리된 목록을 가져오는 방식으로 가겠습니다.
+        List<FinalReportResponseDTO> myReports = finalReportService.getMyReports(email);
+
         model.addAttribute("campaignList", myCampaigns);
+        model.addAttribute("reportList", myReports); // 이미 작성된 보고서 목록
 
         return "finalReport/list";
     }
+
     @GetMapping("/submit")
-    @ResponseBody
     public String submitForm(@RequestParam("campaignNo") Long campaignNo, Model model) {
         log.info("보고서 작성 페이지 이동 - 캠페인 번호: {}", campaignNo);
-
-        // 화면에 "999번 캠페인 보고서 작성"이라고 띄워주기 위해 번호를 전달합니다.
         model.addAttribute("campaignNo", campaignNo);
-
-        return "finalReport/submit"; // src/main/resources/templates/finalReport/submit.html
+        return "finalReport/submit"; 
     }
+
     @GetMapping("/{reportNo}")
-    public ResponseEntity<FinalReportResponseDTO> getReportDetail(
-            @PathVariable("reportNo") Long reportNo) {
+    public String getReportDetail(
+            @PathVariable("reportNo") Long reportNo,
+            java.security.Principal principal,
+            org.springframework.ui.Model model) {
 
-        // 서비스에서 특정 보고서 하나를 DTO로 변환해 가져옵니다.
-        FinalReportResponseDTO detail = finalReportService.getReportDetail(reportNo);
+        if (principal == null) {
+            return "redirect:/api/beneficiary/test/login";
+        }
 
-        return ResponseEntity.ok(detail);
+        // 서비스에서 본인 확인 후 상세 정보를 가져옵니다.
+        FinalReportResponseDTO detail = finalReportService.getReportDetail(reportNo, principal.getName());
+        model.addAttribute("report", detail);
+
+        return "finalReport/detail";
+    }
+
+    /**
+     * 내가 쓴 보고서 목록 조회 API
+     */
+    @GetMapping("/my")
+    @ResponseBody
+    public ResponseEntity<?> getMyReports(java.security.Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body("로그인 정보가 없습니다.");
+        }
+
+        List<FinalReportResponseDTO> myReports = finalReportService.getMyReports(principal.getName());
+        return ResponseEntity.ok(myReports);
     }
     @PutMapping("/update/{reportNo}")
     public ResponseEntity<String> updateReport(
             @PathVariable("reportNo") Long reportNo,
             @RequestPart("dto") FinalReportRequestDTO dto,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @RequestPart(value = "purposes", required = false) List<String> purposes) throws IOException {
+            java.security.Principal principal) throws IOException {
 
-        finalReportService.updateReport(reportNo, dto, files, purposes);
+        if (principal == null) {
+            return ResponseEntity.status(401).body("로그인 정보가 없습니다.");
+        }
+
+        finalReportService.updateReport(reportNo, dto, files, dto.getPurposes(), principal.getName());
         return ResponseEntity.ok("보고서 수정 완료");
+    }
+    // 2. 보고서 제출 테스트 페이지 연결
+    @GetMapping("/test/submit")
+    public String testSubmitPage() {
+        return "finalReport/test-submit";
+    }
+
+    // 3. 보고서 수정 테스트 페이지 연결
+    @GetMapping("/test/update")
+    public String testUpdatePage(@RequestParam("reportNo") Long reportNo, 
+                                java.security.Principal principal, 
+                                org.springframework.ui.Model model) {
+        
+        if (principal == null) {
+            return "redirect:/api/beneficiary/test/login";
+        }
+
+        // 기존 보고서 상세 정보를 가져와서 모델에 담습니다.
+        FinalReportResponseDTO detail = finalReportService.getReportDetail(reportNo, principal.getName());
+        model.addAttribute("report", detail);
+        
+        return "finalReport/test-update";
     }
 }
 

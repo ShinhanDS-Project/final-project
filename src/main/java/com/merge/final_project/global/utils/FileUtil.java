@@ -1,62 +1,31 @@
 package com.merge.final_project.global.utils;
 
-import com.merge.final_project.global.exceptions.BusinessException;
-import com.merge.final_project.global.exceptions.ErrorCode;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
 
+/**
+ * 기존에 FileUtil을 사용하던 팀원들을 위한 유틸리티 클래스입니다.
+ * 내부적으로는 FileService(현재 LocalFileService)를 호출하여 동작합니다.
+ */
 @Component
+@RequiredArgsConstructor
 public class FileUtil {
-    // 💡 파일을 저장할 경로
-    //@Value("${file.upload.path}")
-    private String uploadPath = "c:/upload";
+
+    private final FileService fileService;
 
     public String saveFile(MultipartFile file) throws IOException {
-        if (file.isEmpty()) return null;
-
-        // 1. 폴더 생성
-        File folder = new File(uploadPath);
-        if (!folder.exists()) folder.mkdirs();
-
-        // 2. 중복 방지 이름 생성 (UUID)
-        String originalName = file.getOriginalFilename();
-        String storedName = UUID.randomUUID().toString() + "_" + originalName;
-
-        // 3. 물리적 저장
-        File saveFile = new File(uploadPath, storedName);
-        file.transferTo(saveFile);
-
-        return storedName; // DB에 저장할 이름을 반환
+        return fileService.saveFile(file);
     }
 
-    public void deleteFile(String savedPath) {
-        // 1. 경로가 없거나 기본 이미지인 경우 삭제 로직 건너뛰기
-        if (savedPath == null || savedPath.isBlank() || ("default-profile.png").equals(savedPath)) {
-            return;
-        }
+    public void deleteFile(String storedName) {
+        fileService.deleteFile(storedName);
+    }
 
-        try {
-            Path base = Paths.get(uploadPath).toAbsolutePath().normalize();
-            Path target = base.resolve(savedPath).normalize();
-
-            // 2. 업로드 루트 밖 삭제 방지 (Path Traversal 방어)
-            if (!target.startsWith(base)) {
-                // ErrorCode에 INVALID_FILE_PATH(400) 등을 추가해서 사용 권장
-                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
-            }
-
-            Files.deleteIfExists(target);
-        } catch (IOException e) {
-            // 파일 삭제 실패는 서버 오류이므로 500 에러 코드 사용
-            throw new BusinessException(ErrorCode.FILE_UPLOAD_ERROR);
-        }
+    // DB에 저장할 경로가 필요할 때 사용
+    public String getFilePath(String storedName) {
+        return fileService.getFilePath(storedName);
     }
 }
