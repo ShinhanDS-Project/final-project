@@ -19,7 +19,7 @@ public class AdminLog extends BaseCreatedAtEntity {
     private Long logNo;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "action_type")
+    @Column(name = "action_type", nullable = false)
     private ActionType actionType;
 
     @Enumerated(EnumType.STRING)
