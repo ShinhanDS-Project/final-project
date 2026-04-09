@@ -27,11 +27,17 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
+    /**
+     * 비밀번호 인코더 빈.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * 스프링 시큐리티 AuthenticationManager 주입용 빈.
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
@@ -138,6 +144,9 @@ public class SecurityConfig {
                                 "/uploads/**",
                                 "/api/auth/**",
                                 "/api/signup/**",
+                                // 블록체인 대시보드/조회 API는 프론트 대시보드 초기 연동을 위해 우선 공개.
+                                // 추후 인증 정책 확정 시 role 기반 접근 제어로 전환 가능.
+                                "/api/blockchain/**",
                                 "/oauth2/**",
                                 "/login/**",
                                 "/social-info",
