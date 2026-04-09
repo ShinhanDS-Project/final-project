@@ -9,7 +9,7 @@ import com.merge.final_project.user.users.User;
 import com.merge.final_project.user.users.UserStatus;
 import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
 import com.merge.final_project.user.verify.VerificationService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,7 +20,7 @@ import java.io.IOException;
 
 @RequiredArgsConstructor
 @Service
-@Transactional
+@Transactional(rollbackFor = Exception.class)
 public class UserSignUpServiceImpl implements UserSignUpService{
 
 
