@@ -57,7 +57,9 @@ public class NotificationServiceImpl implements NotificationService {
             throw new BusinessException(ErrorCode.NOTIFICATION_ACCESS_DENIED);
         }
 
-        notification.markAsRead();
+        if (!notification.isRead()) {
+            notification.markAsRead();
+        }
     }
 
     //전체 알람 읽음 처리하기

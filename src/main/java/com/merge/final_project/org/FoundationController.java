@@ -1,14 +1,13 @@
 package com.merge.final_project.org;
 
-import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
-import com.merge.final_project.org.dto.FoundationDetailResponseDTO;
-import com.merge.final_project.org.dto.FoundationListResponseDTO;
+import com.merge.final_project.org.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -48,5 +47,38 @@ public class FoundationController {
     @GetMapping("/{foundationNo}")
     public ResponseEntity<FoundationDetailResponseDTO> getDetail(@PathVariable Long foundationNo) {
         return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
+    }
+
+    // 기부단체 로그인
+    @PostMapping("/login")
+    public ResponseEntity<FoundationSigninResponseDTO> login(@RequestBody FoundationSigninRequestDTO requestDTO) {
+        return ResponseEntity.ok(foundationService.login(requestDTO));
+    }
+
+    // 기부단체 로그아웃 (프론트에서 토큰 제거, 서버는 로그만 남김)
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String bearerToken) {
+        foundationService.logout(bearerToken);
+        return ResponseEntity.ok().build();
+    }
+
+    // 기부단체 회원정보 수정 (설명, 연락처, 계좌, 은행명, 수수료율, 프로필 이미지)
+    @PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FoundationDetailResponseDTO> updateMyInfo(
+            Authentication authentication,
+            @RequestPart("data") @Valid FoundationUpdateRequestDTO requestDTO,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.updateFoundationInfo(foundationNo, requestDTO, profileImage));
+    }
+
+    // 기부단체 비밀번호 변경
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> updateMyPassword(
+            Authentication authentication,
+            @RequestBody @Valid FoundationPasswordUpdateRequestDTO requestDTO) {
+        Long foundationNo = (Long) authentication.getDetails();
+        foundationService.updateFoundationPassword(foundationNo, requestDTO);
+        return ResponseEntity.ok().build();
     }
 }

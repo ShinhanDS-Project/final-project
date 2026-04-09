@@ -3,6 +3,8 @@ package com.merge.final_project.notification.inapp;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,7 +19,8 @@ public class NotificationController {
 
     // 알림 목록 조회
     @GetMapping
-    public ResponseEntity<Page<NotificationResponseDTO>> getNotifications(Pageable pageable) {
+    public ResponseEntity<Page<NotificationResponseDTO>> getNotifications(
+            @PageableDefault(sort="createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         //수행 대상 PK와 수행대상 테이블 명을 토큰에서 추출해내기 위함.
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long receiverNo = (Long) auth.getDetails();
