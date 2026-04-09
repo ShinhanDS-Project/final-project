@@ -3,6 +3,7 @@ package com.merge.final_project.user.signUp;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
+import com.merge.final_project.global.utils.S3FileService;
 import com.merge.final_project.user.signUp.dto.UserSignUpResponseDTO;
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.users.User;
@@ -27,7 +28,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
     private final UserSignUpRepository userSignUpRepository;
     private final VerificationService verificationService;
     private final PasswordEncoder passwordEncoder;
-    private final FileUtil fileUtil;
+    private final S3FileService s3FileService;
 
     @Transactional
     @Override
@@ -52,7 +53,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         String savedPath = null;
         if (file != null && !file.isEmpty()) {
             // 위 1번의 검증 로직 포함...
-            savedPath = fileUtil.saveFile(file);
+            savedPath = s3FileService.saveFile(file);
             requestDto.setProfilePath(savedPath);
         }
 
@@ -66,7 +67,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         } catch (Exception e) {
             // DB 저장 실패 시 저장했던 파일 삭제
             if (savedPath != null) {
-                fileUtil.deleteFile(savedPath); // FileUtil에 삭제 로직 필요
+                s3FileService.deleteFile(savedPath); // FileUtil에 삭제 로직 필요
             }
             throw e; // 예외를 다시 던져서 GlobalExceptionHandler가 처리하게 함
         }
