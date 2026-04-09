@@ -1,20 +1,31 @@
 package com.merge.final_project.global.utils;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+
 import java.io.IOException;
 import java.util.UUID;
 
 /**
- * 나중에 Amazon S3를 연동할 때 사용할 클래스입니다.
- * 실제 사용 시에는 클래스 상단에 @Service를 붙이고, LocalFileService의 @Service를 제거하세요.
- * 또한 build.gradle에 'software.amazon.awssdk:s3' 의존성 추가가 필요합니다.
+ * Amazon S3를 연동한 파일 저장 서비스
  */
-// @org.springframework.stereotype.Service 
+@Service
+@RequiredArgsConstructor
 public class S3FileService implements FileService {
 
-    // 💡 나중에 본인의 S3 설정값으로 변경하세요.
-    private final String bucketName = "your-bucket-name";
-    private final String region = "ap-northeast-2"; // 서울 리전 예시
+    private final S3Client s3Client;
+
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucketName;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     @Override
     public String saveFile(MultipartFile file) throws IOException {
@@ -23,15 +34,16 @@ public class S3FileService implements FileService {
         String originalName = file.getOriginalFilename();
         String storedName = UUID.randomUUID().toString() + "_" + originalName;
 
-        /* 
-        TODO: AWS SDK를 이용한 업로드 로직 예시
-        s3Client.putObject(PutObjectRequest.builder()
+        // S3 업로드 요청 생성
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(storedName)
                 .contentType(file.getContentType())
-                .build(), 
+                .build();
+
+        // 실제 S3 서버로 파일 전송
+        s3Client.putObject(putObjectRequest, 
                 RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-        */
 
         return storedName;
     }
@@ -40,19 +52,19 @@ public class S3FileService implements FileService {
     public void deleteFile(String storedName) {
         if (storedName == null || storedName.isEmpty()) return;
 
-        /* 
-        TODO: AWS SDK를 이용한 삭제 로직 예시
-        s3Client.deleteObject(DeleteObjectRequest.builder()
+        // S3 삭제 요청 생성
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                 .bucket(bucketName)
                 .key(storedName)
-                .build());
-        */
+                .build();
+
+        // 실제 S3 서버에서 파일 삭제
+        s3Client.deleteObject(deleteObjectRequest);
     }
 
     @Override
     public String getFilePath(String storedName) {
-        // 💡 S3에 저장된 파일의 Public URL을 반환합니다.
-        // 이 주소가 DB의 imgPath 컬럼에 저장됩니다.
+        // S3의 Public URL 반환
         return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, storedName);
     }
 }

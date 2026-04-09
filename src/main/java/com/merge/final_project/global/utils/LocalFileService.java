@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 
-@Service
+//@Service
 public class LocalFileService implements FileService {
 
     @org.springframework.beans.factory.annotation.Value("${file.upload-path}")

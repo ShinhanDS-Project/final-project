@@ -19,8 +19,8 @@
     <h3>첨부 이미지 리스트</h3>
     <ul>
         <li th:each="img : ${report.images}" style="list-style: none; margin-bottom: 30px;">
-            <!-- 실제 사진 출력 (경로: /uploads/파일명) -->
-            <img th:src="@{/uploads/{name}(name=${img.imgStoredName})}" 
+            <!-- 실제 사진 출력 (저장소 환경에 맞는 전체 경로 사용) -->
+            <img th:src="${img.imgPath}" 
                  style="max-width: 600px; border: 1px solid #000; display: block;" />
             
             파일명: <span th:text="${img.imgOrgName}"></span><br>
