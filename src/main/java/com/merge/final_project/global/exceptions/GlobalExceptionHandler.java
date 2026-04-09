@@ -10,6 +10,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * @Valid 검증 실패를 400 응답으로 변환한다.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidException(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getAllErrors()
@@ -28,6 +31,10 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(errorCode.getCode(), errorCode.getMessage()));
     }
 
+    /**
+     * 서비스에서 의도적으로 던진 HTTP 상태 예외를 그대로 유지해 반환한다.
+     * (예: 400 invalid status, 404 transaction not found)
+     */
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException e) {
         int statusCode = e.getStatusCode().value();
@@ -38,6 +45,9 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("COMMON_" + statusCode, reason));
     }
 
+    /**
+     * 처리되지 않은 런타임 예외의 최종 fallback.
+     */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
