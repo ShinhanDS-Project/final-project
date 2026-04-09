@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.net.ssl.HttpsURLConnection;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/signup")
@@ -23,14 +24,14 @@ public class UserSignUpController {
     private JwtTokenProvider jwtTokenProvider;
 
     @PostMapping(value="/local", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> register(@Valid @RequestPart("dto") UserSignUpRequestDTO dto, @RequestPart("profileImage") MultipartFile profileImage) {
+    public ResponseEntity<Void> register(@Valid @RequestPart("dto") UserSignUpRequestDTO dto, @RequestPart(value="profileImage",required = false) MultipartFile profileImage) throws IOException {
         dto.setLoginType(LoginType.LOCAL);
         userSignUpService.register(dto,profileImage);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping(value="/google", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity <Void> registerGoogle(@RequestHeader("Authorization") String bearerToken, @Valid @RequestPart("dto") UserSignUpRequestDTO dto,@RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
+    public ResponseEntity <Void> registerGoogle(@RequestHeader("Authorization") String bearerToken, @Valid @RequestPart("dto") UserSignUpRequestDTO dto,@RequestPart(value = "profileImage", required = false) MultipartFile profileImage) throws IOException {
         //보안 처리
         if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
             // bearer로 시작하지 않는 경우 예외처리

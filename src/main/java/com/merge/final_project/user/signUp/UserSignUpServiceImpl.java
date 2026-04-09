@@ -31,7 +31,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
 
     @Transactional
     @Override
-    public void register(UserSignUpRequestDTO requestDto, MultipartFile file) {
+    public void register(UserSignUpRequestDTO requestDto, MultipartFile file) throws IOException {
         // 1. 공통 검증: 전화번호 중복 체크
         if (requestDto.getLoginType() == null) {
             throw new IllegalArgumentException("로그인 타입은 필수입니다.");
@@ -49,22 +49,26 @@ public class UserSignUpServiceImpl implements UserSignUpService{
             throw new IllegalArgumentException("잘못된 로그인 타입입니다.");
         }
 // 2. 사진 저장 (파일이 넘어왔을 때만 실행)
+        String savedPath = null;
         if (file != null && !file.isEmpty()) {
-            try {
-                String savedPath = fileUtil.saveFile(file);
-                requestDto.setProfilePath(savedPath);
-            } catch (IOException e) {
-                throw new BusinessException(ErrorCode.FILE_UPLOAD_ERROR);
-            }
-        } else {
-            // 사진을 안 올렸다면 기본 이미지 경로 설정
-            requestDto.setProfilePath("/images/default-profile.png");
+            // 위 1번의 검증 로직 포함...
+            savedPath = fileUtil.saveFile(file);
+            requestDto.setProfilePath(savedPath);
         }
-        // 4. 최종 등록
-        if (requestDto.getLoginType() == LoginType.LOCAL) {
-            registerLocal(requestDto);
-        } else {
-            registerGoogle(requestDto);
+
+        try {
+            // 실제 가입 로직
+            if (requestDto.getLoginType() == LoginType.LOCAL) {
+                registerLocal(requestDto);
+            } else {
+                registerGoogle(requestDto);
+            }
+        } catch (Exception e) {
+            // DB 저장 실패 시 저장했던 파일 삭제
+            if (savedPath != null) {
+                fileUtil.deleteFile(savedPath); // FileUtil에 삭제 로직 필요
+            }
+            throw e; // 예외를 다시 던져서 GlobalExceptionHandler가 처리하게 함
         }
     }
 
@@ -172,8 +176,8 @@ public class UserSignUpServiceImpl implements UserSignUpService{
     //예외처리 ->db 저장 실패시 실패 원인이 nameHash 중복인지 판별하는 용도
     private boolean isNameHashDuplicateException(DataIntegrityViolationException e) {
         Throwable cause = e.getMostSpecificCause();
-        return cause != null
+        return (cause != null
                 && cause.getMessage() != null
-                && cause.getMessage().contains("name_hash");
+                && cause.getMessage().contains("name_hash"));
     }
 }

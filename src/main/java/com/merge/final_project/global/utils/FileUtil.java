@@ -31,4 +31,7 @@ public class FileUtil {
 
         return storedName; // DB에 저장할 이름을 반환
     }
+
+    public void deleteFile(String savedPath) {
+    }
 }
