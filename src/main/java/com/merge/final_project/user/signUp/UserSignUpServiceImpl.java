@@ -1,5 +1,7 @@
 package com.merge.final_project.user.signUp;
 
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.user.signUp.dto.UserSignUpResponseDTO;
 import com.merge.final_project.user.users.LoginType;
@@ -36,11 +38,20 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         if (userSignUpRepository.existsByPhone(requestDto.getPhone())) {
             throw new IllegalArgumentException("이미 가입된 전화번호입니다.");
         }
-        try {
-            requestDto.setProfilePath(fileUtil.saveFile(file));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+
+        // 2. 사진 저장 (파일이 넘어왔을 때만 실행)
+        if (file != null && !file.isEmpty()) {
+            try {
+                String savedPath = fileUtil.saveFile(file);
+                requestDto.setProfilePath(savedPath);
+            } catch (IOException e) {
+                throw new BusinessException(ErrorCode.FILE_UPLOAD_ERROR);
+            }
+        } else {
+            // 사진을 안 올렸다면 기본 이미지 경로 설정
+            requestDto.setProfilePath("/images/default-profile.png");
         }
+
         // 로그인 타입에 따른 특화 검증 로직 호출
         if (requestDto.getLoginType() == LoginType.LOCAL) {
             validateLocalUser(requestDto);

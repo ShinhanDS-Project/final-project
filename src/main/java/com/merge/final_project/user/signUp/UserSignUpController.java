@@ -7,6 +7,7 @@ import com.merge.final_project.user.users.LoginType;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,15 +22,15 @@ public class UserSignUpController {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
-    @PostMapping("/local")
-    public ResponseEntity<Void> register(@Valid @RequestBody UserSignUpRequestDTO dto, @RequestPart MultipartFile profileImage) {
+    @PostMapping(value="/local", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> register(@Valid @RequestPart("dto") UserSignUpRequestDTO dto, @RequestPart("profileImage") MultipartFile profileImage) {
         dto.setLoginType(LoginType.LOCAL);
         userSignUpService.register(dto,profileImage);
- return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/google")
-    public ResponseEntity <Void> registerGoogle(@RequestHeader("Authorization") String bearerToken, @Valid @RequestBody UserSignUpRequestDTO dto) {
+    @PostMapping(value="/google", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity <Void> registerGoogle(@RequestHeader("Authorization") String bearerToken, @Valid @RequestBody UserSignUpRequestDTO dto,@RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
         //보안 처리
         if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
             // bearer로 시작하지 않는 경우 예외처리
@@ -47,7 +48,7 @@ public class UserSignUpController {
         dto.setName(jwtTokenProvider.getNameFromToken(token));
         dto.setLoginType(LoginType.GOOGLE);
 
-        userSignUpService.register(dto);
+        userSignUpService.register(dto,profileImage);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
