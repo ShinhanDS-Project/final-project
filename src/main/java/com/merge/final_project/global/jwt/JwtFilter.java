@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -39,13 +40,13 @@ public class JwtFilter extends OncePerRequestFilter {
             if ("ACCESS".equals(type)) {
                 String email = jwtTokenProvider.getEmailFromToken(token);
                 String role = jwtTokenProvider.getAdminRole(token); // Claims에서 "role" 꺼내기-> 메서드 이름 변경해야함 
-
+                Long pk= jwtTokenProvider.getReceiverNo(token);
                 // 3. 권한 객체 생성 (사용자가 USER든 BENEFICIARY든 토큰 내 role에 따라 생성)
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 email, null, List.of(new SimpleGrantedAuthority(role))
                         );
-
+                authentication.setDetails(pk);
                 // 4. 시큐리티 컨텍스트에 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

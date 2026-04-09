@@ -63,7 +63,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 return;
             }
             //토큰을 그대로 노출 된 상태로 프론트로 전달하는 건 위험하므로 쿠키+ 보안 처리를 하고 제공한다. HttpOnly쿠키
-            String accessToken=jwtTokenProvider.createSocialAccessToken(name,email); //소셜 로그인용 생성
+            String accessToken=jwtTokenProvider.createSocialAccessToken(name,email,optionalUser.get().getUserNo()); //소셜 로그인용 생성
 
             ResponseCookie cookie = ResponseCookie.from("accessToken", accessToken)
                     .httpOnly(true) //js에서 쿠키를 읽을수없음. xss 노출 위험 내려감

@@ -101,9 +101,10 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // 5. 로그아웃 설정(은선이꺼만 추가됨)
+                // 5. 로그아웃 설정(의선이꺼만 추가됨)
                 .logout(logout -> logout
                         .logoutUrl("/api/beneficiary/logout")
+
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .permitAll()

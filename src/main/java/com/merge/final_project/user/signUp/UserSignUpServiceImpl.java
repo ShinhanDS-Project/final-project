@@ -1,5 +1,6 @@
 package com.merge.final_project.user.signUp;
 
+import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.user.signUp.dto.UserSignUpResponseDTO;
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.users.User;
@@ -11,6 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+
 @RequiredArgsConstructor
 @Service
 public class UserSignUpServiceImpl implements UserSignUpService{
@@ -19,10 +24,11 @@ public class UserSignUpServiceImpl implements UserSignUpService{
     private final UserSignUpRepository userSignUpRepository;
     private final VerificationService verificationService;
     private final PasswordEncoder passwordEncoder;
+    private final FileUtil fileUtil;
 
     @Transactional
     @Override
-    public void register(UserSignUpRequestDTO requestDto)  {
+    public void register(UserSignUpRequestDTO requestDto, MultipartFile file) {
         // 1. 공통 검증: 전화번호 중복 체크
         if (requestDto.getLoginType() == null) {
             throw new IllegalArgumentException("로그인 타입은 필수입니다.");
@@ -30,7 +36,11 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         if (userSignUpRepository.existsByPhone(requestDto.getPhone())) {
             throw new IllegalArgumentException("이미 가입된 전화번호입니다.");
         }
-
+        try {
+            requestDto.setProfilePath(fileUtil.saveFile(file));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         // 로그인 타입에 따른 특화 검증 로직 호출
         if (requestDto.getLoginType() == LoginType.LOCAL) {
             validateLocalUser(requestDto);

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -21,9 +22,9 @@ public class UserSignUpController {
     private JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/local")
-    public ResponseEntity<Void> register(@Valid @RequestBody UserSignUpRequestDTO dto) {
+    public ResponseEntity<Void> register(@Valid @RequestBody UserSignUpRequestDTO dto, @RequestPart MultipartFile profileImage) {
         dto.setLoginType(LoginType.LOCAL);
-        userSignUpService.register(dto);
+        userSignUpService.register(dto,profileImage);
  return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
