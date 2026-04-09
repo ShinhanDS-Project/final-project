@@ -38,28 +38,29 @@ public class Settlement {
     @JoinColumn(name = "beneficiary_no", nullable = false)
     private Beneficiary beneficiary;
 
-    private Integer amount;
+    private Long amount;
 
     @Column(name = "settled_at")
     private LocalDateTime settledAt;
 
     @Column(name = "foundation_amount")
-    private Integer foundationAmount;
+    private Long foundationAmount;
 
     @Column(name = "beneficiary_amount")
-    private Integer beneficiaryAmount;
+    private Long beneficiaryAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(name="status", nullable = false)
+    @Column(name = "status", nullable = false)
     private SettlementStatus status;
 
+    // 정산 생성 (초기 상태: PENDING)
     public Settlement(
             Foundation foundation,
             Campaign campaign,
             Beneficiary beneficiary,
-            Integer amount,
-            Integer foundationAmount,
-            Integer beneficiaryAmount
+            Long amount,
+            Long foundationAmount,
+            Long beneficiaryAmount
     ) {
         this.foundation = foundation;
         this.campaign = campaign;
@@ -69,17 +70,11 @@ public class Settlement {
         this.beneficiaryAmount = beneficiaryAmount;
         this.status = SettlementStatus.PENDING;
     }
-
-    public void completed(Transaction transaction){
-        this.transactionCode = transactionCode;
-        this.status = SettlementStatus.COMPLETED;
-        this.settledAt = LocalDateTime.now();
-    }
-
+    // 정산 실패 처리 (→ FAILED)
     public void failed() {
         this.status = SettlementStatus.FAILED;
     }
-
+    // 처리 시작 (PENDING → PROCESSING)
     public void markProcessing() {
         this.status = SettlementStatus.PROCESSING;
     }

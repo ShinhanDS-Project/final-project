@@ -39,7 +39,7 @@ public class UserServiceImpl implements UserService {
         }
         //5. 정상 로그인을 위해 jwt 토큰 활용
         user.setsLoginCount(0);
-        return jwtTokenProvider.createGeneralAccessToken(user.getName(), user.getEmail(), "ROLE_USER");
+        return jwtTokenProvider.createGeneralAccessToken(user.getName(), user.getEmail(), "ROLE_USER", user.getUserNo());
     }
 
     @Override
