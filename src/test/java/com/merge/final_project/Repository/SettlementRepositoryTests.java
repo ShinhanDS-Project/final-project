@@ -14,8 +14,8 @@ import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
-import com.merge.final_project.org.foundation.Foundation;
-import com.merge.final_project.org.foundation.FoundationRepository;
+import com.merge.final_project.org.Foundation;
+import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.BeneficiaryRepository;
 import com.merge.final_project.recipient.beneficiary.BeneficiaryType;
@@ -105,9 +105,9 @@ public class SettlementRepositoryTests {
 
         Settlement settlement = settlements.get(0);
         assertThat(settlement.getStatus()).isEqualTo(SettlementStatus.COMPLETED);
-        assertThat(settlement.getAmount()).isEqualTo(1000);
-        assertThat(settlement.getFoundationAmount()).isEqualTo(100);
-        assertThat(settlement.getBeneficiaryAmount()).isEqualTo(900);
+        assertThat(settlement.getAmount()).isEqualTo(1000L);
+        assertThat(settlement.getFoundationAmount()).isEqualTo(100L);
+        assertThat(settlement.getBeneficiaryAmount()).isEqualTo(900L);
         assertThat(settlement.getSettledAt()).isNotNull();
 
         List<Transaction> transactions = transactionRepository.findByTransactionCode(settlement.getTransactionCode());

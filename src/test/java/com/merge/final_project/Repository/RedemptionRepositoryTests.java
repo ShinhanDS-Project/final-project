@@ -7,8 +7,8 @@ import com.merge.final_project.blockchain.entity.TransactionStatus;
 import com.merge.final_project.blockchain.repository.KeyRepository;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.blockchain.service.BlockchainService;
-import com.merge.final_project.org.foundation.Foundation;
-import com.merge.final_project.org.foundation.FoundationRepository;
+import com.merge.final_project.org.Foundation;
+import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.BeneficiaryRepository;
 import com.merge.final_project.recipient.beneficiary.BeneficiaryType;
@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -108,6 +109,7 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(requesterWallet.getWalletAddress()))
+                .thenReturn(BigInteger.valueOf(500))
                 .thenReturn(BigInteger.valueOf(300));
         when(blockchainService.getTokenBalance(hotWallet.getWalletAddress()))
                 .thenReturn(BigInteger.valueOf(200));
@@ -175,6 +177,9 @@ public class RedemptionRepositoryTests {
         when(blockchainService.redeemOnChain(any(), any(), any()))
                 .thenThrow(new RuntimeException("블록체인 현금화 실패"));
 
+        when(blockchainService.getTokenBalance(requesterWallet.getWalletAddress()))
+                .thenReturn(BigInteger.valueOf(700));
+
         try {
             redemptionService.requestRedemption(request);
         } catch (Exception ignored) {
@@ -208,22 +213,93 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(any()))
+                .thenReturn(BigInteger.valueOf(500))
                 .thenReturn(BigInteger.valueOf(300))
                 .thenReturn(BigInteger.valueOf(200));
 
         RedemptionResponse response = redemptionService.requestRedemption(request);
-        List<RedemptionListResponse> results = redemptionService.getAdminRedemptions();
+        redemptionService.markCashPaid(response.getRedemptionNo());
+
+        Foundation anotherFoundation = createFoundationWithWallet(new BigDecimal("600"));
+        RedemptionRequest anotherRequest = createRequest(RequesterType.FOUNDATION, anotherFoundation.getFoundationNo(), 100L);
+
+        TransactionReceipt anotherReceipt = new TransactionReceipt();
+        anotherReceipt.setTransactionHash("0xADMIN_LIST_COMPLETED_HASH");
+        anotherReceipt.setBlockNumber("322");
+        anotherReceipt.setGasUsed("21000");
+
+        when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(anotherReceipt);
+        when(blockchainService.getTokenBalance(any()))
+                .thenReturn(BigInteger.valueOf(600))
+                .thenReturn(BigInteger.valueOf(500))
+                .thenReturn(BigInteger.valueOf(100));
+
+        RedemptionResponse completedResponse = redemptionService.requestRedemption(anotherRequest);
+        List<RedemptionListResponse> results = redemptionService.getAdminRedemptions(null);
+
+        System.out.println("=== COMPLETED redemption list ===");
+        results.forEach(item -> System.out.println(
+                "redemptionNo=" + item.getRedemptionNo()
+                        + ", requesterName=" + item.getRequesterName()
+                        + ", requesterType=" + item.getRequesterType()
+                        + ", amount=" + item.getAmount()
+                        + ", status=" + item.getStatus()
+                        + ", requestedAt=" + item.getRequestedAt()
+                        + ", txHash=" + item.getTxHash()
+        ));
 
         RedemptionListResponse target = results.stream()
-                .filter(item -> item.getRedemptionNo().equals(response.getRedemptionNo()))
+                .filter(item -> item.getRedemptionNo().equals(completedResponse.getRedemptionNo()))
                 .findFirst()
                 .orElseThrow();
 
-        assertThat(target.getRequesterName()).isEqualTo(foundation.getFoundationName());
+        assertThat(results).allMatch(item -> item.getStatus() == RedemptionStatus.COMPLETED);
+        assertThat(target.getRequesterName()).isEqualTo(anotherFoundation.getFoundationName());
         assertThat(target.getRequesterType()).isEqualTo(RequesterType.FOUNDATION.name());
-        assertThat(target.getAmount()).isEqualTo(200L);
+        assertThat(target.getAmount()).isEqualTo(100L);
         assertThat(target.getStatus()).isEqualTo(RedemptionStatus.COMPLETED);
-        assertThat(target.getTxHash()).isEqualTo("0xADMIN_LIST_HASH");
+        assertThat(target.getTxHash()).isEqualTo("0xADMIN_LIST_COMPLETED_HASH");
+    }
+
+    @Test
+    @DisplayName("관리자 현금화 목록은 상태 필터로 조회할 수 있다")
+    void getAdminRedemptions_withStatusFilter_success() throws Exception {
+        Wallet hotWallet = createHotWallet();
+        ReflectionTestUtils.setField(redemptionService, "hotWalletAddress", hotWallet.getWalletAddress());
+
+        Foundation foundation = createFoundationWithWallet(new BigDecimal("500"));
+        RedemptionRequest request = createRequest(RequesterType.FOUNDATION, foundation.getFoundationNo(), 200L);
+
+        TransactionReceipt receipt = new TransactionReceipt();
+        receipt.setTransactionHash("0xADMIN_FILTER_HASH");
+        receipt.setBlockNumber("333");
+        receipt.setGasUsed("21000");
+
+        when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
+        when(blockchainService.getTokenBalance(any()))
+                .thenReturn(BigInteger.valueOf(500))
+                .thenReturn(BigInteger.valueOf(300))
+                .thenReturn(BigInteger.valueOf(200));
+
+        RedemptionResponse response = redemptionService.requestRedemption(request);
+        redemptionService.markCashPaid(response.getRedemptionNo());
+
+        List<RedemptionListResponse> paidResults = redemptionService.getAdminRedemptions(RedemptionStatus.PAID);
+
+        System.out.println("=== PAID redemption list ===");
+        paidResults.forEach(item -> System.out.println(
+                "redemptionNo=" + item.getRedemptionNo()
+                        + ", requesterName=" + item.getRequesterName()
+                        + ", requesterType=" + item.getRequesterType()
+                        + ", amount=" + item.getAmount()
+                        + ", status=" + item.getStatus()
+                        + ", requestedAt=" + item.getRequestedAt()
+                        + ", txHash=" + item.getTxHash()
+        ));
+
+        assertThat(paidResults).allMatch(item -> item.getStatus() == RedemptionStatus.PAID);
+        assertThat(paidResults.stream().map(RedemptionListResponse::getRedemptionNo))
+                .contains(response.getRedemptionNo());
     }
 
     @Test
@@ -242,11 +318,31 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(any()))
+                .thenReturn(BigInteger.valueOf(800))
                 .thenReturn(BigInteger.valueOf(500))
                 .thenReturn(BigInteger.valueOf(300));
 
         RedemptionResponse response = redemptionService.requestRedemption(request);
         RedemptionDetailResponse detail = redemptionService.getAdminRedemptionDetail(response.getRedemptionNo());
+
+        System.out.println("=== Redemption detail ===");
+        System.out.println(
+                "redemptionNo=" + detail.getRedemptionNo()
+                        + ", requesterName=" + detail.getRequesterName()
+                        + ", requesterType=" + detail.getRequesterType()
+                        + ", requesterNo=" + detail.getRequesterNo()
+                        + ", account=" + detail.getAccount()
+                        + ", walletAddress=" + detail.getWalletAddress()
+                        + ", amount=" + detail.getAmount()
+                        + ", status=" + detail.getStatus()
+                        + ", requestedAt=" + detail.getRequestedAt()
+                        + ", processedAt=" + detail.getProcessedAt()
+                        + ", cashPaidAt=" + detail.getCashPaidAt()
+                        + ", blockNumber=" + detail.getBlockNumber()
+                        + ", transactionNo=" + detail.getTransactionNo()
+                        + ", txHash=" + detail.getTxHash()
+                        + ", failureReason=" + detail.getFailureReason()
+        );
 
         assertThat(detail.getRequesterName()).isEqualTo(beneficiary.getName());
         assertThat(detail.getRequesterType()).isEqualTo(RequesterType.BENEFICIARY.name());
@@ -275,6 +371,7 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(any()))
+                .thenReturn(BigInteger.valueOf(450))
                 .thenReturn(BigInteger.valueOf(300))
                 .thenReturn(BigInteger.valueOf(150));
 
@@ -284,6 +381,53 @@ public class RedemptionRepositoryTests {
         Redemption redemption = redemptionRepository.findById(response.getRedemptionNo()).orElseThrow();
         assertThat(redemption.getStatus()).isEqualTo(RedemptionStatus.PAID);
         assertThat(redemption.getCashPaidAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("이미 입금 완료된 현금화 요청은 다시 입금 완료 처리할 수 없다")
+    void markCashPaid_alreadyPaid_fail() throws Exception {
+        Wallet hotWallet = createHotWallet();
+        ReflectionTestUtils.setField(redemptionService, "hotWalletAddress", hotWallet.getWalletAddress());
+
+        Foundation foundation = createFoundationWithWallet(new BigDecimal("450"));
+        RedemptionRequest request = createRequest(RequesterType.FOUNDATION, foundation.getFoundationNo(), 150L);
+
+        TransactionReceipt receipt = new TransactionReceipt();
+        receipt.setTransactionHash("0xPAY_DUPLICATE_HASH");
+        receipt.setBlockNumber("999");
+        receipt.setGasUsed("21000");
+
+        when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
+        when(blockchainService.getTokenBalance(any()))
+                .thenReturn(BigInteger.valueOf(450))
+                .thenReturn(BigInteger.valueOf(300))
+                .thenReturn(BigInteger.valueOf(150));
+
+        RedemptionResponse response = redemptionService.requestRedemption(request);
+        redemptionService.markCashPaid(response.getRedemptionNo());
+
+        assertThatThrownBy(() -> redemptionService.markCashPaid(response.getRedemptionNo()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("이미 입금 완료 처리된 현금화 요청입니다.");
+    }
+
+    @Test
+    @DisplayName("현금화 완료 전 상태에서는 입금 완료 처리할 수 없다")
+    void markCashPaid_notCompleted_fail() {
+        Foundation foundation = createFoundationWithWallet(new BigDecimal("450"));
+
+        Redemption redemption = redemptionRepository.save(
+                Redemption.create(
+                        RequesterType.FOUNDATION,
+                        foundation.getFoundationNo(),
+                        150L,
+                        foundation.getWallet()
+                )
+        );
+
+        assertThatThrownBy(() -> redemptionService.markCashPaid(redemption.getRedemptionNo()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("입금 완료 처리는 현금화 완료 건에 대해서만 가능합니다.");
     }
 
     private RedemptionRequest createRequest(RequesterType requesterType, Long requesterNo, Long amount) {

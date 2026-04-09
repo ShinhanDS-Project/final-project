@@ -5,8 +5,8 @@ import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.blockchain.service.BlockchainService;
-import com.merge.final_project.org.foundation.Foundation;
-import com.merge.final_project.org.foundation.FoundationRepository;
+import com.merge.final_project.org.Foundation;
+import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.BeneficiaryRepository;
 import com.merge.final_project.redemption.RedemptionStatus;
@@ -57,6 +57,7 @@ public class RedemptionService {
 
         // 3. 현금화는 요청자 지갑의 서명이 필요하므로 개인키 존재 여부와 잔액을 먼저 검증한다.
         validateWalletForRedemption(requesterWallet, request.getAmount());
+        validateOnChainBalanceForRedemption(requesterWallet, request.getAmount());
 
         // 4. hot wallet 을 로컬 DB 에서 조회한다.
         // transaction 에 from / to 지갑을 함께 남겨야 이후 관리자 조회에서 흐름을 추적할 수 있다.
@@ -139,8 +140,10 @@ public class RedemptionService {
 
     // 관리자용 현금화 요청 목록 조회 (최신순)
     @Transactional(readOnly = true)
-    public List<RedemptionListResponse> getAdminRedemptions() {
-        return redemptionRepository.findAllByOrderByRequestedAtDesc().stream()
+    public List<RedemptionListResponse> getAdminRedemptions(RedemptionStatus status) {
+        RedemptionStatus targetStatus = status != null ? status : RedemptionStatus.COMPLETED;
+
+        return redemptionRepository.findAllByStatusOrderByRequestedAtDesc(targetStatus).stream()
                 .map(redemption -> {
                     RequesterSnapshot requesterSnapshot = getRequesterSnapshot(
                             redemption.getRequesterType(),
@@ -296,7 +299,7 @@ public class RedemptionService {
                 .transactionCode(transactionCode)
                 .fromWallet(requesterWallet)
                 .toWallet(hotWallet)
-                .amount(amount.intValue())
+                .amount(amount)
                 .sentAt(LocalDateTime.now())
                 .txHash(receipt.getTransactionHash())
                 .blockNum(blockNum)
@@ -307,6 +310,28 @@ public class RedemptionService {
                 .build();
     }
 
+    // 온체인 지갑 잔액 검증 (현금화 가능 여부 체크)
+    // - 잔액이 0 이하이면 불가
+    // - 요청 금액보다 부족하면 불가
+    private void validateOnChainBalanceForRedemption(Wallet wallet, Long amount) {
+        BigDecimal onChainBalance;
+        try {
+            // 블록체인에서 실제 토큰 잔액 조회
+            onChainBalance = new BigDecimal(blockchainService.getTokenBalance(wallet.getWalletAddress()));
+        } catch (Exception e) {
+            throw new RuntimeException("요청자 지갑의 온체인 잔액 조회에 실패했습니다.", e);
+        }
+        // 잔액이 없으면 현금화 불가
+        if (onChainBalance.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("현금화 가능한 온체인 토큰 잔액이 없습니다.");
+        }
+        // 요청 금액보다 잔액이 부족하면 현금화 불가
+        if (onChainBalance.compareTo(BigDecimal.valueOf(amount)) < 0) {
+            throw new IllegalArgumentException("현금화 가능한 온체인 토큰 잔액이 부족합니다.");
+        }
+    }
+
+    // 요청자 정보 스냅샷 (이름, 계좌)
     private record RequesterSnapshot(String name, String account) {
     }
 }

@@ -29,12 +29,12 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_wallet_no", nullable = false)
     private Wallet fromWallet;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "to_wallet_no", nullable = false)
     private Wallet toWallet;
-    
-    private Integer amount;
+
+    private Long amount;
 
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
@@ -45,7 +45,7 @@ public class Transaction {
     @Column(name = "tx_hash")
     private String txHash;
 
-    @Column(name="block_num")
+    @Column(name = "block_num")
     private Long blockNum;
 
     @Enumerated(EnumType.STRING)
@@ -55,15 +55,15 @@ public class Transaction {
     @Column(name = "gas_fee", precision = 19, scale = 8)
     private BigDecimal gasFee;
 
+    // 트랜잭션 생성 (초기 상태: PENDING)
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false)
     private TransactionEventType eventType;
 
-    // 트랜잭션 생성 (초기 상태: PENDING)
     public Transaction(
             Wallet fromWallet,
             Wallet toWallet,
-            Integer amount,
+            Long amount,
             TransactionEventType eventType
     ) {
         this.fromWallet = fromWallet;
@@ -73,13 +73,11 @@ public class Transaction {
         this.status = TransactionStatus.PENDING;
         this.createdAt = LocalDateTime.now();
     }
-
-    // 트랜잭션 처리 중 상태로 변경 (온체인 실행 시작)
+    // 처리 시작 (PENDING → PROCESSING)
     public void markProcessing() {
         this.status = TransactionStatus.PROCESSING;
     }
-
-    // 온체인 성공 후 완료 처리 + 해시/블록/가스 정보 저장
+    // 온체인 전송 성공 처리 (PROCESSING → SUCCESS)
     public void complete(String txHash, Long blockNum, BigDecimal gasFee) {
         this.txHash = txHash;
         this.blockNum = blockNum;
@@ -87,11 +85,8 @@ public class Transaction {
         this.status = TransactionStatus.SUCCESS;
         this.sentAt = LocalDateTime.now();
     }
-
-    // 온체인 실패 시 상태 변경
+    // 실패 처리 (→ FAILED)
     public void fail() {
         this.status = TransactionStatus.FAILED;
     }
-
-
 }

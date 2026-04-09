@@ -1,4 +1,4 @@
-package com.merge.final_project.org.foundation;
+package com.merge.final_project.org;
 
 import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;

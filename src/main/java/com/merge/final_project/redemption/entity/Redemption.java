@@ -52,6 +52,10 @@ public class Redemption {
     @Column(name = "block_number")
     private Long blockNumber;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_no", nullable = false)
     private Wallet wallet;

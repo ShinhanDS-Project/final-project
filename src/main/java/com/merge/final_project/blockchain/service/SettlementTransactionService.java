@@ -13,8 +13,8 @@ import com.merge.final_project.campaign.settlement.Repository.SettlementReposito
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
 import com.merge.final_project.campaign.settlement.service.SettlementCommandService;
-import com.merge.final_project.org.foundation.Foundation;
-import com.merge.final_project.org.foundation.FoundationRepository;
+import com.merge.final_project.org.Foundation;
+import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.BeneficiaryRepository;
 import com.merge.final_project.wallet.entity.Wallet;
@@ -170,9 +170,9 @@ public class SettlementTransactionService {
                     transactionCode,
                     foundation,
                     beneficiary,
-                    total.intValue(),
-                    foundationAmount.intValue(),
-                    beneficiaryAmount.intValue(),
+                    toLongExact(total, "정산 총액"),
+                    toLongExact(foundationAmount, "재단 정산 금액"),
+                    toLongExact(beneficiaryAmount, "수혜자 정산 금액"),
                     managedCampaign
             );
             //진행중인 정산 디비가 있음
@@ -225,7 +225,7 @@ public class SettlementTransactionService {
                             .transactionCode(transactionCode)
                             .fromWallet(campaignWallet)
                             .toWallet(foundationWallet)
-                            .amount(foundationAmount.intValue())
+                            .amount(toLongExact(foundationAmount, "재단 정산 트랜잭션 금액"))
                             .sentAt(now)
                             .txHash(txHash)
                             .blockNum(blockNum)
@@ -241,7 +241,7 @@ public class SettlementTransactionService {
                             .transactionCode(transactionCode)
                             .fromWallet(campaignWallet)
                             .toWallet(beneficiaryWallet)
-                            .amount(beneficiaryAmount.intValue())
+                            .amount(toLongExact(beneficiaryAmount, "수혜자 정산 트랜잭션 금액"))
                             .sentAt(now)
                             .txHash(txHash)
                             .blockNum(blockNum)
@@ -278,6 +278,16 @@ public class SettlementTransactionService {
             settlementCommandService.markCompleted(settlement.getSettlementNo());
         } catch (Exception e) {
             throw new RuntimeException("정산 후처리에 실패했습니다.", e);
+        }
+    }
+
+    // BigDecimal → Long 변환 (정수 + 범위 검증)
+    // 소수점이 있거나 long 범위를 벗어나면 예외 발생
+    private Long toLongExact(BigDecimal amount, String fieldName) {
+        try {
+            return amount.longValueExact();
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException(fieldName + "이 long 범위를 벗어나거나 정수가 아닙니다.", e);
         }
     }
 }

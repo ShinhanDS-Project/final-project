@@ -1,10 +1,12 @@
 package com.merge.final_project.redemption.repository;
 
+import com.merge.final_project.redemption.RedemptionStatus;
 import com.merge.final_project.redemption.entity.Redemption;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 public interface RedemptionRepository extends JpaRepository<Redemption, Long> {
-    List<Redemption> findAllByOrderByRequestedAtDesc();
+    //상태별 조회
+    List<Redemption> findAllByStatusOrderByRequestedAtDesc(RedemptionStatus status);
 }
