@@ -1,6 +1,5 @@
 package com.merge.final_project.global.utils;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -11,8 +10,8 @@ import java.util.UUID;
 @Component
 public class FileUtil {
     // 💡 파일을 저장할 경로
-    @Value("${FILE_UPLOAD_PATH}")
-    private String uploadPath;
+    //@Value("${file.upload.path}")
+    private String uploadPath = "c:/upload";
 
     public String saveFile(MultipartFile file) throws IOException {
         if (file.isEmpty()) return null;

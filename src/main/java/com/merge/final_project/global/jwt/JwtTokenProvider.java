@@ -28,7 +28,7 @@ public class JwtTokenProvider {
 
     //1.관리자용 로그인 토큰
     public String createAdminAccessToken(String adminId, String role){
-
+        System.out.println(jwtProperties.getSecret());
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtProperties.getAccessTokenExpiration());
 
