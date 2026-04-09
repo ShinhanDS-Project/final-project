@@ -2,20 +2,31 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>최종 보고서 작성</title>
+    <title>보고서 수정</title>
 </head>
 <body>
-    <h1>최종 보고서 작성</h1>
-    <p>캠페인 번호: <span id="campaignNo" th:text="${campaignNo}"></span></p>
+    <h1>보고서 수정</h1>
+    <p>보고서 번호: <span id="reportNo" th:text="${report.reportNo}"></span></p>
 
-    <form id="reportForm">
-        제목: <input type="text" id="title" required /><br>
-        내용: <textarea id="content" required></textarea><br>
-        사용 목적: <input type="text" id="usagePurpose" required /><br>
+    <form id="updateForm">
+        제목: <input type="text" id="title" th:value="${report.title}" style="width: 300px;"><br>
+        내용: <textarea id="content" rows="10" cols="50" th:text="${report.content}"></textarea><br>
+        사용 목적: <input type="text" id="usagePurpose" th:value="${report.usagePurpose}" style="width: 300px;"><br>
+        
         <hr>
+        <h3>현재 등록된 사진</h3>
+        <p>새 사진을 올리지 않으면 이 사진들이 유지됩니다.</p>
+        <div th:each="img : ${report.images}" style="display: inline-block; margin-right: 10px; border: 1px solid #ccc; padding: 5px;">
+            <img th:src="${img.imgPath}" width="150"><br>
+            설명: <span th:text="${img.purpose}"></span>
+        </div>
+
+        <hr>
+        <h3>사진 교체 (새로 올릴 경우에만 선택)</h3>
+        <p style="color: red;">※ 사진을 새로 업로드하면 기존 사진들은 모두 삭제되고 새 사진으로 대체됩니다.</p>
         <div id="imageInputs">
             <div>
-                파일: <input type="file" name="files" required />
+                파일: <input type="file" name="files" />
                 설명: 
                 <select name="purposes">
                     <option value="FIELD_PHOTO">활동사진</option>
@@ -23,17 +34,19 @@
                 </select>
             </div>
         </div>
-        <button type="button" onclick="addImageInput()">사진 추가</button>
+        <button type="button" onclick="addImageInput()">+ 사진 추가</button>
+
         <hr>
-        <button type="button" onclick="submitReport()">제출하기</button>
+        <button type="button" onclick="updateReport()" style="padding: 10px 20px;">수정 완료</button>
         <a href="/finalReport/list"><button type="button">취소</button></a>
     </form>
 
     <script>
         function addImageInput() {
             const div = document.createElement('div');
+            div.style.marginTop = "5px";
             div.innerHTML = `
-                파일: <input type="file" name="files" />
+                파일: <input type="file" name="files" /> 
                 설명: 
                 <select name="purposes">
                     <option value="FIELD_PHOTO">활동사진</option>
@@ -43,10 +56,11 @@
             document.getElementById('imageInputs').appendChild(div);
         }
 
-        async function submitReport() {
+        async function updateReport() {
+            const reportNo = document.getElementById('reportNo').innerText;
             const formData = new FormData();
             
-            // 1. 목적(purposes) 리스트 먼저 준비
+            // 1. 목적 리스트 준비
             const purposeInputs = document.getElementsByName('purposes');
             const purposesArray = [];
             for (let i = 0; i < purposeInputs.length; i++) {
@@ -58,13 +72,12 @@
                 title: document.getElementById('title').value,
                 content: document.getElementById('content').value,
                 usagePurpose: document.getElementById('usagePurpose').value,
-                campaign_no: parseInt(document.getElementById('campaignNo').innerText),
                 purposes: purposesArray
             };
             
             formData.append("dto", new Blob([JSON.stringify(dto)], { type: "application/json" }));
 
-            // 3. 파일 추가
+            // 3. 파일 추가 (새로 선택한 경우에만)
             const fileInputs = document.getElementsByName('files');
             for (let i = 0; i < fileInputs.length; i++) {
                 if (fileInputs[i].files[0]) {
@@ -73,20 +86,21 @@
             }
 
             try {
-                const response = await fetch('/finalReport/submit', {
-                    method: 'POST',
+                const response = await fetch('/finalReport/update/' + reportNo, {
+                    method: 'PUT',
                     body: formData
                 });
 
                 if (response.ok) {
-                    alert("성공");
+                    alert("성공적으로 수정되었습니다.");
                     location.href = "/finalReport/list";
                 } else {
                     const errorMsg = await response.text();
-                    alert("실패: " + errorMsg);
+                    alert("수정 실패: " + errorMsg);
                 }
             } catch (error) {
-                alert("오류 발생");
+                console.error("수정 중 오류:", error);
+                alert("서버 통신 오류");
             }
         }
     </script>

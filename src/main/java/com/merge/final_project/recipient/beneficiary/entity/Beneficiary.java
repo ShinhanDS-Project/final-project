@@ -49,7 +49,7 @@ public class Beneficiary {
     private LocalDateTime updatedAt;
 
     @Column(name = "entry_code", nullable = false)
-    private Integer entryCode;
+    private String entryCode;
 
     @Column(name = "key_no")
     private Long key_no;
