@@ -64,10 +64,26 @@ public class FinalReport {
 
 
     public void updateContent(String title, String content, String usagePurpose) {
+
+        if (this.approvalStatus == ReportApprovalStatus.APPROVED) {
+            throw new RuntimeException("이미 승인된 보고서는 수정할 수 없습니다.");
+        }
+
         this.title = title;
         this.content = content;
         this.usagePurpose = usagePurpose;
         //수정하면 다시 대기 상태
         this.approvalStatus = ReportApprovalStatus.PENDING;
+    }
+
+    public void changeStatus(ReportApprovalStatus status, String rejectReason) {
+        this.approvalStatus = status;
+
+        // 승인(APPROVED)일 때는 사유를 지워주고, 반려일 때만 저장합니다.
+        if (status == ReportApprovalStatus.REJECTED) {
+            this.rejectReason = rejectReason;
+        } else {
+            this.rejectReason = null;
+        }
     }
 }

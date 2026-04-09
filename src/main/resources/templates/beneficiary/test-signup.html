@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>수혜자 회원가입</title>
+</head>
+<body>
+    <h1>수혜자 회원가입 테스트</h1>
+    <form id="signupForm">
+        이메일: <input type="email" id="email" placeholder="test@email.com" required><br>
+        비밀번호: <input type="password" id="password" required><br>
+        이름: <input type="text" id="name" placeholder="홍길동" required><br>
+        전화번호: <input type="text" id="phone" placeholder="010-1234-5678" required><br>
+        계좌번호: <input type="text" id="account" placeholder="123-456-789" required><br>
+        유형: 
+        <select id="beneficiaryType">
+            <option value="INDIVIDUAL">개인</option>
+            <option value="ORGANIZATION">기관</option>
+        </select><br>
+        <hr>
+        <button type="button" onclick="signup()">회원가입 완료</button>
+        <a href="/api/beneficiary/test/login"><button type="button">로그인 화면으로</button></a>
+    </form>
+
+    <script>
+        async function signup() {
+            const dto = {
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                account: document.getElementById('account').value,
+                beneficiaryType: document.getElementById('beneficiaryType').value
+            };
+
+            try {
+                const response = await fetch('/api/beneficiary/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+
+                if (response.ok) {
+                    alert("회원가입에 성공했습니다! 로그인 페이지로 이동합니다.");
+                    location.href = "/api/beneficiary/test/login";
+                } else {
+                    const errorMsg = await response.text();
+                    alert("회원가입 실패: " + errorMsg);
+                }
+            } catch (error) {
+                console.error("회원가입 에러:", error);
+                alert("서버 통신 중 오류가 발생했습니다.");
+            }
+        }
+    </script>
+</body>
+</html>
