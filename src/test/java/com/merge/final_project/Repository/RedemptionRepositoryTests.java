@@ -9,9 +9,9 @@ import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.blockchain.service.BlockchainService;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
-import com.merge.final_project.recipient.beneficiary.Beneficiary;
-import com.merge.final_project.recipient.beneficiary.BeneficiaryRepository;
 import com.merge.final_project.recipient.beneficiary.BeneficiaryType;
+import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
+import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.redemption.RedemptionStatus;
 import com.merge.final_project.redemption.RequesterType;
 import com.merge.final_project.redemption.dto.request.RedemptionRequest;
@@ -95,8 +95,6 @@ public class RedemptionRepositoryTests {
                         .foundationName("테스트 재단")
                         .foundationEmail("foundation_" + UUID.randomUUID() + "@test.com")
                         .wallet(requesterWallet)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
                         .build()
         );
 
@@ -482,8 +480,6 @@ public class RedemptionRepositoryTests {
                         .foundationEmail("foundation_" + UUID.randomUUID() + "@test.com")
                         .account("110-123-123456")
                         .wallet(requesterWallet)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
                         .build()
         );
     }

@@ -8,18 +8,22 @@ import com.merge.final_project.blockchain.repository.KeyRepository;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.blockchain.service.BlockchainService;
 import com.merge.final_project.blockchain.service.SettlementTransactionService;
-import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
-import com.merge.final_project.recipient.beneficiary.Beneficiary;
-import com.merge.final_project.recipient.beneficiary.BeneficiaryRepository;
+
 import com.merge.final_project.recipient.beneficiary.BeneficiaryType;
+import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
+import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.wallet.entity.Wallet;
+import com.merge.final_project.wallet.entity.WalletStatus;
+import com.merge.final_project.wallet.entity.WalletType;
 import com.merge.final_project.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -98,8 +102,10 @@ public class SettlementRepositoryTests {
         when(blockchainService.getTokenBalance(beneficiaryWallet.getWalletAddress()))
                 .thenReturn(BigInteger.valueOf(900));
 
+        // when
         settlementTransactionService.processSettlement(campaign);
 
+        // then
         List<Settlement> settlements = settlementRepository.findByCampaign(campaign);
         assertThat(settlements).hasSize(1);
 
@@ -112,12 +118,14 @@ public class SettlementRepositoryTests {
 
         List<Transaction> transactions = transactionRepository.findByTransactionCode(settlement.getTransactionCode());
         assertThat(transactions).hasSize(2);
+
         assertThat(transactions)
                 .extracting(Transaction::getEventType)
                 .containsExactlyInAnyOrder(
                         TransactionEventType.SETTLEMENT_FEE,
                         TransactionEventType.SETTLEMENT_BENEFICIARY
                 );
+
         assertThat(transactions)
                 .extracting(Transaction::getStatus)
                 .containsOnly(TransactionStatus.SUCCESS);

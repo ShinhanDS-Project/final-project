@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>보고서 작성</title>
+</head>
+<body>
+<h2>[[${campaignNo}]]번 캠페인 결과 보고서 작성</h2>
+<hr>
+
+<form th:action="@{/api/beneficiary/reports/submit}" method="post">
+    <input type="hidden" name="campaign_no" th:value="${campaignNo}">
+
+    <div>
+        <label>보고서 제목:</label><br>
+        <input type="text" name="title" style="width: 500px;" placeholder="제목을 입력하세요" required>
+    </div>
+    <br>
+    <div>
+        <label>사용 목적:</label><br>
+        <input type="text" name="usagePurpose" style="width: 500px;" placeholder="예: 교육비, 생필품 구입 등" required>
+    </div>
+    <br>
+    <div>
+        <label>보고서 내용:</label><br>
+        <textarea name="content" rows="10" style="width: 500px;" placeholder="상세 내용을 입력하세요" required></textarea>
+    </div>
+    <br>
+    <button type="submit">보고서 제출하기</button>
+    <button type="button" onclick="history.back()">취소</button>
+</form>
+</body>
+</html>
