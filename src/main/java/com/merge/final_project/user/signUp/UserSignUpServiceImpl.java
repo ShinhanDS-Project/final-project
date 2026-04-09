@@ -1,5 +1,6 @@
 package com.merge.final_project.user.signUp;
 
+import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
@@ -27,6 +28,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
     private final UserSignUpRepository userSignUpRepository;
     private final VerificationService verificationService;
     private final PasswordEncoder passwordEncoder;
+    private final SignupWalletHookService signupWalletHookService;
     private final FileUtil fileUtil;
 
     @Transactional
@@ -88,6 +90,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .build();
 
         saveWithRetry(user);
+        signupWalletHookService.onUserSignupCompleted(user.getUserNo());
     }
 
 
@@ -108,6 +111,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .build();
 
         saveWithRetry(user);
+        signupWalletHookService.onUserSignupCompleted(user.getUserNo());
     }
     // 로컬 가입 전용 검증
     private void validateLocalUser(UserSignUpRequestDTO dto) {

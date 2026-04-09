@@ -6,6 +6,7 @@ import com.merge.final_project.admin.adminlog.ActionType;
 import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.admin.sse.ApprovalRequestEvent;
+import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
@@ -45,6 +46,7 @@ public class FoundationServiceImpl implements FoundationService {
     private final FileUtil upload;    //프로필 이미지는 위한 업로드 필드 추가
     private final PasswordEncoder passwordEncoder;  //임시 비밀번호 생성 시 암호화 하여 저장하기 위함
     private final ApplicationEventPublisher eventPublisher; // 언제 이벤트 발행할지 설정하기 위함.
+    private final SignupWalletHookService signupWalletHookService;
     private final AdminLogService adminLogService;
     private final AdminRepository adminRepository;
 
@@ -200,6 +202,7 @@ public class FoundationServiceImpl implements FoundationService {
     public Long approveFoundation(Long foundationNo) {
         Foundation foundation = foundationRepository.findById(foundationNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+        boolean alreadyApproved = foundation.getReviewStatus() == ReviewStatus.APPROVED;
 
         //불법 단체는 승인 불가 하도록 한 번 더 조회 + 반려되는 경우는 비활성화랑 다름. 재가입 불가. 따라서 반려되는 경우도 조회.
         if (foundation.getReviewStatus() == ReviewStatus.ILLEGAL || foundation.getReviewStatus() == ReviewStatus.REJECTED) {
@@ -213,6 +216,9 @@ public class FoundationServiceImpl implements FoundationService {
         String tempPassword = passwordEncoder.encode(sendTempPassword);
 
         foundation.updatePassword(tempPassword);
+        if (!alreadyApproved) {
+            signupWalletHookService.onFoundationSignupCompleted(foundationNo);
+        }
 
         //트랜잭션 커밋 성공한 이후에만 메일 발송 -> 이벤트 기반으로 구현.
         eventPublisher.publishEvent(new FoundationApprovedEvent(foundationNo,foundation.getFoundationEmail(), foundation.getFoundationName(), sendTempPassword));

@@ -86,6 +86,7 @@ public class SecurityConfig {
                                 "/finalReport/test/**",     // 💡 보고서 테스트 페이지
                                 "/api/auth/**",
                                 "/api/signup/**",
+                                "/api/blockchain/**",
                                 "/oauth2/**",
                                 "/login/**",
                                 "/social-info",

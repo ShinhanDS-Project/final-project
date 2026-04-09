@@ -6,5 +6,6 @@ public enum WalletType {
     BENEFICIARY,
     CAMPAIGN,
     HOT,
-    COLD
+    COLD,
+    SERVER
 }

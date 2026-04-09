@@ -5,5 +5,9 @@ public enum TransactionEventType {
     SETTLEMENT_FEE,
     SETTLEMENT_BENEFICIARY,
     ALLOCATION,
-    REDEMPTION
+    REDEMPTION,
+    PAYMENT_TOKEN_CHARGE,
+    DONATION_TRANSFER,
+    POL_AUTO_TOPUP,
+    TokenAllocated
 }
