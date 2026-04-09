@@ -18,14 +18,15 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long paymentNo;
 
+    @Enumerated(EnumType.STRING)
     @Column(name="payment_method")
     private PaymentMethod payment_method; //결제수단 : / 페이 / 카드 결제 -> enum 만들어주세요
 
     @Enumerated(EnumType.STRING)
-   @Column(name="payment_status")
+   @Column(name="payment_status", nullable = false)
     private PaymentStatus status;
 
-   @Column(name="amount")
+   @Column(name="amount", nullable = false, precision = 15, scale = 0)
     private BigDecimal amount;
 
     @Column(name = "paid_at")
@@ -42,4 +43,5 @@ public class Payment {
 
     @Column(name = "user_no")
     private Long userNo;
+
 }
