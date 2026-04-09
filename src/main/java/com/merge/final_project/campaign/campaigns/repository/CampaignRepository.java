@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CampaignRepository extends JpaRepository<Campaign, Long> {
@@ -13,4 +14,7 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
 
     boolean existsByCampaignNoAndBeneficiaryNo(Long campaignNo, Long beneficiaryNo);
     List<Campaign> findByCampaignStatus(CampaignStatus campaignStatus);
+
+
+    Optional<Campaign> findByCampaignNo(Long CampaignNo);
 }

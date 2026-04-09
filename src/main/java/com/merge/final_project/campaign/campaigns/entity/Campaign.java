@@ -5,6 +5,8 @@ import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.global.BaseCreatedAtEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -80,4 +82,8 @@ public class Campaign extends BaseCreatedAtEntity {
 
     @Column(name = "reject_reason")
     private String rejectReason;
+
+    public Long addCurrentAmount(BigDecimal amount) {
+        return this.currentAmount + amount.longValue();
+    }
 }
