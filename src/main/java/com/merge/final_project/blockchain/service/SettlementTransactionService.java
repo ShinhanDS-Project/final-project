@@ -18,7 +18,7 @@ import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.wallet.entity.Wallet;
-import com.merge.final_project.wallet.repository.WalletRepository;
+import com.merge.final_project.wallet.entity.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;

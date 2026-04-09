@@ -1,17 +1,18 @@
 package com.merge.final_project.campaign.campaigns.service;
 
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
-import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDto;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
-import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDto;
+import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDTO;
 import com.merge.final_project.campaign.useplan.entity.UsePlan;
 import com.merge.final_project.campaign.useplan.repository.UsePlanRepository;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
 import com.merge.final_project.wallet.entity.Wallet;
+import com.merge.final_project.wallet.entity.WalletRepository;
 import com.merge.final_project.wallet.entity.WalletStatus;
-import com.merge.final_project.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,12 +47,11 @@ class CampaignServiceImplTest {
 
     @Test
     @Rollback(false)
-    @DisplayName("캠페인 등록 시 본체, 지출 계획, 승인 대기 상태 및 지갑 활성화 확인")
+    @DisplayName("??? ?? ? ??, ????, ???, ?? ??? ????")
     void registerCampaign_success() {
-        Long organizationId = 888L;
+        Long foundationId = 888L;
 
-        // 테스트 실행 시마다 제목이 겹치지 않게 현재 시간 추가
-        String campaignTitle = "깨끗한 식수 지원 사업-" + System.currentTimeMillis();
+        String campaignTitle = "??? ?? ?? ??-" + System.currentTimeMillis();
 
         List<String> myWallets = List.of(
                 "0x888_BUSY_ADDR",
@@ -59,27 +59,22 @@ class CampaignServiceImplTest {
                 "0x888_FREE_ADDR_2"
         );
 
-        // 등록 전 비활성화 지갑 개수 확인
         long beforeInactiveCount = walletRepository.findAll().stream()
                 .filter(w -> myWallets.contains(w.getWalletAddress()) && w.getStatus() == WalletStatus.INACTIVE)
                 .count();
 
-        // 주의: DB에 해당 주소의 INACTIVE 지갑이 미리 존재해야 합니다.
         assertThat(beforeInactiveCount).isGreaterThan(0);
 
-        // 캠페인 등록 정보 입력 (DTO)
-        CampaignRequestDto dto = new CampaignRequestDto();
+        CampaignRequestDTO dto = new CampaignRequestDTO();
         dto.setTitle(campaignTitle);
-        dto.setDescription("아프리카 지역의 우물 굴착 및 식수 시설 구축 프로젝트입니다.");
-        dto.setTargetAmount(2000000L);
-
-        // 기간 설정
+        dto.setDescription("???? ??? ?? ?? ? ?? ?? ?? ???????.");
+        dto.setCategory("??");
+        dto.setTargetAmount(2_000_000L);
         dto.setStartAt(LocalDateTime.of(2025, 1, 1, 0, 0));
         dto.setEndAt(LocalDateTime.of(2025, 3, 31, 23, 59, 59));
         dto.setUsageStartAt(LocalDateTime.of(2025, 4, 1, 0, 0));
         dto.setUsageEndAt(LocalDateTime.of(2025, 6, 30, 23, 59, 59));
 
-        // 테스트용 이미지 파일 생성
         MockMultipartFile imageFile = new MockMultipartFile(
                 "imageFile",
                 "images.png",
@@ -87,47 +82,43 @@ class CampaignServiceImplTest {
                 "test-image".getBytes()
         );
 
-        // 지출 계획 데이터 구성
-        UsePlanRequestDto plan1 = new UsePlanRequestDto();
-        plan1.setPlanContent("우물 굴착 장비 대여비");
-        plan1.setPlanAmount(1500000L);
+        UsePlanRequestDTO plan1 = new UsePlanRequestDTO();
+        plan1.setPlanContent("?? ?? ?? ???");
+        plan1.setPlanAmount(1_500_000L);
 
-        UsePlanRequestDto plan2 = new UsePlanRequestDto();
-        plan2.setPlanContent("현지 활동가 활동비 및 식비");
-        plan2.setPlanAmount(500000L);
+        UsePlanRequestDTO plan2 = new UsePlanRequestDTO();
+        plan2.setPlanContent("?? ??? ? ???");
+        plan2.setPlanAmount(500_000L);
 
         dto.setUsePlans(List.of(plan1, plan2));
 
-        // 서비스 로직 실행
-        campaignService.registerCampaign(dto, imageFile, organizationId);
+        campaignService.registerCampaign(dto, imageFile, List.of(), foundationId);
 
-        // 캠페인 본체 저장 확인
         Campaign savedCampaign = campaignRepository.findAll().stream()
                 .filter(c -> campaignTitle.equals(c.getTitle()))
-                .filter(c -> organizationId.equals(c.getFoundationNo()))
+                .filter(c -> foundationId.equals(c.getFoundationNo()))
                 .max((left, right) -> Long.compare(left.getCampaignNo(), right.getCampaignNo()))
-                .orElseThrow(() -> new IllegalArgumentException("캠페인이 생성되지 않았습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("???? ???? ?????."));
 
         assertThat(savedCampaign.getTitle()).isEqualTo(campaignTitle);
-        assertThat(savedCampaign.getImagePath()).isNull(); // 이미지 테이블을 따로 쓰므로 본체 경로는 null
+        assertThat(savedCampaign.getImagePath()).isNull();
         assertThat(savedCampaign.getApprovalStatus()).isEqualTo(ApprovalStatus.PENDING);
+        assertThat(savedCampaign.getCampaignStatus()).isEqualTo(CampaignStatus.PENDING);
+        assertThat(savedCampaign.getCurrentAmount()).isEqualTo(0L);
 
-        // 기간 저장 검증
         assertThat(savedCampaign.getStartAt()).isEqualTo(LocalDateTime.of(2025, 1, 1, 0, 0));
         assertThat(savedCampaign.getEndAt()).isEqualTo(LocalDateTime.of(2025, 3, 31, 23, 59, 59));
         assertThat(savedCampaign.getUsageStartAt()).isEqualTo(LocalDateTime.of(2025, 4, 1, 0, 0));
         assertThat(savedCampaign.getUsageEndAt()).isEqualTo(LocalDateTime.of(2025, 6, 30, 23, 59, 59));
 
-        // 지출 계획 저장 확인
         List<UsePlan> savedPlans = usePlanRepository.findAll().stream()
                 .filter(plan -> savedCampaign.getCampaignNo().equals(plan.getCampaignNo()))
                 .toList();
 
         assertThat(savedPlans).hasSize(2);
         assertThat(savedPlans).extracting("planContent")
-                .containsExactlyInAnyOrder("우물 굴착 장비 대여비", "현지 활동가 활동비 및 식비");
+                .containsExactlyInAnyOrder("?? ?? ?? ???", "?? ??? ? ???");
 
-        // 이미지 테이블 저장 확인
         List<Image> savedImages = imageRepository.findByTargetNameAndTargetNo("campaign", savedCampaign.getCampaignNo());
 
         assertThat(savedImages).hasSize(1);
@@ -135,13 +126,11 @@ class CampaignServiceImplTest {
         assertThat(savedImages.get(0).getImgStoredName()).contains("_images.png");
         assertThat(savedImages.get(0).getImgPath()).contains(savedImages.get(0).getImgStoredName());
 
-        // 배정된 지갑 상태 확인
         Wallet usedWallet = walletRepository.findById(savedCampaign.getWalletNo())
-                .orElseThrow(() -> new IllegalArgumentException("배정된 지갑을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("??? ??? ?? ? ????."));
 
         assertThat(usedWallet.getStatus()).isEqualTo(WalletStatus.ACTIVE);
 
-        // 비활성화 지갑 개수 감소 확인
         long afterInactiveCount = walletRepository.findAll().stream()
                 .filter(w -> myWallets.contains(w.getWalletAddress()) && w.getStatus() == WalletStatus.INACTIVE)
                 .count();

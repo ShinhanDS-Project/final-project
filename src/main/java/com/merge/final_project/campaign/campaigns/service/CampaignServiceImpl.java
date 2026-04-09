@@ -92,9 +92,9 @@ public class CampaignServiceImpl implements CampaignService {
         List<Campaign> campaigns;
 
         if ("participation".equalsIgnoreCase(sort)) {
-            campaigns = campaignRepository.findByApprovalStatusOrderByCurrentAmountDescCampaignNoDesc(ApprovalStatus.APPROVED);
+            campaigns = campaignRepository.findByCampaignStatusOrderByCurrentAmountDescCampaignNoDesc(CampaignStatus.RECRUITING);
         } else {
-            campaigns = campaignRepository.findByApprovalStatusOrderByEndAtAscCampaignNoDesc(ApprovalStatus.APPROVED);
+            campaigns = campaignRepository.findByCampaignStatusOrderByEndAtAscCampaignNoDesc(CampaignStatus.RECRUITING);
         }
 
         return toCampaignListResponse(campaigns);

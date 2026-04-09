@@ -24,7 +24,7 @@ import com.merge.final_project.redemption.service.RedemptionService;
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletStatus;
 import com.merge.final_project.wallet.entity.WalletType;
-import com.merge.final_project.wallet.repository.WalletRepository;
+import com.merge.final_project.wallet.entity.WalletRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

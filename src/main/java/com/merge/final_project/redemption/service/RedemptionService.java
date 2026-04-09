@@ -18,7 +18,7 @@ import com.merge.final_project.redemption.dto.response.RedemptionResponse;
 import com.merge.final_project.redemption.entity.Redemption;
 import com.merge.final_project.redemption.repository.RedemptionRepository;
 import com.merge.final_project.wallet.entity.Wallet;
-import com.merge.final_project.wallet.repository.WalletRepository;
+import com.merge.final_project.wallet.entity.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
