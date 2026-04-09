@@ -11,11 +11,11 @@ import com.merge.final_project.campaign.useplan.repository.UsePlanRepository;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
 import com.merge.final_project.global.utils.FileUtil;
-import com.merge.final_project.org.foundation.Foundation;
-import com.merge.final_project.org.foundation.FoundationRepository;
-import com.merge.final_project.wallet.Wallet;
+import com.merge.final_project.org.Foundation;
+import com.merge.final_project.org.FoundationRepository;
+import com.merge.final_project.wallet.entity.Wallet;
+import com.merge.final_project.wallet.entity.WalletRepository;
 import com.merge.final_project.wallet.entity.WalletStatus;
-import com.merge.final_project.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -46,16 +46,13 @@ public class CampaignServiceImpl implements CampaignService {
     private final ImageRepository imageRepository;
     private final FileUtil fileUtil;
 
-    // 캠페???�록 ?�청
     @Override
     @Transactional
     public void registerCampaign(CampaignRequestDTO dto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo) {
-        // 기�? ?�체 존재 ?��? ?�인
         Foundation foundation = foundationRepository.findById(foundationNo)
-                .orElseThrow(() -> new IllegalArgumentException("?�체 ?�보 ?�음"));
+                .orElseThrow(() -> new IllegalArgumentException("?? ??? ?? ? ????."));
 
-        // 기�? ?�체??지�?�?INACTIVE 지�??�나 ?�당
-        var walletAddresses = Stream.of(
+        List<String> walletAddresses = Stream.of(
                 foundation.getCampaignWallet1(),
                 foundation.getCampaignWallet2(),
                 foundation.getCampaignWallet3()
@@ -63,39 +60,38 @@ public class CampaignServiceImpl implements CampaignService {
 
         Wallet availableWallet = walletRepository
                 .findFirstByWalletAddressInAndStatus(walletAddresses, WalletStatus.INACTIVE)
-                .orElseThrow(() -> new IllegalStateException("�?지�??�음"));
+                .orElseThrow(() -> new IllegalStateException("?? ??? ??? ????."));
 
-        // 캠페???�티???�성
         Campaign campaign = dto.toEntity();
         campaign.setFoundationNo(foundationNo);
-        campaign.setWalletNo(availableWallet.getWalletNo().longValue());
+        campaign.setWalletNo(availableWallet.getWalletNo());
         campaign.setCurrentAmount(0L);
-        campaign.setApprovalStatus(ApprovalStatus.PENDING); // ?�인 ?��?        campaign.setCampaignStatus(CampaignStatus.PENDING); // 진행 ?��?        campaign.setImagePath(null);
+        campaign.setApprovalStatus(ApprovalStatus.PENDING);
+        campaign.setCampaignStatus(CampaignStatus.PENDING);
+        campaign.setUpdatedAt(LocalDateTime.now());
 
         Campaign savedCampaign = campaignRepository.save(campaign);
 
-        // ?��?지 ?�??(?�???��?지 1??+ ?�세 ?��?지 리스??
         saveCampaignImage(imageFile, savedCampaign.getCampaignNo(), REPRESENTATIVE_IMAGE_PURPOSE);
         saveDetailImages(detailImageFiles, savedCampaign.getCampaignNo());
 
-        // ?�용 계획 ?�??        if (dto.getUsePlans() != null) {
+        if (dto.getUsePlans() != null) {
             dto.getUsePlans().forEach(planDto -> {
                 UsePlan plan = planDto.toEntity(savedCampaign.getCampaignNo());
                 usePlanRepository.save(plan);
             });
         }
 
-        // ?�용??지�??�태 ACTIVE�?변�?        availableWallet.setStatus(WalletStatus.ACTIVE);
+        availableWallet.changeStatus(WalletStatus.ACTIVE);
         walletRepository.save(availableWallet);
     }
 
-    // 캠페??목록 조회
     @Override
     @Transactional(readOnly = true)
     public List<CampaignListResponseDTO> getCampaignList(String sort) {
         List<Campaign> campaigns;
 
-        // ?�렬 조건 분기 : 모금?�순 / 마감?�박??        if ("participation".equalsIgnoreCase(sort)) {
+        if ("participation".equalsIgnoreCase(sort)) {
             campaigns = campaignRepository.findByApprovalStatusOrderByCurrentAmountDescCampaignNoDesc(ApprovalStatus.APPROVED);
         } else {
             campaigns = campaignRepository.findByApprovalStatusOrderByEndAtAscCampaignNoDesc(ApprovalStatus.APPROVED);
@@ -104,30 +100,30 @@ public class CampaignServiceImpl implements CampaignService {
         return toCampaignListResponse(campaigns);
     }
 
-    // ?�티??리스??-> DTO 리스??변??    private List<CampaignListResponseDTO> toCampaignListResponse(List<Campaign> campaigns) {
+    private List<CampaignListResponseDTO> toCampaignListResponse(List<Campaign> campaigns) {
         if (campaigns.isEmpty()) {
             return List.of();
         }
 
-        // 캠페???�???��?지 경로�?가?��? Map???�??        Map<Long, String> imagePathByCampaignNo = imageRepository.findByTargetNameAndPurposeAndTargetNoIn(
-                        CAMPAIGN_IMAGE_TARGET_NAME,
-                        REPRESENTATIVE_IMAGE_PURPOSE,
-                        campaigns.stream().map(Campaign::getCampaignNo).toList()
-                ).stream()
-                .sorted(Comparator.comparing(Image::getCreatedAt).reversed())
+        Map<Long, String> imagePathByCampaignNo = campaigns.stream()
                 .collect(Collectors.toMap(
-                        Image::getTargetNo,
-                        Image::getImgPath,
-                        (existing, ignored) -> existing // 중복 ??최신 ?�이???��?
+                        Campaign::getCampaignNo,
+                        campaign -> imageRepository.findByTargetNameAndTargetNo(
+                                        CAMPAIGN_IMAGE_TARGET_NAME,
+                                        campaign.getCampaignNo()
+                                ).stream()
+                                .filter(image -> REPRESENTATIVE_IMAGE_PURPOSE.equals(image.getPurpose()))
+                                .sorted(Comparator.comparing(Image::getCreatedAt).reversed())
+                                .map(Image::getImgPath)
+                                .findFirst()
+                                .orElse(null)
                 ));
 
-        // 최종 DTO 조립
         return campaigns.stream()
                 .map(campaign -> CampaignListResponseDTO.builder()
                         .campaignNo(campaign.getCampaignNo())
                         .imagePath(imagePathByCampaignNo.get(campaign.getCampaignNo()))
                         .title(campaign.getTitle())
-                        // ?�티???��?관�?@ManyToOne)�??�용?�여 ?�단 명칭 ?�득
                         .foundationName(campaign.getFoundation() != null ? campaign.getFoundation().getFoundationName() : null)
                         .targetAmount(campaign.getTargetAmount())
                         .currentAmount(campaign.getCurrentAmount())
@@ -137,7 +133,7 @@ public class CampaignServiceImpl implements CampaignService {
                 .toList();
     }
 
-    // ?�세 ?��?지 리스???�??    private void saveDetailImages(List<MultipartFile> detailImageFiles, Long campaignNo) {
+    private void saveDetailImages(List<MultipartFile> detailImageFiles, Long campaignNo) {
         if (detailImageFiles == null || detailImageFiles.isEmpty()) {
             return;
         }
@@ -147,17 +143,15 @@ public class CampaignServiceImpl implements CampaignService {
         }
     }
 
-    // ?��?지 ?�이�??�코???�성 �?물리 ?�일 ?�???�출
     private void saveCampaignImage(MultipartFile imageFile, Long campaignNo, String purpose) {
         if (imageFile == null || imageFile.isEmpty()) {
             return;
         }
 
         try {
-            // ?�일 ?�스?�에 물리???�일 ?�??�??�?�된 ?�일�?반환
             String storedName = fileUtil.saveFile(imageFile);
 
-            // DB???��?지 ?�??            imageRepository.save(Image.builder()
+            imageRepository.save(Image.builder()
                     .imgPath("C:/uploads/" + storedName)
                     .imgOrgName(imageFile.getOriginalFilename())
                     .imgStoredName(storedName)

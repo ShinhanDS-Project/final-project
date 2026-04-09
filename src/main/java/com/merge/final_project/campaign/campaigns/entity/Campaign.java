@@ -3,10 +3,24 @@ package com.merge.final_project.campaign.campaigns.entity;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.global.BaseCreatedAtEntity;
-import com.merge.final_project.org.foundation.Foundation;
-import jakarta.persistence.*;
-import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
+import com.merge.final_project.org.Foundation;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -47,10 +61,6 @@ public class Campaign extends BaseCreatedAtEntity {
     private LocalDateTime usageEndAt;
 
     @Column(name = "target_amount")
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
     private Long targetAmount;
 
     @Column(name = "current_amount")
@@ -75,9 +85,6 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(name = "campaign_status")
     private CampaignStatus campaignStatus;
 
-    @Column(name = "wallet_no")
-    private String rejectReason;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "foundation_no", insertable = false, updatable = false)
     private Foundation foundation;
@@ -88,14 +95,8 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(name = "wallet_no")
     private Long walletNo;
 
-    @Column(name = "foundation_no")
-    private Long foundationNo;
-
     @Column(name = "beneficiary_no")
     private Long beneficiaryNo;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 
     @Column(name = "reject_reason")
     private String rejectReason;

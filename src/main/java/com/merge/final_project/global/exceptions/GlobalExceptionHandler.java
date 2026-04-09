@@ -1,5 +1,6 @@
 package com.merge.final_project.global.exceptions;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,11 +21,18 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("VALID_001", message));
     }
 
-
+    //BusinessException 처리
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
         ErrorCode errorCode = e.getErrorCode();
         return ResponseEntity.status(errorCode.getStatus())
                 .body(new ErrorResponse(errorCode.getCode(), errorCode.getMessage()));
+    }
+
+    // BusinessException으로 전환되지 않은 RuntimeException 처리 (500 유지, JSON 응답)
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("COMMON_001", e.getMessage()));
     }
 }

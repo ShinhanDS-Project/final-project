@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>보고서 상세</title>
+</head>
+<body>
+    <h1>보고서 상세 정보</h1>
+    <hr>
+    보고서 번호: <span th:text="${report.reportNo}"></span><br>
+    캠페인 번호: <span th:text="${report.campaignNo}"></span><br>
+    승인 상태: <span th:text="${report.approvalStatus}"></span><br>
+    작성일: <span th:text="${report.createdAt}"></span><br>
+    <hr>
+    제목: <span th:text="${report.title}"></span><br>
+    내용: <p th:text="${report.content}"></p>
+    사용 목적: <span th:text="${report.usagePurpose}"></span><br>
+    <hr>
+    <h3>첨부 이미지 리스트</h3>
+    <ul>
+        <li th:each="img : ${report.images}" style="list-style: none; margin-bottom: 30px;">
+            <!-- 실제 사진 출력 (저장소 환경에 맞는 전체 경로 사용) -->
+            <img th:src="${img.imgPath}" 
+                 style="max-width: 600px; border: 1px solid #000; display: block;" />
+            
+            파일명: <span th:text="${img.imgOrgName}"></span><br>
+            목적: <span th:text="${img.purpose}"></span>
+        </li>
+    </ul>
+    <hr>
+    <a href="/finalReport/list"><button type="button">목록으로</button></a>
+</body>
+</html>

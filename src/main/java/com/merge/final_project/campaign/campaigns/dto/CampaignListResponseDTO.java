@@ -13,19 +13,11 @@ import java.time.LocalDateTime;
 @Builder
 public class CampaignListResponseDTO {
     private Long campaignNo;
-
-    // image ?Œì´ë¸?purpose='REPRESENTATIVE' ?°ì´??    private String imagePath;
-
+    private String imagePath;
     private String title;
-
-    // ê¸°ë? ?¨ì²´ ?´ë¦„ (foundation ?Œì´ë¸”ê³¼ ì¡°ì¸)
     private String foundationName;
-
     private Long targetAmount;
     private Long currentAmount;
     private String category;
-
-    // D-Day ê³„ì‚° ë°?ë§ˆê° ?„ë°•???•ë ¬???¬ìš©
     private LocalDateTime endAt;
 }
-
