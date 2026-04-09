@@ -128,20 +128,23 @@ class AdminCampaignServiceTests {
     }
 
     @Test
-    @DisplayName("이미 반려된 캠페인 승인 시 CAMPAIGN_ALREADY_PROCESSED 예외가 발생한다")
-    void 이미_반려된_캠페인_승인_예외() {
+    @DisplayName("반려된 캠페인은 수정 후 재승인이 가능하다")
+    void 반려된_캠페인_재승인_성공() {
         Campaign campaign = Campaign.builder()
                 .campaignNo(1L)
                 .title("테스트 캠페인")
+                .foundationNo(10L)
                 .approvalStatus(ApprovalStatus.REJECTED)
+                .campaignStatus(CampaignStatus.PENDING)
                 .build();
 
         when(campaignRepository.findById(1L)).thenReturn(Optional.of(campaign));
+        when(adminRepository.findByAdminId("test-admin")).thenReturn(Optional.of(admin));
 
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> adminCampaignService.approveCampaign(1L));
+        adminCampaignService.approveCampaign(1L);
 
-        assertThat(exception.getMessage()).isEqualTo(ErrorCode.CAMPAIGN_ALREADY_PROCESSED.getMessage());
+        assertThat(campaign.getApprovalStatus()).isEqualTo(ApprovalStatus.APPROVED);
+        verify(adminLogService).log(eq(ActionType.APPROVE), eq(TargetType.CAMPAIGN), eq(1L), anyString(), eq(admin));
     }
 
     // ===================== 반려 테스트 =====================
@@ -184,20 +187,22 @@ class AdminCampaignServiceTests {
     }
 
     @Test
-    @DisplayName("이미 처리된 캠페인 반려 시 CAMPAIGN_ALREADY_PROCESSED 예외가 발생한다")
-    void 이미_처리된_캠페인_반려_예외() {
-        // 이미 APPROVED 상태인 캠페인
+    @DisplayName("승인된 캠페인도 문제 발생 시 반려할 수 있다")
+    void 승인된_캠페인_반려_성공() {
         Campaign campaign = Campaign.builder()
                 .campaignNo(1L)
                 .title("테스트 캠페인")
+                .foundationNo(10L)
                 .approvalStatus(ApprovalStatus.APPROVED)
                 .build();
 
         when(campaignRepository.findById(1L)).thenReturn(Optional.of(campaign));
+        when(adminRepository.findByAdminId("test-admin")).thenReturn(Optional.of(admin));
 
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> adminCampaignService.rejectCampaign(1L, "사유"));
+        adminCampaignService.rejectCampaign(1L, "내용 문제");
 
-        assertThat(exception.getMessage()).isEqualTo(ErrorCode.CAMPAIGN_ALREADY_PROCESSED.getMessage());
+        assertThat(campaign.getApprovalStatus()).isEqualTo(ApprovalStatus.REJECTED);
+        assertThat(campaign.getRejectReason()).isEqualTo("내용 문제");
+        verify(adminLogService).log(eq(ActionType.REJECT), eq(TargetType.CAMPAIGN), eq(1L), anyString(), eq(admin));
     }
 }

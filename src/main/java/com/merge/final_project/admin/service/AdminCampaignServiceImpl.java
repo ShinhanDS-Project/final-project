@@ -39,7 +39,7 @@ public class AdminCampaignServiceImpl implements AdminCampaignService {
         Campaign campaign = campaignRepository.findById(campaignNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
 
-        // 이미 승인된 캠페인은 재승인 불가 (반려 후 수정된 캠페인은 승인 가능)
+        // 이미 승인된 캠페인은 재승인 불가
         if (campaign.getApprovalStatus() == ApprovalStatus.APPROVED) {
             throw new BusinessException(ErrorCode.CAMPAIGN_ALREADY_PROCESSED);
         }
@@ -63,7 +63,7 @@ public class AdminCampaignServiceImpl implements AdminCampaignService {
         Campaign campaign = campaignRepository.findById(campaignNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
 
-        //이미 반려된 애들은 중복 방지
+        // 이미 반려된 캠페인은 재반려 불가
         if (campaign.getApprovalStatus() == ApprovalStatus.REJECTED) {
             throw new BusinessException(ErrorCode.CAMPAIGN_ALREADY_PROCESSED);
         }

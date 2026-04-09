@@ -4,6 +4,7 @@ import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,13 @@ class CampaignRepositoryTests {
 
     @Autowired
     private CampaignRepository campaignRepository;
+
+    @BeforeEach
+    void setUp() {
+        // RDS에 기존 데이터가 있어도 각 테스트가 독립적으로 실행되도록 초기화
+        // @Transactional이 클래스에 걸려 있어 deleteAll도 트랜잭션 안에서 실행 → 테스트 후 롤백
+        campaignRepository.deleteAll();
+    }
 
     // 테스트용 캠페인 생성 헬퍼
     private Campaign campaign(ApprovalStatus approvalStatus) {
