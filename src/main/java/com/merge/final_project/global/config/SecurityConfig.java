@@ -63,7 +63,40 @@ public class SecurityConfig {
     }
 
     /**
-     * 2. 일반 사용자 및 수혜자용 필터 체인 (그 외 전체)
+     * 2. 수혜자 및 최종 보고서 전용 필터 체인
+     */
+    @Order(2)
+    @Bean
+    public SecurityFilterChain beneficiaryFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
+        http
+                .securityMatcher("/api/beneficiary/**", "/finalReport/**") // 💡 수혜자 전용 경로 지정
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // 수혜자 로그인/회원가입은 인증 없이 접근 가능
+                        .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
+                        // 그 외 보고서 작성 등은 모두 인증 필요
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler)
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout(logout -> logout
+                        .logoutUrl("/api/beneficiary/logout")
+                        .logoutSuccessUrl("/api/beneficiary/signin")
+                        .deleteCookies("JSESSIONID", "accessToken")
+                        .permitAll()
+                );
+
+        return http.build();
+    }
+
+    /**
+     * 3. 일반 사용자 및 공통 필터 체인 (Default)
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
@@ -74,16 +107,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // 1. [공개 경로] 누구나 접근 가능
                         .requestMatchers(
                                 "/",
                                 "/error",
                                 "/favicon.ico",
-                                "/uploads/**",          // 💡 업로드된 사진 보기 허용
-                                "/api/beneficiary/signup",
-                                "/api/beneficiary/signin",
-                                "/api/beneficiary/test/**", // 💡 수혜자 테스트 페이지
-                                "/finalReport/test/**",     // 💡 보고서 테스트 페이지
+                                "/uploads/**",
                                 "/api/auth/**",
                                 "/api/signup/**",
                                 "/oauth2/**",
@@ -92,15 +120,9 @@ public class SecurityConfig {
                                 "/users/support/**",
                                 "/api/foundation/**"
                         ).permitAll()
-
-                        // 2. [인증 경로] 로그인한 사용자만 가능
-                        .requestMatchers("/finalReport/**").authenticated()
-
-                        // 3. 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
 
-                // OAuth2 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
@@ -111,16 +133,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 )
 
-                // JWT 필터 추가
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-
-                // 로그아웃 설정
-                .logout(logout -> logout
-                        .logoutUrl("/api/beneficiary/logout")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID", "accessToken") // 💡 토큰 쿠키도 함께 삭제
-                        .permitAll()
-                );
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

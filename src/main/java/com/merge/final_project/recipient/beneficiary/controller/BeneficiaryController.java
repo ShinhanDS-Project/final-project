@@ -13,7 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@Controller // HTML 뷰 반환을 위해 Controller 사용
+@Controller
 @RequestMapping("/api/beneficiary")
 @RequiredArgsConstructor
 @Log4j2
@@ -24,26 +24,26 @@ public class BeneficiaryController {
     private final JwtTokenProvider jwtTokenProvider;
 
     /**
-     * 로그인 테스트 페이지 이동
+     * 로그인 페이지 이동
      */
-    @GetMapping("/test/login")
-    public String testLoginPage() {
-        return "beneficiary/test-login";
+    @GetMapping("/signin")
+    public String signinPage() {
+        return "beneficiary/signin";
     }
 
     /**
-     * 회원가입 테스트 페이지 이동
+     * 회원가입 페이지 이동
      */
-    @GetMapping("/test/signup")
+    @GetMapping("/signup")
     public String signupPage() {
-        return "beneficiary/test-signup";
+        return "beneficiary/signup";
     }
 
     /**
      * 로그인 처리 (API)
      */
     @PostMapping("/signin")
-    @ResponseBody // JSON 응답
+    @ResponseBody
     public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto, 
                                  jakarta.servlet.http.HttpServletResponse response) {
         
@@ -51,6 +51,7 @@ public class BeneficiaryController {
                 new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
         );
 
+        // createAdminAccessToken -> 추후 수혜자 전용 메서드명으로 변경 권장
         String accessToken = jwtTokenProvider.createAdminAccessToken(
                 authentication.getName(),
                 authentication.getAuthorities().iterator().next().getAuthority()
@@ -62,7 +63,7 @@ public class BeneficiaryController {
         cookie.setMaxAge(60 * 60 * 24);
         response.addCookie(cookie);
 
-        log.info("수혜자 로그인 성공 및 쿠키 발급 완료: {}", loginDto.getEmail());
+        log.info("수혜자 로그인 성공: {}", loginDto.getEmail());
 
         return ResponseEntity.ok(accessToken);
     }
@@ -71,7 +72,7 @@ public class BeneficiaryController {
      * 회원가입 처리 (API)
      */
     @PostMapping("/signup")
-    @ResponseBody // JSON 응답
+    @ResponseBody
     public ResponseEntity<Long> signup(@RequestBody BeneficiarySignupRequestDTO dto) {
         log.info("수혜자 회원가입 시도: {}", dto.getEmail());
         Long beneficiaryNo = beneficiaryService.signup(dto);
