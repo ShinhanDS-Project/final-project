@@ -20,6 +20,7 @@ import java.io.IOException;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class UserSignUpServiceImpl implements UserSignUpService{
 
 
@@ -39,7 +40,15 @@ public class UserSignUpServiceImpl implements UserSignUpService{
             throw new IllegalArgumentException("이미 가입된 전화번호입니다.");
         }
 
-        // 2. 사진 저장 (파일이 넘어왔을 때만 실행)
+        // 로그인 타입에 따른 특화 검증 로직 호출
+        if (requestDto.getLoginType() == LoginType.LOCAL) {
+            validateLocalUser(requestDto);
+        } else if (requestDto.getLoginType() == LoginType.GOOGLE) {
+            validateGoogleUser(requestDto);
+        } else {
+            throw new IllegalArgumentException("잘못된 로그인 타입입니다.");
+        }
+// 2. 사진 저장 (파일이 넘어왔을 때만 실행)
         if (file != null && !file.isEmpty()) {
             try {
                 String savedPath = fileUtil.saveFile(file);
@@ -51,18 +60,12 @@ public class UserSignUpServiceImpl implements UserSignUpService{
             // 사진을 안 올렸다면 기본 이미지 경로 설정
             requestDto.setProfilePath("/images/default-profile.png");
         }
-
-        // 로그인 타입에 따른 특화 검증 로직 호출
+        // 4. 최종 등록
         if (requestDto.getLoginType() == LoginType.LOCAL) {
-            validateLocalUser(requestDto);
             registerLocal(requestDto);
-        } else if (requestDto.getLoginType() == LoginType.GOOGLE) {
-            validateGoogleUser(requestDto);
-            registerGoogle(requestDto);
         } else {
-            throw new IllegalArgumentException("잘못된 로그인 타입입니다.");
+            registerGoogle(requestDto);
         }
-
     }
 
 

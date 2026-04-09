@@ -30,7 +30,7 @@ public class UserSignUpController {
     }
 
     @PostMapping(value="/google", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity <Void> registerGoogle(@RequestHeader("Authorization") String bearerToken, @Valid @RequestBody UserSignUpRequestDTO dto,@RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
+    public ResponseEntity <Void> registerGoogle(@RequestHeader("Authorization") String bearerToken, @Valid @RequestPart("dto") UserSignUpRequestDTO dto,@RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
         //보안 처리
         if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
             // bearer로 시작하지 않는 경우 예외처리
