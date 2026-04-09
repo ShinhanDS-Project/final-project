@@ -1,5 +1,8 @@
 package com.merge.final_project.org;
 
+import com.merge.final_project.admin.Admin;
+import com.merge.final_project.admin.AdminRepository;
+import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
@@ -8,6 +11,7 @@ import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
 import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundation;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +20,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
@@ -47,6 +54,26 @@ class FoundationServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private AdminLogService adminLogService;
+
+    @Mock
+    private AdminRepository adminRepository;
+
+    @BeforeEach
+    void setUp() {
+        // 승인/반려 메서드 내 SecurityContextHolder.getAuthentication() NPE 방지
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                "test-admin", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // 승인/반려 테스트에서만 사용. 다른 테스트에서 불필요한 stubbing 경고 방지용으로 lenient 처리
+        lenient().when(adminRepository.findByAdminId("test-admin")).thenReturn(Optional.of(
+                Admin.builder().adminId("test-admin").name("테스트관리자").build()
+        ));
+    }
 
     private Foundation foundationOf(ReviewStatus reviewStatus, String rejectReason) {
         return Foundation.builder()
