@@ -56,7 +56,6 @@ public class WalletProvisionService {
                 .status(status)
                 .createdAt(LocalDateTime.now())
                 .lastUsedAt(LocalDateTime.now())
-                .campaign(null)
                 .build();
 
         Wallet savedWallet = walletRepository.save(wallet);

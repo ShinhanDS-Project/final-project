@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
         @UniqueConstraint(name = "uk_user_email_login_type", columnNames = {"email", "login_type"})
 }) //로그인 타입,별로 이메일 중복 허용ㅇ
 @Getter
+
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -73,5 +74,10 @@ public class User {
     //namehash 바꿔야함
     public void updateNameHash(String nameHash) {
         this.nameHash = nameHash;
+    }
+
+    //비밀번호 틀렸을 경우에만 loginCount,로그인 성공시에 0
+    public void setsLoginCount(Integer loginCount) {
+        this.loginCount = loginCount;
     }
 }

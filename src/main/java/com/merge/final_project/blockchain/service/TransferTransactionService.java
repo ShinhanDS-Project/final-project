@@ -32,7 +32,7 @@ public class TransferTransactionService {
                 .transactionCode(UUID.randomUUID().toString())
                 .fromWallet(fromWallet)
                 .toWallet(toWallet)
-                .amount(safeLongToInt(amount))
+                .amount(amount)
                 .sentAt(LocalDateTime.now())
                 .createdAt(LocalDateTime.now())
                 .txHash(txHash)
@@ -42,19 +42,6 @@ public class TransferTransactionService {
                 .eventType(toEventType(eventType))
                 .build();
         return transactionRepository.save(transaction);
-    }
-
-    private Integer safeLongToInt(Long value) {
-        if (value == null) {
-            return null;
-        }
-        if (value > Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
-        }
-        if (value < Integer.MIN_VALUE) {
-            return Integer.MIN_VALUE;
-        }
-        return value.intValue();
     }
 
     private TransactionStatus toStatus(String status) {

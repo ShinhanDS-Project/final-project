@@ -100,7 +100,7 @@ public class BlockchainTransferService {
         if (campaign.getWalletNo() == null) {
             throw new IllegalStateException("campaign wallet is not assigned: " + campaignNo);
         }
-        Wallet campaignWallet = walletRepository.findByWalletNo(campaign.getWalletNo())
+        Wallet campaignWallet = walletRepository.findById(campaign.getWalletNo())
                 .orElseThrow(() -> new IllegalArgumentException("campaign wallet not found: " + campaign.getWalletNo()));
         gasStationService.ensureSufficientPol(userWallet);
 

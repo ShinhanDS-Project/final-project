@@ -1,30 +1,37 @@
 package com.merge.final_project.user.signUp;
 
-import com.merge.final_project.auth.useraccount.SignupWalletHookService;
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
+import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.user.signUp.dto.UserSignUpResponseDTO;
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.users.User;
 import com.merge.final_project.user.users.UserStatus;
 import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
 import com.merge.final_project.user.verify.VerificationService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+
 @RequiredArgsConstructor
 @Service
+@Transactional(rollbackFor = Exception.class)
 public class UserSignUpServiceImpl implements UserSignUpService{
 
 
     private final UserSignUpRepository userSignUpRepository;
     private final VerificationService verificationService;
     private final PasswordEncoder passwordEncoder;
-    private final SignupWalletHookService signupWalletHookService;
+    private final FileUtil fileUtil;
 
     @Transactional
     @Override
-    public void register(UserSignUpRequestDTO requestDto)  {
+    public void register(UserSignUpRequestDTO requestDto, MultipartFile file) throws IOException {
         // 1. 공통 검증: 전화번호 중복 체크
         if (requestDto.getLoginType() == null) {
             throw new IllegalArgumentException("로그인 타입은 필수입니다.");
@@ -36,18 +43,37 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         // 로그인 타입에 따른 특화 검증 로직 호출
         if (requestDto.getLoginType() == LoginType.LOCAL) {
             validateLocalUser(requestDto);
-            registerLocal(requestDto);
         } else if (requestDto.getLoginType() == LoginType.GOOGLE) {
             validateGoogleUser(requestDto);
-            registerGoogle(requestDto);
         } else {
             throw new IllegalArgumentException("잘못된 로그인 타입입니다.");
         }
+// 2. 사진 저장 (파일이 넘어왔을 때만 실행)
+        String savedPath = null;
+        if (file != null && !file.isEmpty()) {
+            // 위 1번의 검증 로직 포함...
+            savedPath = fileUtil.saveFile(file);
+            requestDto.setProfilePath(savedPath);
+        }
 
+        try {
+            // 실제 가입 로직
+            if (requestDto.getLoginType() == LoginType.LOCAL) {
+                registerLocal(requestDto);
+            } else {
+                registerGoogle(requestDto);
+            }
+        } catch (Exception e) {
+            // DB 저장 실패 시 저장했던 파일 삭제
+            if (savedPath != null) {
+                fileUtil.deleteFile(savedPath); // FileUtil에 삭제 로직 필요
+            }
+            throw e; // 예외를 다시 던져서 GlobalExceptionHandler가 처리하게 함
+        }
     }
 
-    @Override
-    public void registerLocal(UserSignUpRequestDTO dto) {
+
+    private void registerLocal(UserSignUpRequestDTO dto) {
         User user = User.builder()
                 .email(dto.getEmail())
                 .passwordHash(passwordEncoder.encode(dto.getPassword()))
@@ -62,13 +88,12 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .build();
 
         saveWithRetry(user);
-        signupWalletHookService.onUserSignupCompleted(user.getUserNo());
     }
 
 
 
-    @Override
-    public void registerGoogle(UserSignUpRequestDTO dto) {
+
+    private void registerGoogle(UserSignUpRequestDTO dto) {
         User user = User.builder()
                 .email(dto.getEmail())
                 .passwordHash(null)
@@ -83,7 +108,6 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .build();
 
         saveWithRetry(user);
-        signupWalletHookService.onUserSignupCompleted(user.getUserNo());
     }
     // 로컬 가입 전용 검증
     private void validateLocalUser(UserSignUpRequestDTO dto) {
@@ -135,6 +159,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         for (int i = 0; i < MAX_HASH_RETRY; i++) {
             try {
                 userSignUpRepository.save(user);
+                userSignUpRepository.flush();
                 return;
             } catch (DataIntegrityViolationException e) {
                 if (isNameHashDuplicateException(e)) {
@@ -151,8 +176,8 @@ public class UserSignUpServiceImpl implements UserSignUpService{
     //예외처리 ->db 저장 실패시 실패 원인이 nameHash 중복인지 판별하는 용도
     private boolean isNameHashDuplicateException(DataIntegrityViolationException e) {
         Throwable cause = e.getMostSpecificCause();
-        return cause != null
+        return (cause != null
                 && cause.getMessage() != null
-                && cause.getMessage().contains("name_hash");
+                && cause.getMessage().contains("name_hash"));
     }
 }

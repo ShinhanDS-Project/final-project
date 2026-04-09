@@ -28,7 +28,7 @@ public class JwtTokenProvider {
 
     //1.관리자용 로그인 토큰
     public String createAdminAccessToken(String adminId, String role){
-
+        System.out.println(jwtProperties.getSecret());
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtProperties.getAccessTokenExpiration());
 
@@ -59,10 +59,10 @@ public class JwtTokenProvider {
 
     }
     //3. 소셜 접근 로그인 토큰 생성(일반사용자 -구글용)
-    public String createSocialAccessToken(String name,String email){
+    public String createSocialAccessToken(String name,String email,Long userNo){
         Date now = new Date();
-        //10분 제한
-        Date expiry = new Date(now.getTime() +600000);
+        //general과 동일한 로그인 토큰 시간 정책 적용
+        Date expiry = new Date(now.getTime() + jwtProperties.getAccessTokenExpiration());
 
         return Jwts.builder()
                 .subject(email)
@@ -70,6 +70,7 @@ public class JwtTokenProvider {
                 .claim("email",email)
                 .claim("role","ROLE_USER") //social 로그인은 user로 강제지정
                 .claim("type","ACCESS") //임시토큰으로 구분하기 위한 타입
+                .claim("userNo",userNo) // pk -> 구글용
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey)
@@ -78,7 +79,7 @@ public class JwtTokenProvider {
     }
 
     //4. 로그인 토큰 생성(일반사용자, 수혜자, 기업용)
-    public String createGeneralAccessToken(String name,String email,String role){
+    public String createGeneralAccessToken(String name,String email,String role,Long no){
         Date now = new Date();
         //
         Date expiry = new Date(now.getTime() + jwtProperties.getAccessTokenExpiration());
@@ -88,8 +89,9 @@ public class JwtTokenProvider {
                 .subject(email)
                 .claim("name",name)
                 .claim("email",email)
-                .claim("role",role)
+                .claim("role",role)// role
                 .claim("type","ACCESS") //임시토큰으로 구분하기 위한 타입
+                .claim("pk",no)
                 .issuedAt(now)
                 .expiration(expiry) //시간 제한-> 부가기능
                 .signWith(secretKey)
@@ -117,8 +119,8 @@ public class JwtTokenProvider {
      public String getEmailFromToken(String token){
         return parseClaims(token).get("email", String.class);
      }
-
-     //3. 토큰 종류 구분하기
+    public Long getReceiverNo(String token) { return parseClaims(token).get("no", Long.class);}
+        //3. 토큰 종류 구분하기
     public String getTokenType(String token){return parseClaims(token).get("type", String.class);}
 
     //4. 토큰이 정상인지 검증하고 그 안에 json 데이터인 페이로드를 추출.

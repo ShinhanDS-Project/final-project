@@ -76,12 +76,14 @@ public class SecurityConfig {
                                 "/", 
                                 "/api/auth/**", 
                                 "/api/signup/**", 
-                                "/api/beneficiary/signup", 
+                                "/api/beneficiary/signup",
                                 "/api/beneficiary/signin",
                                 "/oauth2/**", 
                                 "/login/**", 
                                 "/social-info", 
-                                "/error"
+                                "/error",
+                                "/users/support/**",
+                                "/api/foundation/**"
                         ).permitAll() // 인증 없이 접근 가능한 경로들
                         .requestMatchers("/finalReport/**").authenticated() // 인증이 필요한 경로
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필수
@@ -100,9 +102,10 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // 5. 로그아웃 설정(은선이꺼만 추가됨)
+                // 5. 로그아웃 설정(의선이꺼만 추가됨)
                 .logout(logout -> logout
                         .logoutUrl("/api/beneficiary/logout")
+
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .permitAll()
