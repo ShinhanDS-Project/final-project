@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -52,10 +53,9 @@ public class BeneficiaryService implements UserDetailsService {
         return saved.getBeneficiaryNo();
     }
 
-    //일단 랜덤 아무거나 넣을게요 참여코드
-    private int generatedEntryCode(){
-        Random random = new Random();
-        return 100000 + random.nextInt(900000);
+
+    private String generatedEntryCode(){
+        return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
 

@@ -1,32 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>내 캠페인 리스트</title>
 </head>
 <body>
-<h2>내 참여 캠페인 목록</h2>
-<table border="1">
-    <thead>
-    <tr>
-        <th>캠페인 번호</th>
-        <th>캠페인 제목</th>
-        <th>상태</th>
-        <th>보고서 작성</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="campaign : ${campaignList}">
-        <td th:text="${campaign.campaignNo}">번호</td>
-        <td th:text="${campaign.title}">제목</td>
-        <td th:text="${campaign.campaignStatus}">진행상태</td>
-        <td>
-            <a th:href="@{/finalReport/submit(campaignNo=${campaign.campaignNo})}">
-                <button type="button">보고서 작성하기</button>
-            </a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+    <h1>내 캠페인 리스트</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>캠페인 번호</th>
+                <th>캠페인 제목</th>
+                <th>보고서 상태</th>
+                <th>작업</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="campaign : ${campaignList}">
+                <td th:text="${campaign.campaignNo}"></td>
+                <td th:text="${campaign.title}"></td>
+                <td>
+                    <span th:with="report=${reportList.?[campaignNo == __${campaign.campaignNo}__]}"
+                          th:text="${#lists.isEmpty(report) ? '미작성' : '작성완료 (' + report[0].approvalStatus + ')'}">
+                    </span>
+                </td>
+                <td>
+                    <div th:with="matchingReports=${reportList.?[campaignNo == __${campaign.campaignNo}__]}">
+                        <a th:if="${#lists.isEmpty(matchingReports)}" 
+                           th:href="@{/finalReport/submit(campaignNo=${campaign.campaignNo})}">
+                            <button type="button">보고서 작성하기</button>
+                        </a>
+                        <div th:if="${!#lists.isEmpty(matchingReports)}">
+                            <button type="button" th:onclick="'viewReport(' + ${matchingReports[0].reportNo} + ')'">보고서 보기</button>
+                            <button type="button" th:onclick="'editReport(' + ${matchingReports[0].reportNo} + ')'">수정하기</button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <script>
+        function viewReport(reportNo) {
+            location.href = "/finalReport/" + reportNo;
+        }
+        function editReport(reportNo) {
+            location.href = "/finalReport/test/update?reportNo=" + reportNo;
+        }
+    </script>
 </body>
 </html>
