@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class CampaignResponseDto {
+public class CampaignRequestDto {
     private String title;
     private String description;
     private String imagePath;

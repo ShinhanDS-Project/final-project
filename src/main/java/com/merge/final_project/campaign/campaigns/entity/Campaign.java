@@ -80,4 +80,18 @@ public class Campaign extends BaseCreatedAtEntity {
 
     @Column(name = "reject_reason")
     private String rejectReason;
+
+
+    // [가빈] 캠페인 승인 시 상태 변경 메서드
+    public void approve() {
+        this.approvalStatus = ApprovalStatus.APPROVED;
+        this.campaignStatus = CampaignStatus.RECRUITING;
+        this.approvedAt = LocalDateTime.now();
+    }
+
+    // [가빈] 캠페인 반려 시 상태 및 사유 변경 메서드
+    public void reject(String reason) {
+        this.approvalStatus = ApprovalStatus.REJECTED;
+        this.rejectReason = reason;
+    }
 }
