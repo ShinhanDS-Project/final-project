@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 public class IllegalFoundation {
 
     @Id
+    @Column(name="illegal_no")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long illegalNo;
 
@@ -19,9 +20,6 @@ public class IllegalFoundation {
 
     @Column(name = "representative")
     private String representative;
-
-    @Column(name = "address")
-    private String address;
 
     @Column(name = "reason")
     private String reason;

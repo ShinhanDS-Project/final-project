@@ -10,8 +10,8 @@ import com.merge.final_project.campaign.useplan.repository.UsePlanRepository;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
 import com.merge.final_project.global.utils.FileUtil;
-import com.merge.final_project.org.foundation.Foundation;
-import com.merge.final_project.org.foundation.FoundationRepository;
+import com.merge.final_project.org.Foundation;
+import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletStatus;
 import com.merge.final_project.wallet.repository.WalletRepository;
@@ -64,6 +64,8 @@ public class CampaignServiceImpl implements CampaignService {
         campaign.setCurrentAmount(0L);
         campaign.setApprovalStatus(ApprovalStatus.PENDING);
         campaign.setCampaignStatus(CampaignStatus.PENDING);
+        campaign.setCreatedAt(LocalDateTime.now());
+        campaign.setUpdatedAt(LocalDateTime.now());
 
         // 캠페인 정보 DB 저장
         Campaign savedCampaign = campaignRepository.save(campaign);

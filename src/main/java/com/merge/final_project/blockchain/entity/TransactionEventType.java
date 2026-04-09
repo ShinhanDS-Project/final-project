@@ -4,5 +4,6 @@ public enum TransactionEventType {
     DONATION,
     SETTLEMENT_FEE,
     SETTLEMENT_BENEFICIARY,
-    ALLOCATION
+    ALLOCATION,
+    REDEMPTION
 }

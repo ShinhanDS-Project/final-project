@@ -4,7 +4,7 @@ import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
-import com.merge.final_project.org.foundation.Foundation;
+import com.merge.final_project.org.Foundation;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,15 +19,15 @@ public class SettlementCommandService {
 
     private final SettlementRepository settlementRepository;
 
-    //정산 생성
+    // 정산 생성 (초기 상태: PENDING)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Settlement createPendingSettlement(
             String transactionCode,
             Foundation foundation,
             Beneficiary beneficiary,
-            Integer totalAmount,
-            Integer foundationAmount,
-            Integer beneficiaryAmount,
+            Long totalAmount,
+            Long foundationAmount,
+            Long beneficiaryAmount,
             Campaign campaign
     ) {
         Settlement settlement = Settlement.builder()
@@ -43,21 +43,27 @@ public class SettlementCommandService {
 
         return settlementRepository.save(settlement);
     }
+    // 처리 시작 (PENDING → PROCESSING)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markProcessing(Long settlementNo) {
+        Settlement settlement = settlementRepository.findById(settlementNo)
+                .orElseThrow(() -> new IllegalArgumentException("정산 정보를 찾을 수 없습니다."));
 
-    //정산 완료 처리
+        settlement.markProcessing();
+    }
+    // 정산 완료 처리 (→ COMPLETED)
     @Transactional
     public void markCompleted(Long settlementNo) {
         Settlement settlement = settlementRepository.findById(settlementNo)
-                .orElseThrow(() -> new IllegalArgumentException("정산 없음"));
+                .orElseThrow(() -> new IllegalArgumentException("정산 정보를 찾을 수 없습니다."));
         settlement.setStatus(SettlementStatus.COMPLETED);
         settlement.setSettledAt(LocalDateTime.now());
     }
-
-    //정산 실패 처리
+    // 정산 실패 처리 (→ FAILED)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markFailed(Long settlementNo) {
         Settlement settlement = settlementRepository.findById(settlementNo)
-                .orElseThrow(() -> new IllegalArgumentException("정산 없음"));
+                .orElseThrow(() -> new IllegalArgumentException("정산 정보를 찾을 수 없습니다."));
 
         settlement.failed();
     }
