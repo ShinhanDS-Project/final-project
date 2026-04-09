@@ -5,11 +5,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
-@RestControllerAdvice   //전역 예외를 잡아서 통일된 형태로 응답하기 위함
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // @Valid 검증 실패하면 400 응답
+    /**
+     * @Valid 검증 실패를 400 응답으로 변환한다.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidException(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getAllErrors()
@@ -21,7 +24,6 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("VALID_001", message));
     }
 
-    //BusinessException 처리
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
         ErrorCode errorCode = e.getErrorCode();
@@ -29,10 +31,26 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(errorCode.getCode(), errorCode.getMessage()));
     }
 
-    // BusinessException으로 전환되지 않은 RuntimeException 처리 (500 유지, JSON 응답)
+    /**
+     * 서비스에서 의도적으로 던진 HTTP 상태 예외를 그대로 유지해 반환한다.
+     * (예: 400 invalid status, 404 transaction not found)
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException e) {
+        int statusCode = e.getStatusCode().value();
+        String reason = e.getReason() == null || e.getReason().isBlank()
+                ? "요청 처리 중 오류가 발생했습니다."
+                : e.getReason();
+        return ResponseEntity.status(e.getStatusCode())
+                .body(new ErrorResponse("COMMON_" + statusCode, reason));
+    }
+
+    /**
+     * 처리되지 않은 런타임 예외의 최종 fallback.
+     */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("COMMON_001", e.getMessage()));
+                .body(new ErrorResponse("COMMON_500", e.getMessage()));
     }
 }
