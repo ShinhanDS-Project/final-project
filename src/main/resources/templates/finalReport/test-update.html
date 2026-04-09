@@ -17,7 +17,7 @@
         <h3>현재 등록된 사진</h3>
         <p>새 사진을 올리지 않으면 이 사진들이 유지됩니다.</p>
         <div th:each="img : ${report.images}" style="display: inline-block; margin-right: 10px; border: 1px solid #ccc; padding: 5px;">
-            <img th:src="@{/uploads/{name}(name=${img.imgStoredName})}" width="150"><br>
+            <img th:src="${img.imgPath}" width="150"><br>
             설명: <span th:text="${img.purpose}"></span>
         </div>
 
