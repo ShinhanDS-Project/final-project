@@ -13,13 +13,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,27 +32,26 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림이 올바른 정보로 저장된다")
     void 알림_저장() {
-        notificationService.send(RecipientType.USER, 1L, NotificationType.CAMPAIGN_APPROVED, "캠페인이 승인되었습니다.");
+        notificationService.send(RecipientType.USERS, 1L, NotificationType.CAMPAIGN_APPROVED, "캠페인이 승인되었습니다.");
 
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         verify(notificationRepository).save(captor.capture());
 
         Notification saved = captor.getValue();
-        assertThat(saved.getRecipientType()).isEqualTo(RecipientType.USER);
+        assertThat(saved.getRecipientType()).isEqualTo(RecipientType.USERS);
         assertThat(saved.getReceiverNo()).isEqualTo(1L);
         assertThat(saved.getNotificationType()).isEqualTo(NotificationType.CAMPAIGN_APPROVED);
         assertThat(saved.getContent()).isEqualTo("캠페인이 승인되었습니다.");
         assertThat(saved.isRead()).isFalse();
-        assertThat(saved.getSentAt()).isNotNull();
     }
 
     @Test
     @DisplayName("읽지 않은 알림 수를 반환한다")
     void 읽지않은_알림_수() {
-        when(notificationRepository.countByReceiverNoAndRecipientTypeAndIsRead(1L, RecipientType.USER, false))
+        when(notificationRepository.countByReceiverNoAndRecipientTypeAndIsRead(1L, RecipientType.USERS, false))
                 .thenReturn(3L);
 
-        long count = notificationService.getUnreadCount(RecipientType.USER, 1L);
+        long count = notificationService.getUnreadCount(RecipientType.USERS, 1L);
 
         assertThat(count).isEqualTo(3L);
     }
@@ -64,10 +61,9 @@ class NotificationServiceTest {
     void 단건_읽음_처리() {
         Notification notification = Notification.builder()
                 .receiverNo(1L)
-                .recipientType(RecipientType.USER)
+                .recipientType(RecipientType.USERS)
                 .notificationType(NotificationType.CAMPAIGN_APPROVED)
                 .content("내용")
-                .sentAt(LocalDateTime.now())
                 .isRead(false)
                 .build();
 
@@ -94,24 +90,24 @@ class NotificationServiceTest {
     @DisplayName("전체 읽음 처리 시 읽지 않은 알림만 읽음 상태로 변경된다")
     void 전체_읽음_처리() {
         Notification unread1 = Notification.builder()
-                .receiverNo(1L).recipientType(RecipientType.USER)
+                .receiverNo(1L).recipientType(RecipientType.USERS)
                 .notificationType(NotificationType.CAMPAIGN_APPROVED)
-                .content("내용1").sentAt(LocalDateTime.now()).isRead(false).build();
+                .content("내용1").isRead(false).build();
 
         Notification unread2 = Notification.builder()
-                .receiverNo(1L).recipientType(RecipientType.USER)
+                .receiverNo(1L).recipientType(RecipientType.USERS)
                 .notificationType(NotificationType.FOUNDATION_APPROVED)
-                .content("내용2").sentAt(LocalDateTime.now()).isRead(false).build();
+                .content("내용2").isRead(false).build();
 
         Notification alreadyRead = Notification.builder()
-                .receiverNo(1L).recipientType(RecipientType.USER)
+                .receiverNo(1L).recipientType(RecipientType.USERS)
                 .notificationType(NotificationType.CAMPAIGN_REJECTED)
-                .content("내용3").sentAt(LocalDateTime.now()).isRead(true).build();
+                .content("내용3").isRead(true).build();
 
-        when(notificationRepository.findByReceiverNoAndRecipientType(1L, RecipientType.USER, Pageable.unpaged()))
+        when(notificationRepository.findByReceiverNoAndRecipientType(1L, RecipientType.USERS, Pageable.unpaged()))
                 .thenReturn(new PageImpl<>(List.of(unread1, unread2, alreadyRead)));
 
-        notificationService.markAllAsRead(RecipientType.USER, 1L);
+        notificationService.markAllAsRead(RecipientType.USERS, 1L);
 
         assertThat(unread1.isRead()).isTrue();
         assertThat(unread2.isRead()).isTrue();

@@ -8,14 +8,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
 
+    //알림 전송 ( 전송 시 데이터 insert)
     @Override
     @Transactional
     public void send(RecipientType recipientType, Long receiverNo, NotificationType notificationType, String content) {
@@ -24,35 +23,37 @@ public class NotificationServiceImpl implements NotificationService {
                 .receiverNo(receiverNo)
                 .notificationType(notificationType)
                 .content(content)
-                .sentAt(LocalDateTime.now())
                 .isRead(false)
                 .build();
+        //save 하니까 트랜잭션 추가함.
         notificationRepository.save(notification);
     }
 
+    // 수행 대상 별로 본인 알림 읽어오기
     @Override
-    @Transactional(readOnly = true)
     public Page<NotificationResponseDTO> getNotifications(RecipientType recipientType, Long receiverNo, Pageable pageable) {
         return notificationRepository
                 .findByReceiverNoAndRecipientType(receiverNo, recipientType, pageable)
                 .map(NotificationResponseDTO::from);
     }
 
+    // 수행 대상 별로 안 읽은 알림 개수 조회하기
     @Override
-    @Transactional(readOnly = true)
     public long getUnreadCount(RecipientType recipientType, Long receiverNo) {
         return notificationRepository
                 .countByReceiverNoAndRecipientTypeAndIsRead(receiverNo, recipientType, false);
     }
 
+    //알림 읽음 처리하기 (상태 수정)
     @Override
-    @Transactional
+    @Transactional  //markAsRead()에서 is_read 값 상태 변경하므로 트랜잭션 처리함. 전체 읽음 처리도 동일하게 처리
     public void markAsRead(Long notificationNo) {
         Notification notification = notificationRepository.findById(notificationNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
         notification.markAsRead();
     }
 
+    //전체 알람 읽음 처리하기
     @Override
     @Transactional
     public void markAllAsRead(RecipientType recipientType, Long receiverNo) {

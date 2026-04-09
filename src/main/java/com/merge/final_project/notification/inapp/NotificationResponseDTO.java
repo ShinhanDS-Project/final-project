@@ -13,7 +13,7 @@ public class NotificationResponseDTO {
     private NotificationType notificationType;
     private String content;
     private boolean isRead;
-    private LocalDateTime sentAt;
+    private LocalDateTime createdAt;
     private LocalDateTime readAt;
 
     public static NotificationResponseDTO from(Notification notification) {
@@ -22,7 +22,7 @@ public class NotificationResponseDTO {
                 .notificationType(notification.getNotificationType())
                 .content(notification.getContent())
                 .isRead(notification.isRead())
-                .sentAt(notification.getSentAt())
+                .createdAt(notification.getCreatedAt())
                 .readAt(notification.getReadAt())
                 .build();
     }

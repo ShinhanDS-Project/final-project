@@ -117,6 +117,9 @@ public class JwtTokenProvider {
      public String getEmailFromToken(String token){
         return parseClaims(token).get("email", String.class);
      }
+     public Long getReceiverNo(String token) {
+        return parseClaims(token).get("receiverNo", Long.class);
+     }
 
      //3. 토큰 종류 구분하기
     public String getTokenType(String token){return parseClaims(token).get("type", String.class);}
