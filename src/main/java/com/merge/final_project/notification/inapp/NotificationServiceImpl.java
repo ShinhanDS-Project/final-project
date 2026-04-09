@@ -44,12 +44,19 @@ public class NotificationServiceImpl implements NotificationService {
                 .countByReceiverNoAndRecipientTypeAndIsRead(receiverNo, recipientType, false);
     }
 
-    //알림 읽음 처리하기 (상태 수정)
+    //알림 읽음 처리하기 (상태 수정) - [가빈] 소유권 검증 추가 (IDOR 방지)
     @Override
-    @Transactional  //markAsRead()에서 is_read 값 상태 변경하므로 트랜잭션 처리함. 전체 읽음 처리도 동일하게 처리
-    public void markAsRead(Long notificationNo) {
+    @Transactional
+    public void markAsRead(Long notificationNo, RecipientType recipientType, Long receiverNo) {
         Notification notification = notificationRepository.findById(notificationNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        // 해당 알림이 현재 로그인한 사용자의 것인지 검증
+        if (!notification.getReceiverNo().equals(receiverNo)
+                || notification.getRecipientType() != recipientType) {
+            throw new BusinessException(ErrorCode.NOTIFICATION_ACCESS_DENIED);
+        }
+
         notification.markAsRead();
     }
 

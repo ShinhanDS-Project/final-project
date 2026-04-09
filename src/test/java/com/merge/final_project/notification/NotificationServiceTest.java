@@ -29,6 +29,17 @@ class NotificationServiceTest {
     @Mock
     private NotificationRepository notificationRepository;
 
+    // 알림 생성 헬퍼
+    private Notification notification(Long receiverNo, RecipientType recipientType, boolean isRead) {
+        return Notification.builder()
+                .receiverNo(receiverNo)
+                .recipientType(recipientType)
+                .notificationType(NotificationType.CAMPAIGN_APPROVED)
+                .content("테스트 알림")
+                .isRead(isRead)
+                .build();
+    }
+
     @Test
     @DisplayName("알림이 올바른 정보로 저장된다")
     void 알림_저장() {
@@ -57,19 +68,26 @@ class NotificationServiceTest {
     }
 
     @Test
+    @DisplayName("알림 목록 조회 시 해당 수신자의 알림만 반환된다")
+    void 알림_목록_조회() {
+        Notification n1 = notification(1L, RecipientType.USERS, false);
+        Notification n2 = notification(1L, RecipientType.USERS, true);
+
+        when(notificationRepository.findByReceiverNoAndRecipientType(1L, RecipientType.USERS, Pageable.ofSize(10)))
+                .thenReturn(new PageImpl<>(List.of(n1, n2)));
+
+        var result = notificationService.getNotifications(RecipientType.USERS, 1L, Pageable.ofSize(10));
+
+        assertThat(result.getContent()).hasSize(2);
+    }
+
+    @Test
     @DisplayName("단건 읽음 처리 시 읽음 상태로 변경된다")
     void 단건_읽음_처리() {
-        Notification notification = Notification.builder()
-                .receiverNo(1L)
-                .recipientType(RecipientType.USERS)
-                .notificationType(NotificationType.CAMPAIGN_APPROVED)
-                .content("내용")
-                .isRead(false)
-                .build();
-
+        Notification notification = notification(1L, RecipientType.USERS, false);
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
 
-        notificationService.markAsRead(1L);
+        notificationService.markAsRead(1L, RecipientType.USERS, 1L);
 
         assertThat(notification.isRead()).isTrue();
         assertThat(notification.getReadAt()).isNotNull();
@@ -80,29 +98,49 @@ class NotificationServiceTest {
     void 존재하지않는_알림_읽음처리_예외() {
         when(notificationRepository.findById(999L)).thenReturn(Optional.empty());
 
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> notificationService.markAsRead(999L));
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> notificationService.markAsRead(999L, RecipientType.USERS, 1L));
 
-        assertThat(exception.getMessage()).isEqualTo(ErrorCode.NOTIFICATION_NOT_FOUND.getMessage());
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.NOTIFICATION_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 알림을 읽음 처리하면 403 예외가 발생한다 (IDOR 방지)")
+    void 타인_알림_읽음처리_접근_거부() {
+        // receiverNo=2L 인 다른 사용자의 알림
+        Notification otherNotification = notification(2L, RecipientType.USERS, false);
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(otherNotification));
+
+        // receiverNo=1L 인 현재 로그인 사용자가 접근 시도
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> notificationService.markAsRead(1L, RecipientType.USERS, 1L));
+
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.NOTIFICATION_ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("다른 수신자 타입의 알림을 읽음 처리하면 403 예외가 발생한다 (IDOR 방지)")
+    void 타입_불일치_알림_읽음처리_접근_거부() {
+        // FOUNDATION 타입 알림인데
+        Notification foundationNotification = notification(1L, RecipientType.FOUNDATION, false);
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(foundationNotification));
+
+        // USERS 타입으로 접근 시도
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> notificationService.markAsRead(1L, RecipientType.USERS, 1L));
+
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.NOTIFICATION_ACCESS_DENIED);
     }
 
     @Test
     @DisplayName("전체 읽음 처리 시 읽지 않은 알림만 읽음 상태로 변경된다")
     void 전체_읽음_처리() {
-        Notification unread1 = Notification.builder()
-                .receiverNo(1L).recipientType(RecipientType.USERS)
-                .notificationType(NotificationType.CAMPAIGN_APPROVED)
-                .content("내용1").isRead(false).build();
-
+        Notification unread1 = notification(1L, RecipientType.USERS, false);
         Notification unread2 = Notification.builder()
                 .receiverNo(1L).recipientType(RecipientType.USERS)
                 .notificationType(NotificationType.FOUNDATION_APPROVED)
                 .content("내용2").isRead(false).build();
-
-        Notification alreadyRead = Notification.builder()
-                .receiverNo(1L).recipientType(RecipientType.USERS)
-                .notificationType(NotificationType.CAMPAIGN_REJECTED)
-                .content("내용3").isRead(true).build();
+        Notification alreadyRead = notification(1L, RecipientType.USERS, true);
 
         when(notificationRepository.findByReceiverNoAndRecipientType(1L, RecipientType.USERS, Pageable.unpaged()))
                 .thenReturn(new PageImpl<>(List.of(unread1, unread2, alreadyRead)));

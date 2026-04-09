@@ -14,8 +14,8 @@ public interface NotificationService {
     // 읽지 않은 알림 수 (배지용)
     long getUnreadCount(RecipientType recipientType, Long receiverNo);
 
-    // 단건 읽음 처리
-    void markAsRead(Long notificationNo);
+    // 단건 읽음 처리 (소유권 검증 포함)
+    void markAsRead(Long notificationNo, RecipientType recipientType, Long receiverNo);
 
     // 전체 읽음 처리
     void markAllAsRead(RecipientType recipientType, Long receiverNo);

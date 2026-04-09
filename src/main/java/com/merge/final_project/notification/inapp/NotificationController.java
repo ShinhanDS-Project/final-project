@@ -36,10 +36,12 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getUnreadCount(recipientType, receiverNo));
     }
 
-    // 단건 읽음 처리
+    // 단건 읽음 처리 =>JWT에서 소유자 정보 추출하여 소유권 검증
     @PatchMapping("/{notificationNo}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long notificationNo) {
-        notificationService.markAsRead(notificationNo);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        RecipientType recipientType = RecipientType.from(auth.getAuthorities().iterator().next().getAuthority());
+        notificationService.markAsRead(notificationNo, recipientType, (Long) auth.getDetails());
         return ResponseEntity.ok().build();
     }
 
