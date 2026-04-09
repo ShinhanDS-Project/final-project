@@ -11,6 +11,9 @@ public class WalletOwnerBindingService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    /**
+     * 기부자 지갑 생성 후 users 테이블의 wallet_no를 연결한다.
+     */
     @Transactional
     public void bindUserWallet(Long userNo, Long walletNo) {
         entityManager.createNativeQuery("UPDATE users SET wallet_no = :walletNo WHERE user_no = :userNo")
@@ -19,6 +22,9 @@ public class WalletOwnerBindingService {
                 .executeUpdate();
     }
 
+    /**
+     * 기부단체 지갑 번호를 foundation 테이블에 연결한다.
+     */
     @Transactional
     public void bindFoundationWallet(Long foundationNo, Long walletNo) {
         entityManager.createNativeQuery("UPDATE foundation SET wallet_no = :walletNo WHERE foundation_no = :foundationNo")
@@ -27,6 +33,10 @@ public class WalletOwnerBindingService {
                 .executeUpdate();
     }
 
+    /**
+     * 사전 생성한 캠페인 지갑 주소 3개를 foundation 행에 저장한다.
+     * 이후 캠페인 생성 시 이 주소들을 재사용한다.
+     */
     @Transactional
     public void bindFoundationCampaignWallets(Long foundationNo, String wallet1, String wallet2, String wallet3) {
         entityManager.createNativeQuery(
@@ -41,6 +51,9 @@ public class WalletOwnerBindingService {
                 .executeUpdate();
     }
 
+    /**
+     * beneficiary 도메인에서 쓰는 wallet/key 참조를 beneficiary 행에 저장한다.
+     */
     @Transactional
     public void bindBeneficiaryWallet(Long beneficiaryNo, Long walletNo, Long keyNo) {
         entityManager.createNativeQuery(

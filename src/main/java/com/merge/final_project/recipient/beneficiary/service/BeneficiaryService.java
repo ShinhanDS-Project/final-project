@@ -49,6 +49,7 @@ public class BeneficiaryService implements UserDetailsService {
                 .beneficiaryHash("init_hash")
                 .build();
         Beneficiary saved = beneficiaryRepository.save(beneficiary);
+        // 수혜자 계정 생성 직후 수혜자 전용 지갑을 생성하고 beneficiary 테이블에 바인딩한다.
         signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
         return saved.getBeneficiaryNo();
     }
@@ -83,6 +84,7 @@ public class BeneficiaryService implements UserDetailsService {
                 .build();
 
         Beneficiary saved = beneficiaryRepository.save(beneficiary);
+        // 테스트/임시 가입 경로에서도 동일한 지갑 생성 훅을 적용한다.
         signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
     }
     public List<Campaign> getMyCampaigns(String email) {

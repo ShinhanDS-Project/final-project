@@ -217,6 +217,7 @@ public class FoundationServiceImpl implements FoundationService {
 
         foundation.updatePassword(tempPassword);
         if (!alreadyApproved) {
+            // 최초 승인 시점에만 단체 지갑/캠페인 지갑 세트를 생성한다.
             signupWalletHookService.onFoundationSignupCompleted(foundationNo);
         }
 

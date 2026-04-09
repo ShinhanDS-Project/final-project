@@ -43,6 +43,15 @@ public class BlockchainTransferService {
     @Value("${blockchain.contract.owner-address:}")
     private String contractOwnerAddress;
 
+    /**
+     * 결제 승인 직후 서버(소유자) 지갑에서 기부자 지갑으로 토큰을 충전한다.
+     * 처리 순서:
+     * 1) 요청값 유효성 검증
+     * 2) HOT/소유자/기부자 지갑 조회
+     * 3) 서명 지갑 가스(POL) 사전 점검 및 필요 시 자동 충전
+     * 4) 온체인 allocateToUser 호출
+     * 5) 결과를 거래내역(Transaction) 테이블에 저장
+     */
     @Transactional
     public BlockchainTransferResponse chargeUserToken(Long userNo, Long amount, Long donationId) {
         validatePositive(amount, "amount");
@@ -86,6 +95,10 @@ public class BlockchainTransferService {
         );
     }
 
+    /**
+     * 기부자 지갑에서 캠페인 지갑으로 토큰을 이체한다.
+     * 온체인 전송 성공/실패와 무관하게 거래내역을 저장해 추적 가능성을 보장한다.
+     */
     @Transactional
     public BlockchainTransferResponse transferDonationToCampaign(Long userNo, Long campaignNo, Long amount, Long donationId) {
         validatePositive(amount, "amount");
@@ -137,11 +150,18 @@ public class BlockchainTransferService {
         );
     }
 
+    /**
+     * ALLOCATION 흐름의 기본 송신 지갑(HOT)을 조회한다.
+     */
     private Wallet findHotWallet() {
         return walletLookupRepository.findFirstByWalletType(WalletType.HOT)
                 .orElseThrow(() -> new IllegalStateException("HOT wallet not found"));
     }
 
+    /**
+     * 컨트랙트 소유자 주소가 설정된 경우 해당 지갑을 서명 지갑으로 사용한다.
+     * 설정이 없으면 HOT 지갑으로 대체한다.
+     */
     private Wallet findContractOwnerWallet(Wallet hotWallet) {
         if (contractOwnerAddress == null || contractOwnerAddress.isBlank()) {
             return hotWallet;
@@ -150,10 +170,17 @@ public class BlockchainTransferService {
                 .orElseThrow(() -> new IllegalStateException("contract owner wallet not found in DB: " + contractOwnerAddress));
     }
 
+    /**
+     * 비즈니스 금액(Long)을 토큰 최소 단위(10^decimals)로 변환한다.
+     */
     private BigInteger toOnChainTokenAmount(Long amount) {
         return BigInteger.valueOf(amount).multiply(BigInteger.TEN.pow(tokenDecimals));
     }
 
+    /**
+     * donationId가 유효하면 그대로 사용하고,
+     * 없으면 epoch millis 기반 임시 ID를 생성해 컨트랙트 인자를 항상 채운다.
+     */
     private BigInteger resolveDonationId(Long donationId) {
         if (donationId != null && donationId > 0) {
             return BigInteger.valueOf(donationId);
@@ -161,6 +188,10 @@ public class BlockchainTransferService {
         return BigInteger.valueOf(Instant.now().toEpochMilli());
     }
 
+    /**
+     * 지갑의 private key payload를 조회/복호화한다.
+     * 레거시 평문 키 데이터와의 호환을 위해 복호화 실패 시 원문 문자열을 그대로 반환한다.
+     */
     private String resolveWalletPrivateKey(Wallet wallet) {
         if (wallet.getKey() == null || wallet.getKey().getKeyNo() == null) {
             throw new IllegalStateException("wallet key reference is missing. walletNo=" + wallet.getWalletNo());
@@ -181,6 +212,9 @@ public class BlockchainTransferService {
         }
     }
 
+    /**
+     * 식별자/금액 공통 양수 검증 유틸.
+     */
     private void validatePositive(Long value, String fieldName) {
         if (value == null || value <= 0) {
             throw new IllegalArgumentException(fieldName + " must be positive");

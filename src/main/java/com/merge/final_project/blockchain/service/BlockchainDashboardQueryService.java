@@ -53,6 +53,10 @@ public class BlockchainDashboardQueryService {
     private final UserRepository userRepository;
     private final BeneficiaryRepository beneficiaryRepository;
 
+    /**
+     * 거래 목록 조회 API용 서비스 메서드.
+     * 상태 필터 적용 후 화면용 DTO로 변환하고, 키워드 검색 + 페이징을 수행한다.
+     */
     public BlockchainTransactionsResponse getTransactions(int page, String keyword, String statusText) {
         TransactionStatus status = resolveStatus(statusText);
         LookupCache cache = new LookupCache();
@@ -70,6 +74,10 @@ public class BlockchainDashboardQueryService {
         return new BlockchainTransactionsResponse(slice.items(), slice.pageInfo());
     }
 
+    /**
+     * 대시보드 요약 데이터 조회.
+     * 최신 블록/평균 블록 간격/총 거래 수/토큰 집계값을 계산한다.
+     */
     public BlockchainSummaryResponse getSummary(int page, String statusText) {
         TransactionStatus status = resolveStatus(statusText);
         List<Transaction> transactions = transactionRepository.findByStatusOrderBySentAtDescTransactionNoDesc(status);
@@ -115,6 +123,10 @@ public class BlockchainDashboardQueryService {
         );
     }
 
+    /**
+     * txHash 기준 단건 상세 조회.
+     * 거래가 없으면 404를 반환한다.
+     */
     public BlockchainTransactionDetailResponse getTransactionDetail(String txHash, String statusText) {
         TransactionStatus status = resolveStatus(statusText);
         Transaction transaction = transactionRepository
@@ -144,6 +156,10 @@ public class BlockchainDashboardQueryService {
         );
     }
 
+    /**
+     * 특정 지갑 상세 + 연관 거래 목록 조회.
+     * from/to 양방향 거래를 함께 내려준다.
+     */
     public BlockchainWalletDetailResponse getWalletDetail(String walletAddress, int page, String statusText) {
         TransactionStatus status = resolveStatus(statusText);
         Wallet wallet = walletLookupRepository.findByWalletAddressIgnoreCase(walletAddress)
@@ -163,6 +179,10 @@ public class BlockchainDashboardQueryService {
         );
     }
 
+    /**
+     * 검색어를 실제 이동 대상으로 해석한다.
+     * 우선순위: txHash -> walletAddress -> foundationName -> campaignTitle.
+     */
     public BlockchainSearchResolveResponse resolveSearchTarget(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return new BlockchainSearchResolveResponse("not_found", null);
@@ -193,6 +213,9 @@ public class BlockchainDashboardQueryService {
                 .orElseGet(() -> new BlockchainSearchResolveResponse("not_found", null));
     }
 
+    /**
+     * Transaction 엔티티를 거래 리스트/상세 화면 공통 DTO로 변환한다.
+     */
     private BlockchainTransactionItemResponse toTransactionItem(Transaction transaction, LookupCache cache) {
         Wallet fromWallet = transaction.getFromWallet();
         Wallet toWallet = transaction.getToWallet();
@@ -219,6 +242,9 @@ public class BlockchainDashboardQueryService {
         );
     }
 
+    /**
+     * 지갑 엔티티를 화면 표시용 요약 DTO로 변환한다.
+     */
     private BlockchainWalletSummaryResponse toWalletSummary(Wallet wallet, LookupCache cache) {
         if (wallet == null) {
             return null;
@@ -235,6 +261,9 @@ public class BlockchainDashboardQueryService {
         );
     }
 
+    /**
+     * 거래의 from/to 지갑 정보를 이용해 단체명/캠페인명 표시 대상을 결정한다.
+     */
     private Names resolveNamesForTransaction(Wallet fromWallet, Wallet toWallet, LookupCache cache) {
         Wallet campaignWallet = walletByType(fromWallet, toWallet, WalletType.CAMPAIGN);
         if (campaignWallet != null) {
@@ -249,6 +278,9 @@ public class BlockchainDashboardQueryService {
         return new Names(null, null);
     }
 
+    /**
+     * from/to 중 지정한 타입의 지갑을 반환한다.
+     */
     private Wallet walletByType(Wallet fromWallet, Wallet toWallet, WalletType walletType) {
         if (fromWallet != null && fromWallet.getWalletType() == walletType) {
             return fromWallet;
@@ -259,6 +291,9 @@ public class BlockchainDashboardQueryService {
         return null;
     }
 
+    /**
+     * 지갑 타입별 owner 이름 정보를 조회한다.
+     */
     private Names resolveNamesForWallet(Wallet wallet, LookupCache cache) {
         if (wallet == null || wallet.getWalletType() == null) {
             return new Names(null, null);
@@ -280,6 +315,9 @@ public class BlockchainDashboardQueryService {
         };
     }
 
+    /**
+     * foundationNo로 단체명을 조회한다. 동일 요청 내 조회 결과는 캐시한다.
+     */
     private String resolveFoundationName(Long foundationNo, LookupCache cache) {
         if (foundationNo == null) {
             return null;
@@ -291,6 +329,9 @@ public class BlockchainDashboardQueryService {
         return foundation == null ? null : foundation.getFoundationName();
     }
 
+    /**
+     * walletNo 기준 캠페인을 조회한다. 동일 요청 내 조회 결과는 캐시한다.
+     */
     private Campaign resolveCampaignByWalletNo(Long walletNo, LookupCache cache) {
         if (walletNo == null) {
             return null;
@@ -301,6 +342,9 @@ public class BlockchainDashboardQueryService {
         );
     }
 
+    /**
+     * userNo로 기부자 이름을 조회한다. 동일 요청 내 조회 결과는 캐시한다.
+     */
     private String resolveUserName(Long userNo, LookupCache cache) {
         if (userNo == null) {
             return null;
@@ -312,6 +356,9 @@ public class BlockchainDashboardQueryService {
         return user == null ? "기부자" : user.getName();
     }
 
+    /**
+     * beneficiaryNo로 수혜자 이름을 조회한다. 동일 요청 내 조회 결과는 캐시한다.
+     */
     private String resolveBeneficiaryName(Long beneficiaryNo, LookupCache cache) {
         if (beneficiaryNo == null) {
             return null;
@@ -323,6 +370,9 @@ public class BlockchainDashboardQueryService {
         return beneficiary == null ? "수혜자" : beneficiary.getName();
     }
 
+    /**
+     * 거래 검색 키워드 매칭 규칙을 정의한다.
+     */
     private boolean matchesKeyword(BlockchainTransactionItemResponse item, String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return true;
@@ -336,10 +386,17 @@ public class BlockchainDashboardQueryService {
                 || contains(item.toWalletAddress(), normalized);
     }
 
+    /**
+     * null-safe 문자열 포함 여부 검사.
+     */
     private boolean contains(String value, String keyword) {
         return value != null && value.toLowerCase(Locale.ROOT).contains(keyword);
     }
 
+    /**
+     * 상태 파라미터 문자열을 TransactionStatus로 변환한다.
+     * 비어 있으면 SUCCESS 기본값, 변환 실패 시 400 에러를 반환한다.
+     */
     private TransactionStatus resolveStatus(String statusText) {
         if (statusText == null || statusText.isBlank()) {
             return TransactionStatus.SUCCESS;
@@ -351,6 +408,9 @@ public class BlockchainDashboardQueryService {
         }
     }
 
+    /**
+     * 내부 이벤트 타입을 프론트 표준 eventType 코드로 매핑한다.
+     */
     private String toApiEventType(TransactionEventType eventType) {
         if (eventType == null) {
             return "UNKNOWN";
@@ -364,6 +424,9 @@ public class BlockchainDashboardQueryService {
         };
     }
 
+    /**
+     * 이벤트 타입을 화면 표시용 한글 라벨로 변환한다.
+     */
     private String toEventTypeLabel(TransactionEventType eventType) {
         if (eventType == null) {
             return "미확인";
@@ -377,6 +440,9 @@ public class BlockchainDashboardQueryService {
         };
     }
 
+    /**
+     * 이벤트 타입별 설명 문구(메모)를 생성한다.
+     */
     private String toMemo(TransactionEventType eventType) {
         if (eventType == null) {
             return null;
@@ -390,6 +456,9 @@ public class BlockchainDashboardQueryService {
         };
     }
 
+    /**
+     * 지갑 타입을 API 표준 ownerType 코드로 변환한다.
+     */
     private String toOwnerType(Wallet wallet) {
         if (wallet == null || wallet.getWalletType() == null) {
             return "UNKNOWN";
@@ -403,6 +472,9 @@ public class BlockchainDashboardQueryService {
         };
     }
 
+    /**
+     * 지갑 타입을 화면 표시용 ownerType 라벨로 변환한다.
+     */
     private String toOwnerTypeLabel(Wallet wallet) {
         if (wallet == null || wallet.getWalletType() == null) {
             return "미확인";
@@ -416,10 +488,17 @@ public class BlockchainDashboardQueryService {
         };
     }
 
+    /**
+     * 거래 발생 시각은 sentAt 우선, 없으면 createdAt을 사용한다.
+     */
     private LocalDateTime resolveOccurredAt(Transaction transaction) {
         return transaction.getSentAt() != null ? transaction.getSentAt() : transaction.getCreatedAt();
     }
 
+    /**
+     * 메모리 리스트를 페이지 단위로 자르는 공통 유틸.
+     * 유효 범위를 벗어난 페이지 요청은 가장 가까운 페이지로 보정한다.
+     */
     private <T> PageSlice<T> paginate(List<T> items, int requestedPage, int pageSize) {
         int safePageSize = pageSize <= 0 ? DEFAULT_PAGE_SIZE : pageSize;
         long totalItems = items.size();
@@ -442,12 +521,22 @@ public class BlockchainDashboardQueryService {
         return new PageSlice<>(pagedItems, pageInfo);
     }
 
+    /**
+     * 트랜잭션 화면 표시에 필요한 이름 정보 묶음(내부용).
+     */
     private record Names(String foundationName, String campaignName) {
     }
 
+    /**
+     * 페이지 계산 결과 묶음(내부용).
+     */
     private record PageSlice<T>(List<T> items, BlockchainPageInfoResponse pageInfo) {
     }
 
+    /**
+     * 요청 단위 조회 캐시.
+     * 같은 PK를 반복 조회할 때 DB round-trip을 줄이기 위해 사용한다.
+     */
     private static class LookupCache {
         private final Map<Long, Campaign> campaignByWalletNo = new HashMap<>();
         private final Map<Long, Foundation> foundationByNo = new HashMap<>();

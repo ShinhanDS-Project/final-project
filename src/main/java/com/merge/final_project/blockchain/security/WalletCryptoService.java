@@ -28,6 +28,10 @@ public class WalletCryptoService {
         this.encryptionKey = sha256(secret.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * 랜덤 private key를 생성하고 주소를 파생한 뒤, 암호화된 키 payload를 반환한다.
+     * 저장 포맷은 Base64( nonce(12바이트) + AES-GCM ciphertext ) 구조다.
+     */
     public WalletCredentials createWalletCredentials() {
         try {
             byte[] privateKeyBytes = new byte[PRIVATE_KEY_BYTES];
@@ -43,6 +47,9 @@ public class WalletCryptoService {
         }
     }
 
+    /**
+     * encryptToBase64로 저장된 private key payload를 복호화한다.
+     */
     public String decryptPrivateKey(String encryptedPrivateKey) {
         try {
             byte[] payload = Base64.getDecoder().decode(encryptedPrivateKey);
@@ -63,10 +70,17 @@ public class WalletCryptoService {
         }
     }
 
+    /**
+     * 암호화된 키 payload를 web3j Credentials 객체로 변환한다.
+     */
     public Credentials credentialsFromEncrypted(String encryptedPrivateKey) {
         return Credentials.create(decryptPrivateKey(encryptedPrivateKey));
     }
 
+    /**
+     * AES-GCM 암호화 유틸.
+     * 복호화 시 상태를 갖지 않도록 payload를 nonce + ciphertext 형태로 직렬화한다.
+     */
     private String encryptToBase64(String plainText) {
         try {
             byte[] nonce = new byte[GCM_NONCE_LENGTH];
@@ -87,6 +101,9 @@ public class WalletCryptoService {
         }
     }
 
+    /**
+     * 설정된 secret으로부터 고정 길이(32바이트) AES 키를 파생한다.
+     */
     private byte[] sha256(byte[] bytes) {
         try {
             MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
@@ -96,6 +113,9 @@ public class WalletCryptoService {
         }
     }
 
+    /**
+     * 바이트 배열을 prefix 없는 소문자 hex 문자열로 변환한다.
+     */
     private String toHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) {

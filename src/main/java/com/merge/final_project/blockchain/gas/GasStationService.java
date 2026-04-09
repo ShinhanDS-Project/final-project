@@ -49,11 +49,18 @@ public class GasStationService {
         this.minPolWei = new BigInteger(minPolWei);
     }
 
+    /**
+     * 신규 ACTIVE 지갑 생성 직후 1회 초기 POL 가스비를 충전한다.
+     */
     @Transactional
     public void fundInitialPol(Wallet wallet) {
         topUpPolFromHot(wallet, initialPolWei, "ALLOCATION");
     }
 
+    /**
+     * 온체인 서명 직전 가스비 상태를 점검한다.
+     * 잔액이 임계치보다 낮으면 HOT 지갑에서 자동 충전한다.
+     */
     @Transactional
     public void ensureSufficientPol(Wallet signerWallet) {
         if (signerWallet == null || signerWallet.getWalletAddress() == null || signerWallet.getWalletAddress().isBlank()) {
@@ -78,6 +85,10 @@ public class GasStationService {
         topUpPolFromHot(signerWallet, initialPolWei, "ALLOCATION");
     }
 
+    /**
+     * HOT 지갑에서 대상 지갑으로 네이티브 코인을 전송하고 거래내역을 저장한다.
+     * 가스 충전에 실패하면 후속 트랜잭션을 안전하게 진행할 수 없으므로 예외를 던진다.
+     */
     private void topUpPolFromHot(Wallet wallet, BigInteger amountWei, String eventType) {
         if (wallet == null || isHotWallet(wallet)) {
             return;
@@ -115,10 +126,17 @@ public class GasStationService {
                 eventType, wallet.getWalletNo(), transferResult.txHash());
     }
 
+    /**
+     * HOT 지갑은 가스 공급원이며 자기 자신을 다시 충전하지 않는다.
+     */
     private boolean isHotWallet(Wallet wallet) {
         return wallet != null && wallet.getWalletType() == WalletType.HOT;
     }
 
+    /**
+     * key 테이블에서 서명 지갑 키를 읽어 복호화한다.
+     * 레거시 평문 키와의 호환을 위해 복호화 실패 시 원문을 그대로 사용한다.
+     */
     private String resolveWalletPrivateKey(Wallet wallet) {
         if (wallet.getKey() == null || wallet.getKey().getKeyNo() == null) {
             throw new IllegalStateException("wallet key reference is missing. walletNo=" + wallet.getWalletNo());

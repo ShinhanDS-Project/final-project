@@ -19,6 +19,10 @@ public class TransferTransactionService {
 
     private final TransactionRepository transactionRepository;
 
+    /**
+     * 블록체인 전송 결과 1건을 Transaction 테이블에 저장한다.
+     * 전송 진입점에서 공통으로 사용해 저장 포맷을 일관되게 유지한다.
+     */
     public Transaction saveTransfer(
             Wallet fromWallet,
             Wallet toWallet,
@@ -44,6 +48,10 @@ public class TransferTransactionService {
         return transactionRepository.save(transaction);
     }
 
+    /**
+     * 전송 클라이언트의 문자열 status를 내부 TransactionStatus enum으로 매핑한다.
+     * 알 수 없는 값은 안전하게 FAILED로 처리한다.
+     */
     private TransactionStatus toStatus(String status) {
         if (status == null) {
             return TransactionStatus.FAILED;
@@ -55,6 +63,10 @@ public class TransferTransactionService {
         }
     }
 
+    /**
+     * 문자열 eventType을 내부 TransactionEventType enum으로 매핑한다.
+     * 알 수 없는 값은 null 방지를 위해 DONATION으로 대체한다.
+     */
     private TransactionEventType toEventType(String eventType) {
         if (eventType == null || eventType.isBlank()) {
             return TransactionEventType.DONATION;
