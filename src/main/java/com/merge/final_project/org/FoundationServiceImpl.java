@@ -163,19 +163,19 @@ public class FoundationServiceImpl implements FoundationService {
         // 이메일로 단체 조회 (보안상 이메일/비밀번호 오류를 동일 메시지로 반환하고 로그로만 남김.)
         Foundation foundation = foundationRepository.findByFoundationEmail(requestDTO.getEmail())
                 .orElseThrow(() -> {
-                    log.warn("로그인 실패 - 존재하지 않는 이메일: {}", requestDTO.getEmail());
+                    log.warn("로그인 실패 - 존재하지 않는 이메일");
                     return new BusinessException(ErrorCode.FOUNDATION_LOGIN_FAILED);
                 });
 
         // 비밀번호 검증
         if (!passwordEncoder.matches(requestDTO.getPassword(), foundation.getFoundationPassword())) {
-            log.warn("로그인 실패 - 비밀번호 불일치, 이메일: {}", requestDTO.getEmail());
+            log.warn("로그인 실패 - 비밀번호 불일치, 이메일");
             throw new BusinessException(ErrorCode.FOUNDATION_LOGIN_FAILED);
         }
 
         // 승인된 단체만 로그인 가능 (ACTIVE 상태 검증)
         if (foundation.getAccountStatus() != AccountStatus.ACTIVE) {
-            log.warn("로그인 실패 - 미승인 단체, 이메일: {}", requestDTO.getEmail());
+            log.warn("로그인 실패 - 미승인 단체");
             throw new BusinessException(ErrorCode.FOUNDATION_NOT_ACTIVATED);
         }
 
@@ -204,8 +204,8 @@ public class FoundationServiceImpl implements FoundationService {
         Foundation foundation = foundationRepository.findById(foundationNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
 
-        //비활성화된 단체는 정보 변경 불가
-        if (foundation.getAccountStatus() == AccountStatus.INACTIVE) {
+        //활성화(승인됨) 단체만 정보 변경 가능하게 처리
+        if (foundation.getAccountStatus()!= AccountStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.FOUNDATION_NOT_ACTIVATED);
         }
 
@@ -237,6 +237,11 @@ public class FoundationServiceImpl implements FoundationService {
     public void updateFoundationPassword(Long foundationNo, FoundationPasswordUpdateRequestDTO requestDTO) {
         Foundation foundation = foundationRepository.findById(foundationNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+
+        //활성화(승인됨) 단체만 정보 변경 가능하게 처리
+        if (foundation.getAccountStatus()!= AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FOUNDATION_NOT_ACTIVATED);
+        }
 
         //입력받은 비밀번호를 인코딩 한 값이 현재 암호화된 기부단체 비밀번호와 다른지 Encoder.matches로 확인.
         if (!passwordEncoder.matches(requestDTO.getCurrentPassword(), foundation.getFoundationPassword())) {

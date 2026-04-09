@@ -21,4 +21,9 @@ public interface FoundationRepository extends JpaRepository<Foundation, Long> {
     Page<Foundation> findByReviewStatusAndAccountStatus(ReviewStatus reviewStatus, AccountStatus accountStatus, Pageable pageable);
     //기부단체 상세조회 - PK 값으로
     Optional<Foundation> findByFoundationNo(Long foundationNo);
+    /**
+     * 단체명 대소문자 무시 단건 조회.
+     * 대시보드 검색어 해석 시 단체 지갑 탐색의 시작점으로 사용한다.
+     */
+    Optional<Foundation> findFirstByFoundationNameIgnoreCase(String foundationName);
 }

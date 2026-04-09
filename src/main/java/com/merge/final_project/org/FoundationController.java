@@ -51,7 +51,7 @@ public class FoundationController {
 
     // 기부단체 로그인
     @PostMapping("/login")
-    public ResponseEntity<FoundationSigninResponseDTO> login(@RequestBody FoundationSigninRequestDTO requestDTO) {
+    public ResponseEntity<FoundationSigninResponseDTO> login(@RequestBody @Valid FoundationSigninRequestDTO requestDTO) {
         return ResponseEntity.ok(foundationService.login(requestDTO));
     }
 
