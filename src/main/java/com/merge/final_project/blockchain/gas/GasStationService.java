@@ -54,7 +54,7 @@ public class GasStationService {
      */
     @Transactional
     public void fundInitialPol(Wallet wallet) {
-        topUpPolFromHot(wallet, initialPolWei, "ALLOCATION");
+        topUpPolFromHot(wallet, initialPolWei, "POL_AUTO_TOPUP");
     }
 
     /**
@@ -82,7 +82,7 @@ public class GasStationService {
         if (currentBalance.compareTo(minPolWei) >= 0) {
             return;
         }
-        topUpPolFromHot(signerWallet, initialPolWei, "ALLOCATION");
+        topUpPolFromHot(signerWallet, initialPolWei, "POL_AUTO_TOPUP");
     }
 
     /**

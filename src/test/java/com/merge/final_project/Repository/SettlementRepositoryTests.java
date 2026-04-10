@@ -96,11 +96,11 @@ public class SettlementRepositoryTests {
                 any(), any(), any(), any(), any(), any(), any()
         )).thenReturn(receipt);
         when(blockchainService.getTokenBalance(campaignWallet.getWalletAddress()))
-                .thenReturn(BigInteger.valueOf(1000), BigInteger.ZERO);
+                .thenReturn(rawToken(1000L), BigInteger.ZERO);
         when(blockchainService.getTokenBalance(foundationWallet.getWalletAddress()))
-                .thenReturn(BigInteger.valueOf(100));
+                .thenReturn(rawToken(100L));
         when(blockchainService.getTokenBalance(beneficiaryWallet.getWalletAddress()))
-                .thenReturn(BigInteger.valueOf(900));
+                .thenReturn(rawToken(900L));
 
         // when
         settlementTransactionService.processSettlement(campaign);
@@ -158,7 +158,7 @@ public class SettlementRepositoryTests {
                 any(), any(), any(), any(), any(), any(), any()
         )).thenThrow(new RuntimeException("온체인 정산 실패"));
         when(blockchainService.getTokenBalance(campaignWallet.getWalletAddress()))
-                .thenReturn(BigInteger.valueOf(1000));
+                .thenReturn(rawToken(1000L));
 
         try {
             settlementTransactionService.processSettlement(campaign);
@@ -233,5 +233,9 @@ public class SettlementRepositoryTests {
                         .beneficiaryNo(beneficiary.getBeneficiaryNo())
                         .build()
         );
+    }
+
+    private BigInteger rawToken(Long amount) {
+        return BigInteger.valueOf(amount).multiply(BigInteger.TEN.pow(18));
     }
 }

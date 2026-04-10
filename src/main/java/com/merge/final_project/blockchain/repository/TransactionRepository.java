@@ -3,6 +3,9 @@ package com.merge.final_project.blockchain.repository;
 import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,6 +26,70 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
      */
     List<Transaction> findByStatusOrderBySentAtDescTransactionNoDesc(TransactionStatus status);
 
+    @EntityGraph(attributePaths = {"fromWallet", "toWallet"})
+    Page<Transaction> findByStatus(TransactionStatus status, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"fromWallet", "toWallet"})
+    @Query(value = """
+            SELECT t.*
+            FROM token_transaction t
+            JOIN wallet fw ON t.from_wallet_no = fw.wallet_no
+            JOIN wallet tw ON t.to_wallet_no = tw.wallet_no
+            LEFT JOIN campaign cfw ON cfw.wallet_no = fw.wallet_no
+            LEFT JOIN campaign ctw ON ctw.wallet_no = tw.wallet_no
+            LEFT JOIN foundation ffw
+                ON fw.wallet_type = 'FOUNDATION'
+               AND ffw.foundation_no = fw.owner_no
+            LEFT JOIN foundation ftw
+                ON tw.wallet_type = 'FOUNDATION'
+               AND ftw.foundation_no = tw.owner_no
+            LEFT JOIN foundation fcfw ON fcfw.foundation_no = cfw.foundation_no
+            LEFT JOIN foundation fctw ON fctw.foundation_no = ctw.foundation_no
+            WHERE t.status = :status
+              AND (
+                    :keyword = ''
+                 OR LOWER(COALESCE(t.tx_hash, '')) LIKE :keyword
+                 OR LOWER(COALESCE(t.transaction_code, '')) LIKE :keyword
+                 OR LOWER(fw.wallet_address) LIKE :keyword
+                 OR LOWER(tw.wallet_address) LIKE :keyword
+                 OR LOWER(COALESCE(cfw.title, ctw.title, '')) LIKE :keyword
+                 OR LOWER(COALESCE(ffw.foundation_name, ftw.foundation_name, fcfw.foundation_name, fctw.foundation_name, '')) LIKE :keyword
+              )
+            ORDER BY t.sent_at DESC NULLS LAST, t.transaction_no DESC
+            """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM token_transaction t
+                    JOIN wallet fw ON t.from_wallet_no = fw.wallet_no
+                    JOIN wallet tw ON t.to_wallet_no = tw.wallet_no
+                    LEFT JOIN campaign cfw ON cfw.wallet_no = fw.wallet_no
+                    LEFT JOIN campaign ctw ON ctw.wallet_no = tw.wallet_no
+                    LEFT JOIN foundation ffw
+                        ON fw.wallet_type = 'FOUNDATION'
+                       AND ffw.foundation_no = fw.owner_no
+                    LEFT JOIN foundation ftw
+                        ON tw.wallet_type = 'FOUNDATION'
+                       AND ftw.foundation_no = tw.owner_no
+                    LEFT JOIN foundation fcfw ON fcfw.foundation_no = cfw.foundation_no
+                    LEFT JOIN foundation fctw ON fctw.foundation_no = ctw.foundation_no
+                    WHERE t.status = :status
+                      AND (
+                            :keyword = ''
+                         OR LOWER(COALESCE(t.tx_hash, '')) LIKE :keyword
+                         OR LOWER(COALESCE(t.transaction_code, '')) LIKE :keyword
+                         OR LOWER(fw.wallet_address) LIKE :keyword
+                         OR LOWER(tw.wallet_address) LIKE :keyword
+                         OR LOWER(COALESCE(cfw.title, ctw.title, '')) LIKE :keyword
+                         OR LOWER(COALESCE(ffw.foundation_name, ftw.foundation_name, fcfw.foundation_name, fctw.foundation_name, '')) LIKE :keyword
+                      )
+                    """,
+            nativeQuery = true)
+    Page<Transaction> searchDashboardPage(
+            @Param("status") String status,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
     /**
      * 상태별 거래 개수 집계.
      */
@@ -42,6 +109,22 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
      * 대시보드 최신 블록 값 계산에 사용한다.
      */
     Optional<Transaction> findTopByStatusAndBlockNumIsNotNullOrderByBlockNumDesc(TransactionStatus status);
+
+    @EntityGraph(attributePaths = {"fromWallet", "toWallet"})
+    @Query("""
+            SELECT t
+            FROM Transaction t
+            WHERE t.status = :status
+              AND (
+                    t.fromWallet.walletNo = :walletNo
+                 OR t.toWallet.walletNo = :walletNo
+              )
+            """)
+    Page<Transaction> findPageByWalletNoAndStatus(
+            @Param("walletNo") Long walletNo,
+            @Param("status") TransactionStatus status,
+            Pageable pageable
+    );
 
     /**
      * 특정 지갑 주소가 from/to로 참여한 거래를 상태 조건과 함께 조회.

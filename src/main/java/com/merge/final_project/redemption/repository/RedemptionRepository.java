@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface RedemptionRepository extends JpaRepository<Redemption, Long> {
-    //상태별 조회
     List<Redemption> findAllByStatusOrderByRequestedAtDesc(RedemptionStatus status);
+
+    List<Redemption> findAllByStatusOrderByRedemptionNoAsc(RedemptionStatus status);
 }

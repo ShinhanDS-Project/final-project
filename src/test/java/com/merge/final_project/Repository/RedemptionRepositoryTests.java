@@ -107,10 +107,10 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(requesterWallet.getWalletAddress()))
-                .thenReturn(BigInteger.valueOf(500))
-                .thenReturn(BigInteger.valueOf(300));
+                .thenReturn(rawToken(500L))
+                .thenReturn(rawToken(300L));
         when(blockchainService.getTokenBalance(hotWallet.getWalletAddress()))
-                .thenReturn(BigInteger.valueOf(200));
+                .thenReturn(rawToken(200L));
 
         RedemptionResponse response = redemptionService.requestRedemption(request);
 
@@ -176,7 +176,7 @@ public class RedemptionRepositoryTests {
                 .thenThrow(new RuntimeException("블록체인 현금화 실패"));
 
         when(blockchainService.getTokenBalance(requesterWallet.getWalletAddress()))
-                .thenReturn(BigInteger.valueOf(700));
+                .thenReturn(rawToken(700L));
 
         try {
             redemptionService.requestRedemption(request);
@@ -211,9 +211,9 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(any()))
-                .thenReturn(BigInteger.valueOf(500))
-                .thenReturn(BigInteger.valueOf(300))
-                .thenReturn(BigInteger.valueOf(200));
+                .thenReturn(rawToken(500L))
+                .thenReturn(rawToken(300L))
+                .thenReturn(rawToken(200L));
 
         RedemptionResponse response = redemptionService.requestRedemption(request);
         redemptionService.markCashPaid(response.getRedemptionNo());
@@ -228,9 +228,9 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(anotherReceipt);
         when(blockchainService.getTokenBalance(any()))
-                .thenReturn(BigInteger.valueOf(600))
-                .thenReturn(BigInteger.valueOf(500))
-                .thenReturn(BigInteger.valueOf(100));
+                .thenReturn(rawToken(600L))
+                .thenReturn(rawToken(500L))
+                .thenReturn(rawToken(100L));
 
         RedemptionResponse completedResponse = redemptionService.requestRedemption(anotherRequest);
         List<RedemptionListResponse> results = redemptionService.getAdminRedemptions(null);
@@ -275,9 +275,9 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(any()))
-                .thenReturn(BigInteger.valueOf(500))
-                .thenReturn(BigInteger.valueOf(300))
-                .thenReturn(BigInteger.valueOf(200));
+                .thenReturn(rawToken(500L))
+                .thenReturn(rawToken(300L))
+                .thenReturn(rawToken(200L));
 
         RedemptionResponse response = redemptionService.requestRedemption(request);
         redemptionService.markCashPaid(response.getRedemptionNo());
@@ -316,9 +316,9 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(any()))
-                .thenReturn(BigInteger.valueOf(800))
-                .thenReturn(BigInteger.valueOf(500))
-                .thenReturn(BigInteger.valueOf(300));
+                .thenReturn(rawToken(800L))
+                .thenReturn(rawToken(500L))
+                .thenReturn(rawToken(300L));
 
         RedemptionResponse response = redemptionService.requestRedemption(request);
         RedemptionDetailResponse detail = redemptionService.getAdminRedemptionDetail(response.getRedemptionNo());
@@ -369,9 +369,9 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(any()))
-                .thenReturn(BigInteger.valueOf(450))
-                .thenReturn(BigInteger.valueOf(300))
-                .thenReturn(BigInteger.valueOf(150));
+                .thenReturn(rawToken(450L))
+                .thenReturn(rawToken(300L))
+                .thenReturn(rawToken(150L));
 
         RedemptionResponse response = redemptionService.requestRedemption(request);
         redemptionService.markCashPaid(response.getRedemptionNo());
@@ -397,9 +397,9 @@ public class RedemptionRepositoryTests {
 
         when(blockchainService.redeemOnChain(any(), any(), any())).thenReturn(receipt);
         when(blockchainService.getTokenBalance(any()))
-                .thenReturn(BigInteger.valueOf(450))
-                .thenReturn(BigInteger.valueOf(300))
-                .thenReturn(BigInteger.valueOf(150));
+                .thenReturn(rawToken(450L))
+                .thenReturn(rawToken(300L))
+                .thenReturn(rawToken(150L));
 
         RedemptionResponse response = redemptionService.requestRedemption(request);
         redemptionService.markCashPaid(response.getRedemptionNo());
@@ -513,5 +513,9 @@ public class RedemptionRepositoryTests {
                 .filter(redemption -> requesterNo.equals(redemption.getRequesterNo()))
                 .max(Comparator.comparing(Redemption::getRedemptionNo))
                 .orElseThrow();
+    }
+
+    private BigInteger rawToken(Long amount) {
+        return BigInteger.valueOf(amount).multiply(BigInteger.TEN.pow(18));
     }
 }
