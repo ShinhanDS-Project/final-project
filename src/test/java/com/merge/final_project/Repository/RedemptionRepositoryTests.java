@@ -160,7 +160,7 @@ public class RedemptionRepositoryTests {
                         .name("테스트 수혜자")
                         .email("beneficiary_" + UUID.randomUUID() + "@test.com")
                         .password("1234")
-                        .entryCode(1234)
+                        .entryCode("1234")  //[가빈]의선오빠꺼 develop했는데 엔티티 수정되어 있어서 바다 테스트 코드 수정함.
                         .phone("01012345678")
                         .beneficiaryType(BeneficiaryType.INDIVIDUAL)
                         .createdAt(LocalDateTime.now())
@@ -497,7 +497,7 @@ public class RedemptionRepositoryTests {
                         .name("테스트수혜자_" + UUID.randomUUID())
                         .email("beneficiary_" + UUID.randomUUID() + "@test.com")
                         .password("1234")
-                        .entryCode(1234)
+                        .entryCode("1234")  //[가빈]의선오빠꺼 develop했는데 엔티티 수정되어 있어서 바다 테스트 코드 수정함.
                         .phone("01012345678")
                         .account("3333-12-123456")
                         .beneficiaryType(BeneficiaryType.INDIVIDUAL)

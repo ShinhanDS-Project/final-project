@@ -211,7 +211,7 @@ public class SettlementRepositoryTests {
                         .name("테스트 수혜자")
                         .email("beneficiary_" + UUID.randomUUID() + "@test.com")
                         .password("1234")
-                        .entryCode(1111)
+                        .entryCode("1111")
                         .phone("01012345678")
                         .beneficiaryType(BeneficiaryType.ORGANIZATION)
                         .createdAt(LocalDateTime.now())

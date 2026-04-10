@@ -43,9 +43,7 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 
-    /**
-     * 1. 관리자 전용 필터 체인 (/admin/**)
-     */
+    //관리자
     @Order(1)
     @Bean
     public SecurityFilterChain adminFilterChain(HttpSecurity http, AdminJwtFilter adminJwtFilter) throws Exception {
@@ -68,9 +66,68 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * 2. 일반 사용자 및 수혜자용 필터 체인 (그 외 전체)
-     */
+    // 수혜자
+    @Order(2)
+    @Bean
+    public SecurityFilterChain beneficiaryFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
+        http
+                .securityMatcher("/api/beneficiary/**", "/finalReport/**") // 수혜자 전용 경로 지정
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // 수혜자 로그인/회원가입은 인증 없이 접근 가능
+                        .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
+                        // 그 외 보고서 작성 등은 모두 인증 필요
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler)
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout(logout -> logout
+                        .logoutUrl("/api/beneficiary/logout")
+                        .logoutSuccessUrl("/api/beneficiary/signin")
+                        .deleteCookies("JSESSIONID", "accessToken")
+                        .permitAll()
+                );
+
+        return http.build();
+    }
+
+    // 기부단체
+    @Order(3)
+    @Bean
+    public SecurityFilterChain foundationFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
+        http
+                .securityMatcher("/api/foundation/**")
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/foundation/signup",    // 가입 신청
+                                "/api/foundation/check-brn", // 사업자등록번호 중복 체크
+                                "/api/foundation/all",       // 단체 목록 조회 (공개)
+                                "/api/foundation/login",     // 로그인
+                                "/api/foundation/logout"     // 로그아웃 (토큰 만료 후에도 호출 가능해야 함)
+                        ).permitAll()
+                        // 그 외 단체 전용 기능은 ROLE_FOUNDATION 필요
+                        .anyRequest().hasAuthority("ROLE_FOUNDATION")
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler)
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    //일반 사용자
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
@@ -80,16 +137,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // 1. [공개 경로] 누구나 접근 가능
                         .requestMatchers(
                                 "/",
                                 "/error",
                                 "/favicon.ico",
-                                "/uploads/**",          // 💡 업로드된 사진 보기 허용
-                                "/api/beneficiary/signup",
-                                "/api/beneficiary/signin",
-                                "/api/beneficiary/test/**", // 💡 수혜자 테스트 페이지
-                                "/finalReport/test/**",     // 💡 보고서 테스트 페이지
+                                "/uploads/**",
                                 "/api/auth/**",
                                 "/api/signup/**",
                                 // 블록체인 대시보드/조회 API는 프론트 대시보드 초기 연동을 위해 우선 공개.
@@ -98,18 +150,11 @@ public class SecurityConfig {
                                 "/oauth2/**",
                                 "/login/**",
                                 "/social-info",
-                                "/users/support/**",
-                                "/api/foundation/**"
+                                "/users/support/**"
                         ).permitAll()
-
-                        // 2. [인증 경로] 로그인한 사용자만 가능
-                        .requestMatchers("/finalReport/**").authenticated()
-
-                        // 3. 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
 
-                // OAuth2 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
@@ -120,16 +165,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 )
 
-                // JWT 필터 추가
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-
-                // 로그아웃 설정
-                .logout(logout -> logout
-                        .logoutUrl("/api/beneficiary/logout")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID", "accessToken") // 💡 토큰 쿠키도 함께 삭제
-                        .permitAll()
-                );
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

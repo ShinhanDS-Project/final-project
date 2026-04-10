@@ -28,7 +28,7 @@ public class JwtTokenProvider {
 
     //1.관리자용 로그인 토큰
     public String createAdminAccessToken(String adminId, String role){
-        System.out.println(jwtProperties.getSecret());
+
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtProperties.getAccessTokenExpiration());
 
@@ -70,7 +70,7 @@ public class JwtTokenProvider {
                 .claim("email",email)
                 .claim("role","ROLE_USER") //social 로그인은 user로 강제지정
                 .claim("type","ACCESS") //임시토큰으로 구분하기 위한 타입
-                .claim("userNo",userNo) // pk -> 구글용
+                .claim("no",userNo) // pk -> 구글용
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey)
@@ -91,7 +91,7 @@ public class JwtTokenProvider {
                 .claim("email",email)
                 .claim("role",role)// role
                 .claim("type","ACCESS") //임시토큰으로 구분하기 위한 타입
-                .claim("pk",no)
+                .claim("no",no)
                 .issuedAt(now)
                 .expiration(expiry) //시간 제한-> 부가기능
                 .signWith(secretKey)
