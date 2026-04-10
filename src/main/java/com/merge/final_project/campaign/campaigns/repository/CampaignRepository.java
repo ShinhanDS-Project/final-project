@@ -4,9 +4,9 @@ import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -57,5 +57,5 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     // [가빈] 승인 상태별 캠페인 목록 조회 (PENDING, REJECTED 등)
     Page<Campaign> findByApprovalStatus(ApprovalStatus approvalStatus, Pageable pageable);
     //[가빈] 기부단체 별 캠페인 목록 조회
-    Page<CampaignListResponseDTO> findByFoundationNo(Long foundationNo, Pageable pageable);
+    Page<Campaign> findByFoundationNo(Long foundationNo, Pageable pageable);
 }

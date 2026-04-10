@@ -160,9 +160,10 @@ public class CampaignServiceImpl implements CampaignService {
 
         try {
             String storedName = fileUtil.saveFile(imageFile);
+            String filePath = fileUtil.getFilePath(storedName);
 
             imageRepository.save(Image.builder()
-                .imgPath("C:/uploads/" + storedName)
+                .imgPath(filePath)
                 .imgOrgName(imageFile.getOriginalFilename())
                 .imgStoredName(storedName)
                 .targetName(CAMPAIGN_IMAGE_TARGET_NAME)
