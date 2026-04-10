@@ -57,4 +57,23 @@ public class Beneficiary {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "wallet_no", nullable = false)
     private Wallet wallet;
+
+    /**
+     * 정보 수정 메서드 (Dirty Checking 활용)
+     */
+    public void updateInfo(String name, String phone, String account, BeneficiaryType beneficiaryType) {
+        this.name = name;
+        this.phone = phone;
+        this.account = account;
+        this.beneficiaryType = beneficiaryType;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 비밀번호 수정 메서드
+     */
+    public void updatePassword(String encryptedPassword) {
+        this.password = encryptedPassword;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

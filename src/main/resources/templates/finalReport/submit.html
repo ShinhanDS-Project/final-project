@@ -9,12 +9,13 @@
     <p>캠페인 번호: <span id="campaignNo" th:text="${campaignNo}"></span></p>
 
     <form id="reportForm">
-        제목: <input type="text" id="title" required /><br>
-        내용: <textarea id="content" required></textarea><br>
-        사용 목적: <input type="text" id="usagePurpose" required /><br>
+        제목: <input type="text" id="title" required style="width: 300px;"/><br>
+        내용: <textarea id="content" rows="10" cols="50" required></textarea><br>
+        사용 목적: <input type="text" id="usagePurpose" required style="width: 300px;"/><br>
         <hr>
+        <h3>이미지 업로드</h3>
         <div id="imageInputs">
-            <div>
+            <div style="margin-bottom: 5px;">
                 파일: <input type="file" name="files" required />
                 설명: 
                 <select name="purposes">
@@ -23,15 +24,16 @@
                 </select>
             </div>
         </div>
-        <button type="button" onclick="addImageInput()">사진 추가</button>
+        <button type="button" onclick="addImageInput()">+ 사진 추가</button>
         <hr>
-        <button type="button" onclick="submitReport()">제출하기</button>
+        <button type="button" onclick="submitReport()" style="padding: 10px 20px;">제출하기</button>
         <a href="/finalReport/list"><button type="button">취소</button></a>
     </form>
 
     <script>
         function addImageInput() {
             const div = document.createElement('div');
+            div.style.marginBottom = "5px";
             div.innerHTML = `
                 파일: <input type="file" name="files" />
                 설명: 
@@ -62,31 +64,41 @@
                 purposes: purposesArray
             };
             
+            // 💡 JSON 명시 및 Blob 생성
             formData.append("dto", new Blob([JSON.stringify(dto)], { type: "application/json" }));
 
             // 3. 파일 추가
             const fileInputs = document.getElementsByName('files');
+            let hasFile = false;
             for (let i = 0; i < fileInputs.length; i++) {
                 if (fileInputs[i].files[0]) {
                     formData.append("files", fileInputs[i].files[0]);
+                    hasFile = true;
                 }
             }
 
+            if(!hasFile) {
+                alert("최소 1장 이상의 사진을 선택해주세요.");
+                return;
+            }
+
             try {
+                // 💡 쿠키를 사용하므로 따로 Authorization 헤더를 넣지 않아도 브라우저가 자동으로 보냅니다.
                 const response = await fetch('/finalReport/submit', {
                     method: 'POST',
                     body: formData
                 });
 
                 if (response.ok) {
-                    alert("성공");
+                    alert("성공적으로 제출되었습니다.");
                     location.href = "/finalReport/list";
                 } else {
                     const errorMsg = await response.text();
                     alert("실패: " + errorMsg);
                 }
             } catch (error) {
-                alert("오류 발생");
+                console.error("전송 에러:", error);
+                alert("서버 통신 중 오류가 발생했습니다.");
             }
         }
     </script>

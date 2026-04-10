@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>수혜자 로그인</title>
+</head>
+<body>
+    <h2>수혜자 로그인</h2>
+    <form id="loginForm">
+        <div>
+            <label>이메일: </label>
+            <input type="email" id="email" placeholder="example@email.com" required>
+        </div>
+        <div>
+            <label>비밀번호: </label>
+            <input type="password" id="password" required>
+        </div>
+        <br>
+        <button type="button" onclick="handleLogin()" style="padding: 5px 15px;">로그인</button>
+        <a href="/api/beneficiary/signup"><button type="button">회원가입하러 가기</button></a>
+    </form>
+
+    <script>
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if(!email || !password) {
+                alert("이메일과 비밀번호를 모두 입력해주세요.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/beneficiary/signin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    alert("로그인 성공!");
+                    location.href = "/finalReport/list";
+                } else {
+                    const errorMsg = await response.text();
+                    alert("로그인 실패: " + errorMsg);
+                }
+            } catch (e) {
+                console.error("로그인 에러:", e);
+                alert("서버 통신 오류");
+            }
+        }
+    </script>
+</body>
+</html>
