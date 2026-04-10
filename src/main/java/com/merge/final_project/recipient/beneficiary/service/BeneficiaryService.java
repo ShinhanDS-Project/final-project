@@ -3,6 +3,7 @@ package com.merge.final_project.recipient.beneficiary.service;
 import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
+import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryInfoResponseDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryUpdateRequestDTO;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -51,7 +53,7 @@ public class BeneficiaryService implements UserDetailsService {
                 .build();
         Beneficiary saved = beneficiaryRepository.save(beneficiary);
         // 수혜자 계정 생성 직후 수혜자 전용 지갑을 생성하고 beneficiary 테이블에 바인딩한다.
-        signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
+        // signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
         return saved.getBeneficiaryNo();
     }
 
@@ -99,6 +101,15 @@ public class BeneficiaryService implements UserDetailsService {
     }
 
     /**
+     * 본인 상세 정보 조회 (조회용)
+     */
+    public BeneficiaryInfoResponseDTO getMyDetailInfo(String email) {
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
+        return new BeneficiaryInfoResponseDTO(beneficiary);
+    }
+
+    /**
      * 본인 정보 조회 (수정 폼용)
      */
     public BeneficiaryUpdateRequestDTO getMyInfo(String email) {
@@ -130,4 +141,12 @@ public class BeneficiaryService implements UserDetailsService {
             beneficiary.updatePassword(passwordEncoder.encode(dto.getPassword()));
         }
     }
+
+    public Long getBeneficiaryNoByEntryCode(String entryCode){
+        Beneficiary beneficiary = beneficiaryRepository.findByEntryCode(entryCode)
+                     .orElseThrow(() -> new RuntimeException("해당 엔트리 코드를 가진 수혜자를 찾을 수 없습니다: " + entryCode));
+
+        return beneficiary.getBeneficiaryNo();
+    }
+
 }

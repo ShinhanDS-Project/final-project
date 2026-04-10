@@ -79,6 +79,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 수혜자 로그인/회원가입은 인증 없이 접근 가능
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
+
                         // 그 외 보고서 작성 등은 모두 인증 필요
                         .anyRequest().authenticated()
                 )

@@ -6,6 +6,7 @@
 </head>
 <body>
     <div style="text-align: right; margin-bottom: 10px;">
+        <a href="/api/beneficiary/info"><button type="button">내 정보 보기</button></a>
         <a href="/api/beneficiary/edit"><button type="button">내 정보 수정</button></a>
         <form th:action="@{/api/beneficiary/logout}" method="post" style="display: inline;">
             <button type="submit">로그아웃</button>
@@ -48,7 +49,7 @@
                 <tr th:each="report : ${reportList}" th:if="${report.approvalStatus.name() == 'PENDING'}">
                     <td th:text="${report.reportNo}"></td>
                     <td th:text="${report.title}"></td>
-                    <td th:text="${report.createdAt}"></td>
+                    <td th:text="${#temporals.format(report.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
                     <td>
                         <button type="button" th:onclick="'viewReport(' + ${report.reportNo} + ')'">상세 보기</button>
                         <button type="button" th:onclick="'editReport(' + ${report.reportNo} + ')'">수정하기</button>
@@ -71,7 +72,7 @@
                 <tr th:each="report : ${reportList}" th:if="${report.approvalStatus.name() == 'APPROVED'}">
                     <td th:text="${report.reportNo}"></td>
                     <td th:text="${report.title}"></td>
-                    <td th:text="${report.createdAt}"></td> <!-- 승인일이 따로 있다면 그걸 쓰는게 좋음 -->
+                    <td th:text="${#temporals.format(report.createdAt, 'yyyy-MM-dd HH:mm')}"></td> <!-- 승인일이 따로 있다면 그걸 쓰는게 좋음 -->
                     <td>
                         <button type="button" th:onclick="'viewReport(' + ${report.reportNo} + ')'">상세 보기</button>
                     </td>

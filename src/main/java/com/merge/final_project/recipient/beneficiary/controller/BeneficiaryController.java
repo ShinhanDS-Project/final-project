@@ -1,6 +1,7 @@
 package com.merge.final_project.recipient.beneficiary.controller;
 
 import com.merge.final_project.global.jwt.JwtTokenProvider;
+import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryInfoResponseDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySignupRequestDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryUpdateRequestDTO;
@@ -24,6 +25,18 @@ public class BeneficiaryController {
     private final BeneficiaryService beneficiaryService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+
+    /**
+     * 회원 상세 정보 페이지 이동
+     */
+    @GetMapping("/info")
+    public String infoPage(java.security.Principal principal, Model model) {
+        if (principal == null) return "redirect:/api/beneficiary/signin";
+
+        BeneficiaryInfoResponseDTO myInfo = beneficiaryService.getMyDetailInfo(principal.getName());
+        model.addAttribute("myInfo", myInfo);
+        return "beneficiary/info";
+    }
 
     /**
      * 로그인 페이지 이동
