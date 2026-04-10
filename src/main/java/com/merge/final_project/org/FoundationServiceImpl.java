@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FoundationServiceImpl implements FoundationService {
+public class  FoundationServiceImpl implements FoundationService {
 
     private final FoundationRepository foundationRepository;
     private final IllegalFoundationRepository illegalFoundationRepository;

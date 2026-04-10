@@ -5,10 +5,9 @@ import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.donation.donations.Donation;
 import com.merge.final_project.donation.donations.DonationRepository;
-import com.merge.final_project.donation.payment.dto.PaymentBody;
-import com.merge.final_project.donation.payment.dto.PaymentConfirmRequest;
-import com.merge.final_project.donation.payment.dto.PaymentReadyRequest;
-import com.merge.final_project.donation.payment.dto.PaymentReadyResponse;
+import com.merge.final_project.donation.payment.dto.*;
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
@@ -44,116 +43,126 @@ public class PaymentServiceImpl implements PaymentService{
     @Autowired
     private WalletRepository walletRepository;
 
-    //1) 준비단계 -> 검증 (비지니스 로직 )
-
-
     @Override
-    public void preparePayment(PaymentConfirmRequest dto, Long userNo) {
-
-        //1. 유저
-        // 1) 유저가 존재하는지 확인
-        User user= userRepository.findById(userNo)
-                .orElseThrow(()-> new RuntimeException("에러가 발생하였습니다."));
-
-        //1. 결제건
-        // 1) 존재하는 결제건인지 확인
-        Payment payment= paymentRepository.findByOrderKey(dto.getOrderId())
-                .orElseThrow(()->new RuntimeException("찾을 수 없는 결제 내역입니다."));
-
-        // 2) 금액이 바뀌지 않았는지 확인
-        if(dto.getAmount().compareTo(payment.getAmount())!=0 ){
-            //금액이 달라진 오류 코드 발생 -> " 오류가 발생했습니다 "
-        }
-
+    public PaymentReadyResponse paymentReady(Long userNo, PaymentReadyRequest dto) {
         //2.캠페인
         //1) 캠페인이 존재하는지
-        Campaign campaign=campaignRepository.findById( payment.getCampaignNo())
-                .orElseThrow(()->new RuntimeException("찾을 수 없는 캠페인입니다."));
+        Campaign campaign=campaignRepository.findById(dto.getCampaignNo())
+                .orElseThrow(()->new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
 
         // 2)캠페인이 모금기간인지
         if(!CampaignStatus.ACTIVE.equals(campaign.getCampaignStatus())){
-            //에러코드 -> 현재 모금기간이 아닙니다.
+            throw new BusinessException(ErrorCode.CAMPAIGN_NOT_ACTIVE);
         }
-        //3. 캠페인 지갑 유효한지 확인
+        String orderId="DONATION-"+System.currentTimeMillis()+"-"+userNo;
+        //2. 결제 대기 (READY) 데이터 생성
+        Payment payment= Payment.builder()
+                .userNo(userNo)
+                .campaignNo(dto.getCampaignNo())
+                .orderKey(orderId)
+                .amount(dto.getAmount())
+                .paymentMethod(dto.getPaymentMethod())
+                .paymentStatus(PaymentStatus.READY)
+                .isAnonymous(dto.getIsAnonymous())
+                .build();
+        paymentRepository.save(payment);
+        //3.프론트에 전송할 정보
+        return PaymentReadyResponse.builder()
+                .paymentNo(payment.getPaymentNo())
+                .orderId(orderId)
+                .amount(payment.getAmount())
+                .orderName(campaign.getTitle())
+                .build();
+    }
+
+    @Override
+    public PaymentConfirmResponse confirmPayment(Long userNo, PaymentConfirmRequest dto) {
+        //1. 유저
+        // 1) 유저가 존재하는지 확인
+        User user= userRepository.findById(userNo)
+                .orElseThrow(()->  new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        //2. 결제건
+        // 1) 존재하는 결제건인지 확인
+        Payment payment= paymentRepository.findByOrderKey(dto.getOrderId())
+                .orElseThrow(()->new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 2) 금액이 바뀌지 않았는지 확인
+        if(dto.getAmount().compareTo(payment.getAmount())!=0 ){
+            throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+        }
+        // 3) 결제 메서드가 동일한지
+        if(!dto.getMethod().equals(payment.getPaymentMethod())){
+            throw new BusinessException(ErrorCode.PAYMENT_METHOD_MISMATCH);
+        }
+
+        //3. 캠페인
+        Campaign campaign=campaignRepository.findById( payment.getCampaignNo())
+                .orElseThrow(()-> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
+
+        //4. 캠페인 지갑
         // 1) 월렛 주소가 없는 경우
         if(campaign.getWalletNo()==null){
-            new RuntimeException("오류가 발생하였습니다.");
+            throw new BusinessException(ErrorCode.CAMPAIGN_WALLET_NOT_FOUND);
         }
         // 2) 지갑이 지금은 존재하지 않는 경우
         Wallet wallet = walletRepository.findById(campaign.getWalletNo())
-                .orElseThrow(()->new RuntimeException("오류가 발생하였습니다."));
+                .orElseThrow(()-> new BusinessException(ErrorCode.CAMPAIGN_WALLET_NOT_FOUND));
 
 
         // 3.기부단체
         // 1) 기부단체가 존재하는지
         long foundationId=campaign.getFoundationNo();
         Foundation foundation=foundationRepository.findById(foundationId)
-                .orElseThrow(()-> new RuntimeException("찾을 수 없는 기부단체입니다."));
+                .orElseThrow(()->  new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
 
         //2) 기부단체 상태 체크
         if(AccountStatus.INACTIVE.equals(foundation.getAccountStatus())){
-            //에러코드 체크 -- > 존재하지 않는경우
+            throw new BusinessException(ErrorCode.FOUNDATION_INACTIVE);
         }
-
-        //토스 승인 api 호출
+        //4. 토스 호출
+        // 1)토스 승인 api 호출
         PaymentBody paymentBody = tossPaymentClient.confirmPayment(dto);
 
-        // 성공시엔 상태 변경 후 기부내역 생성
         // 1. 기존 Payment 엔티티 업데이트
-        payment.setPaymentStatus(PaymentStatus.COMPLETED);
+        payment.setPaymentStatus(PaymentStatus.DONE);
+        payment.setPaymentKey(paymentBody.getPaymentKey());
+        payment.setPaidAt(paymentBody.getApprovedAt().toLocalDateTime());
 
-        // JPA 영속성 컨텍스트 덕분에 save를 다시 안 해도 트랜잭션 종료 시 업데이트됨.
 
-
-        // 2. Donation(기부 내역) 생성
-        //1.유저 월렛 찾아내기
-
+        //5. 기부 생성
         Donation donation = Donation.builder()
                 .paymentNo(payment.getPaymentNo())
                 .userNo(userNo)
                 .campaignNo(payment.getCampaignNo())
                 .donationAmount(paymentBody.getTotalAmount())
-                .donatedAt(LocalDateTime.now())           // 기부일시
+                .donatedAt(LocalDateTime.now())
                 .isAnonymous(payment.getIsAnonymous())
                 .donorWalletNo(user.getWallet().getWalletNo())
                 .campaignWalletNo(campaign.getWalletNo())
                 .build();
+
         donationRepository.save(donation);
-
-        // 3. 캠페인 현재 모금액 합산
+        //6. 캠페인 현재 모금액 합산
         campaign.addCurrentAmount(paymentBody.getTotalAmount());
-    }
 
-    //
-    @Override
-    public ResponseEntity<Payment> startPayment(PaymentReadyRequest dto, Long userNo) {
-      //
-        Payment.builder()
-              .paymentMethod(dto.getPaymentMethod())
-              .campaignNo(dto.getCampaignNo())
-              .amount(dto.getAmount())
-              .paymentStatus(PaymentStatus.READY)
-                .userNo(userNo)
-                .isAnonymous(dto.getIsAnonymous())
-                .
-                .
-              //.privatekeyNo()
-    }
+        return PaymentConfirmResponse.builder()
+                .paymentNo(payment.getPaymentNo())
+                .donationNo(donation.getDonationNo())
+                .orderId(payment.getOrderKey())
+                .paymentKey(dto.getPaymentKey())
+                .amount(payment.getAmount())
+                .status("SUCCESS")
+                .message("기부가 완료되었습니다. 감사합니다!")
+                .build();
 
-    @Override
-    public PaymentReadyResponse readyPayment(Long userNo, PaymentReadyRequest request) {
-        return null;
-    }
-
-    @Override
-    public void preparePayment(PaymentConfirmRequest dto) {
 
     }
 
     @Transactional
     public void processPaymentFail(String orderId, String code, String message) {
         Payment payment = paymentRepository.findByOrderKey(orderId)
-                .orElseThrow(() -> new RuntimeException("결제 내역 없음"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
         // 상태를 FAILED로 변경하고 실패 사유를 기록 (엔티티에 메서드 필요)
         payment.setPaymentStatus(PaymentStatus.FAILED);

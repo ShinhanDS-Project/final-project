@@ -3,6 +3,8 @@ package com.merge.final_project.donation.payment;
 import com.merge.final_project.donation.payment.dto.PaymentBody;
 import com.merge.final_project.donation.payment.dto.PaymentConfirmRequest;
 import com.merge.final_project.donation.payment.dto.TossResponse;
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -36,19 +38,21 @@ public class TossPaymentClient {
         //응답을 tossResponse<PayMentBody>형태로 받음
         // 토스가 응답을 한번더 감싸서 와서 tossResponse<T>로 받음
        try {
-           ResponseEntity<TossResponse<PaymentBody>> response = restTemplate.exchange(
-                   url, HttpMethod.POST, entity, new ParameterizedTypeReference<>() {
-                   }
+           ResponseEntity<PaymentBody> response = restTemplate.exchange(
+                   url,
+                   HttpMethod.POST,
+                   entity,
+                   PaymentBody.class
            );
-           return response.getBody().getEntityBody();
+           return response.getBody();
        }
        catch(HttpClientErrorException e){
            //400번대 에러
            //토스가 보낸 에러를 확인 후 던wla
-           throw new RuntimeException("결제 승인 실패"+e. getResponseBodyAsString());
+           throw new BusinessException(ErrorCode.PAYMENT_CONFIRM_FAILED);
        }catch (Exception e){
            //네트워크등 기타 에러
-           throw new RuntimeException("결제중 알 수 없는 에러 발생");
+           throw new BusinessException(ErrorCode.PAYMENT_CONFIRM_FAILED);
        }
         // 3. 알맹이(entityBody)만 쏙 빼서 반환
 
