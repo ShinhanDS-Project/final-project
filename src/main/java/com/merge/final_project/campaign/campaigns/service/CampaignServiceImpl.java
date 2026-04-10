@@ -15,6 +15,8 @@ import com.merge.final_project.global.ImageRepository;
 import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
+import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
+import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.repository.WalletRepository;
 import com.merge.final_project.wallet.entity.WalletStatus;
@@ -43,6 +45,7 @@ public class CampaignServiceImpl implements CampaignService {
     private static final String DETAIL_IMAGE_PURPOSE = "DETAIL";
 
     private final FoundationRepository foundationRepository;
+    private final BeneficiaryRepository beneficiaryRepository;
     private final WalletRepository walletRepository;
     private final CampaignRepository campaignRepository;
     private final UsePlanRepository usePlanRepository;
@@ -56,6 +59,9 @@ public class CampaignServiceImpl implements CampaignService {
         Foundation foundation = foundationRepository.findById(foundationNo)
             .orElseThrow(() -> new IllegalArgumentException("?? ??? ?? ? ????."));
 
+        Beneficiary beneficiary = beneficiaryRepository.findByEntryCode(dto.getEntryCode())
+            .orElseThrow(() -> new IllegalArgumentException("Invalid beneficiary entry code."));
+
         List<String> walletAddresses = Stream.of(
             foundation.getCampaignWallet1(),
             foundation.getCampaignWallet2(),
@@ -68,6 +74,7 @@ public class CampaignServiceImpl implements CampaignService {
 
         Campaign campaign = dto.toEntity();
         campaign.setFoundationNo(foundationNo);
+        campaign.setBeneficiaryNo(beneficiary.getBeneficiaryNo());
         campaign.setWalletNo(availableWallet.getWalletNo());
         campaign.setCurrentAmount(0L);
         campaign.setApprovalStatus(ApprovalStatus.PENDING);
@@ -160,9 +167,10 @@ public class CampaignServiceImpl implements CampaignService {
 
         try {
             String storedName = fileUtil.saveFile(imageFile);
+            String filePath = fileUtil.getFilePath(storedName);
 
             imageRepository.save(Image.builder()
-                .imgPath("C:/uploads/" + storedName)
+                .imgPath(filePath)
                 .imgOrgName(imageFile.getOriginalFilename())
                 .imgStoredName(storedName)
                 .targetName(CAMPAIGN_IMAGE_TARGET_NAME)
