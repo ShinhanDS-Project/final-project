@@ -22,7 +22,7 @@ public class Payment {
 
     @Enumerated(EnumType.STRING)
     @Column(name="payment_method", nullable = false)
-    private PaymentMethod paymentMethod; //결제수단 : / 페이 / 카드 결제 -> enum 만들어주세요
+    private PaymentMethod method; //결제수단 : / 페이 / 카드 결제 -> enum 만들어주세요
 
     @Enumerated(EnumType.STRING)
    @Column(name="payment_status", nullable = false)

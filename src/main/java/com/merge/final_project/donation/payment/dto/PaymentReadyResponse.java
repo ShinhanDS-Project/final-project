@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 
 @Getter
 @Builder
+
 public class PaymentReadyResponse {
 
     private Long paymentNo;

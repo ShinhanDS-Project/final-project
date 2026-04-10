@@ -58,7 +58,7 @@ public class PaymentServiceImpl implements PaymentService{
                 .campaignNo(dto.getCampaignNo())
                 .orderKey(orderId)
                 .amount(dto.getAmount())
-                .paymentMethod(dto.getPaymentMethod())
+                .method(dto.getMethod())
                 .paymentStatus(PaymentStatus.READY)
                 .privateKeyNo(1L) // 💡 여기에 반드시 유효한 값이 들어가야 합니다!
                 .isAnonymous(dto.getIsAnonymous())
@@ -93,7 +93,7 @@ public class PaymentServiceImpl implements PaymentService{
                 throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
             }
             // 3) 결제 메서드가 동일한지
-            if (!dto.getMethod().equals(payment.getPaymentMethod())) {
+            if (!dto.getMethod().equals(payment.getMethod())) {
                 throw new BusinessException(ErrorCode.PAYMENT_METHOD_MISMATCH);
             }
 
@@ -136,7 +136,7 @@ public class PaymentServiceImpl implements PaymentService{
                     .paymentNo(payment.getPaymentNo())
                     .userNo(userNo)
                     .campaignNo(payment.getCampaignNo())
-                    .donationAmount(paymentBody.getTotalAmount())
+                    .donationAmount(paymentBody.getAmount())
                     .donatedAt(LocalDateTime.now())
                     .isAnonymous(payment.getIsAnonymous())
                     .donorWalletNo(user.getWallet().getWalletNo())
@@ -145,7 +145,7 @@ public class PaymentServiceImpl implements PaymentService{
 
             donationRepository.save(donation);
             //6. 캠페인 현재 모금액 합산
-            campaign.addCurrentAmount(paymentBody.getTotalAmount());
+            campaign.addCurrentAmount(paymentBody.getAmount());
 
             return PaymentConfirmResponse.builder()
                     .paymentNo(payment.getPaymentNo())
@@ -165,5 +165,11 @@ public class PaymentServiceImpl implements PaymentService{
         }
 
     }
-
+    @Transactional
+    public void processPaymentFail(String orderId, String code, String message) {
+        paymentRepository.findByOrderKey(orderId).ifPresent(payment -> {
+            payment.setPaymentStatus(PaymentStatus.FAILED);
+            // 필요하다면 payment 엔티티에 failReason 필드를 추가해서 message를 저장하세요!
+        });
+    }
 }

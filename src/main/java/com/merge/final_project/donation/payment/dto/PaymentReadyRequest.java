@@ -4,10 +4,12 @@ import com.merge.final_project.donation.payment.PaymentMethod;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Getter
+@NoArgsConstructor
 public class PaymentReadyRequest {
 
     @NotNull(message = "오류 발생하였습니다.")
@@ -21,5 +23,5 @@ public class PaymentReadyRequest {
     private Boolean isAnonymous;
 
     @NotNull(message = "결제수단은 필수입니다.")
-    private PaymentMethod paymentMethod;
+    private PaymentMethod method;
 }
