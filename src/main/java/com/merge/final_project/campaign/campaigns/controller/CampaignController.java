@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/campaigns")
+@RequestMapping("/api/foundation/campaigns")
 @Log4j2
 @RequiredArgsConstructor
 public class CampaignController {

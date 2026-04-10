@@ -369,6 +369,7 @@ public class FoundationServiceImpl implements FoundationService {
 
     @Override
     public Page<CampaignListResponseDTO> getMyCampaigns(Long foundationNo, Pageable pageable) {
-        return campaignRepository.findByFoundationNo(foundationNo, pageable);
+        return campaignRepository.findByFoundationNo(foundationNo, pageable).map(CampaignListResponseDTO::from);
     }
+
 }

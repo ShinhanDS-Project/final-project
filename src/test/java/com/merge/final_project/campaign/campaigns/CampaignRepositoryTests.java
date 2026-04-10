@@ -40,7 +40,6 @@ class CampaignRepositoryTests {
                 .campaignStatus(CampaignStatus.PENDING)
                 .targetAmount(1000000L)
                 .currentAmount(0L)
-                .createdAt(LocalDateTime.now()) //가빈 ->// Campaign 엔티티의 created_at은 @CreatedDate 없이 직접 선언되어 있어 수동 세팅 필요
                 .build();
     }
 
