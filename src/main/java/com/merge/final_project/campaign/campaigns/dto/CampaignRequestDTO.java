@@ -14,6 +14,7 @@ public class CampaignRequestDTO {
     private String imagePath;
     private String category;
     private Long targetAmount;
+    private String entryCode;
 
     private LocalDateTime startAt;
     private LocalDateTime endAt;

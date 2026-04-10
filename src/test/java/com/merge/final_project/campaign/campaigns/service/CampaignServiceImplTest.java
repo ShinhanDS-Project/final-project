@@ -38,6 +38,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class CampaignServiceImplTest {
 
     private static final Long FOUNDATION_NO = 10000L;
+    private static final Long BENEFICIARY_NO = 10000L;
+    private static final String BENEFICIARY_ENTRY_CODE = "12345678";
 
     @Autowired
     private CampaignService campaignService;
@@ -81,6 +83,7 @@ class CampaignServiceImplTest {
 
         CampaignRequestDTO dto = new CampaignRequestDTO();
         dto.setTitle(campaignTitle);
+        dto.setEntryCode(BENEFICIARY_ENTRY_CODE);
         dto.setDescription("올드페리도넛 먹은날");
         dto.setCategory("테스트");
         dto.setTargetAmount(3_000_000L);
@@ -159,6 +162,7 @@ class CampaignServiceImplTest {
                 .orElseThrow(() -> new IllegalArgumentException("캠페인이 저장되지 않았습니다."));
 
         assertThat(savedCampaign.getFoundationNo()).isEqualTo(FOUNDATION_NO);
+        assertThat(savedCampaign.getBeneficiaryNo()).isEqualTo(BENEFICIARY_NO);
         assertThat(savedCampaign.getTitle()).isEqualTo(campaignTitle);
         assertThat(savedCampaign.getApprovalStatus()).isEqualTo(ApprovalStatus.PENDING);
         assertThat(savedCampaign.getCampaignStatus()).isEqualTo(CampaignStatus.PENDING);
