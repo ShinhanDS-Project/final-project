@@ -3,6 +3,7 @@ package com.merge.final_project.recipient.beneficiary.service;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
+import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryUpdateRequestDTO;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySignupRequestDTO;
@@ -56,6 +57,7 @@ public class BeneficiaryService implements UserDetailsService {
     }
 
 
+
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         // DB에서 이메일로 수혜자 찾기
@@ -90,4 +92,36 @@ public class BeneficiaryService implements UserDetailsService {
         return campaignRepository.findByBeneficiaryNo(beneficiary.getBeneficiaryNo());
     }
 
+    /**
+     * 본인 정보 조회 (수정 폼용)
+     */
+    public BeneficiaryUpdateRequestDTO getMyInfo(String email) {
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
+
+        BeneficiaryUpdateRequestDTO dto = new BeneficiaryUpdateRequestDTO();
+        dto.setName(beneficiary.getName());
+        dto.setPhone(beneficiary.getPhone());
+        dto.setAccount(beneficiary.getAccount());
+        dto.setBeneficiaryType(beneficiary.getBeneficiaryType());
+
+        return dto;
+    }
+
+    /**
+     * 본인 정보 수정 로직
+     */
+    @Transactional
+    public void updateMyInfo(String email, BeneficiaryUpdateRequestDTO dto) {
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
+
+        // 1. 기본 인적 사항 업데이트
+        beneficiary.updateInfo(dto.getName(), dto.getPhone(), dto.getAccount(), dto.getBeneficiaryType());
+
+        // 2. 비밀번호 변경 요청 시 처리
+        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
+            beneficiary.updatePassword(passwordEncoder.encode(dto.getPassword()));
+        }
+    }
 }

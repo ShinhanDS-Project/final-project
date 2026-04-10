@@ -3,6 +3,7 @@ package com.merge.final_project.recipient.beneficiary.controller;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySignupRequestDTO;
+import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryUpdateRequestDTO;
 import com.merge.final_project.recipient.beneficiary.service.BeneficiaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -11,6 +12,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
@@ -37,6 +39,30 @@ public class BeneficiaryController {
     @GetMapping("/signup")
     public String signupPage() {
         return "beneficiary/signup";
+    }
+
+    /**
+     * 회원 정보 수정 페이지 이동
+     */
+    @GetMapping("/edit")
+    public String editPage(java.security.Principal principal, Model model) {
+        if (principal == null) return "redirect:/api/beneficiary/signin";
+
+        BeneficiaryUpdateRequestDTO myInfo = beneficiaryService.getMyInfo(principal.getName());
+        model.addAttribute("myInfo", myInfo);
+        return "beneficiary/edit";
+    }
+
+    /**
+     * 회원 정보 수정 처리 (API)
+     */
+    @PostMapping("/edit")
+    @ResponseBody
+    public ResponseEntity<String> updateInfo(@RequestBody BeneficiaryUpdateRequestDTO dto, java.security.Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body("로그인 필요");
+
+        beneficiaryService.updateMyInfo(principal.getName(), dto);
+        return ResponseEntity.ok("정보 수정 완료");
     }
 
     /**
