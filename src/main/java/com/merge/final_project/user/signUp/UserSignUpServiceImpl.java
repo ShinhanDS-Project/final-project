@@ -1,5 +1,6 @@
 package com.merge.final_project.user.signUp;
 
+import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
@@ -27,6 +28,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
     private final UserSignUpRepository userSignUpRepository;
     private final VerificationService verificationService;
     private final PasswordEncoder passwordEncoder;
+    private final SignupWalletHookService signupWalletHookService;
     private final FileUtil fileUtil;
 
     @Transactional
@@ -88,6 +90,8 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .build();
 
         saveWithRetry(user);
+        // 회원 저장이 끝난 직후 지갑 생성 훅을 호출해 users.wallet_no까지 연결한다.
+        signupWalletHookService.onUserSignupCompleted(user.getUserNo());
     }
 
 
@@ -108,6 +112,8 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .build();
 
         saveWithRetry(user);
+        // 소셜 가입 사용자도 동일한 지갑 생성 흐름을 사용한다.
+        signupWalletHookService.onUserSignupCompleted(user.getUserNo());
     }
     // 로컬 가입 전용 검증
     private void validateLocalUser(UserSignUpRequestDTO dto) {
