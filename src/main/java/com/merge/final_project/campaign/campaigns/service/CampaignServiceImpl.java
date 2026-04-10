@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -76,7 +77,7 @@ public class CampaignServiceImpl implements CampaignService {
         campaign.setFoundationNo(foundationNo);
         campaign.setBeneficiaryNo(beneficiary.getBeneficiaryNo());
         campaign.setWalletNo(availableWallet.getWalletNo());
-        campaign.setCurrentAmount(0L);
+        campaign.setCurrentAmount(BigDecimal.valueOf(0)); //채원 수정
         campaign.setApprovalStatus(ApprovalStatus.PENDING);
         campaign.setCampaignStatus(CampaignStatus.PENDING);
         campaign.setUpdatedAt(LocalDateTime.now());

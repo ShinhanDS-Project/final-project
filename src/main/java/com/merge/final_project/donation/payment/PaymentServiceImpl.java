@@ -13,7 +13,6 @@ import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.user.users.User;
 import com.merge.final_project.user.users.UserRepository;
-import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.repository.WalletRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 @Transactional
 @Service
-public class PaymentServiceImpl implements PaymentService{
+public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private PaymentRepository paymentRepository;
@@ -44,16 +43,20 @@ public class PaymentServiceImpl implements PaymentService{
     public PaymentReadyResponse paymentReady(Long userNo, PaymentReadyRequest dto) {
         //2.캠페인
         //1) 캠페인이 존재하는지
-        Campaign campaign=campaignRepository.findById(dto.getCampaignNo())
-                .orElseThrow(()->new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
+        Campaign campaign = campaignRepository.findById(dto.getCampaignNo())
+                .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
 
-        // 2)캠페인이 모금기간인지
-        if(!CampaignStatus.ACTIVE.equals(campaign.getCampaignStatus())){
+        // 2)캠페인의 상태 확인
+        if (!CampaignStatus.ACTIVE.equals(campaign.getCampaignStatus())) {
             throw new BusinessException(ErrorCode.CAMPAIGN_NOT_ACTIVE);
         }
-        String orderId="DONATION-"+System.currentTimeMillis()+"-"+userNo;
+        // 3) 캠페인 모금 기간 외이면
+        if (LocalDateTime.now().isBefore(campaign.getStartAt()) || LocalDateTime.now().isAfter(campaign.getEndAt())) {
+            throw new BusinessException(ErrorCode.CAMPAIGN_NOT_ACTIVE);
+        }
+        String orderId = "DONATION-" + System.currentTimeMillis() + "-" + userNo;
         //2. 결제 대기 (READY) 데이터 생성
-        Payment payment= Payment.builder()
+        Payment payment = Payment.builder()
                 .userNo(userNo)
                 .campaignNo(dto.getCampaignNo())
                 .orderKey(orderId)
@@ -77,7 +80,7 @@ public class PaymentServiceImpl implements PaymentService{
     public PaymentConfirmResponse confirmPayment(Long userNo, PaymentConfirmRequest dto) {
         //1. 유저
         // 1) 유저가 존재하는지 확인
-        try {
+
             User user = userRepository.findById(userNo)
                     .orElseThrow(() ->
                             new BusinessException(ErrorCode.USER_NOT_FOUND)
@@ -101,14 +104,14 @@ public class PaymentServiceImpl implements PaymentService{
             Campaign campaign = campaignRepository.findById(payment.getCampaignNo())
                     .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
 
-            //4. 캠페인 지갑
-            // 1) 월렛 주소가 없는 경우
-            if (campaign.getWalletNo() == null) {
-                throw new BusinessException(ErrorCode.CAMPAIGN_WALLET_NOT_FOUND);
-            }
-            // 2) 지갑이 지금은 존재하지 않는 경우
-            Wallet wallet = walletRepository.findById(campaign.getWalletNo())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_WALLET_NOT_FOUND));
+//            //4. 캠페인 지갑
+//            // 1) 월렛 주소가 없는 경우
+//            if (campaign.getWalletNo() == null) {
+//                throw new BusinessException(ErrorCode.CAMPAIGN_WALLET_NOT_FOUND);
+//            }
+//            // 2) 지갑이 지금은 존재하지 않는 경우
+//            Wallet wallet = walletRepository.findById(campaign.getWalletNo())
+//                    .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_WALLET_NOT_FOUND));
 
 
             // 3.기부단체
@@ -158,13 +161,10 @@ public class PaymentServiceImpl implements PaymentService{
                     .build();
 
 
-        } catch (BusinessException e) {
-            // 💡 여기서 모든 검증 실패를 낚아채서 DB 상태를 FAILED로 바꿉니다.
-            processPaymentFail(dto.getOrderId(), e.getErrorCode().getCode(), e.getMessage());
-            throw e; // 프론트에도 에러를 알려줘야 하니 다시 던집니다.
-        }
+
 
     }
+
     @Transactional
     public void processPaymentFail(String orderId, String code, String message) {
         paymentRepository.findByOrderKey(orderId).ifPresent(payment -> {

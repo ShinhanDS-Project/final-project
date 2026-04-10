@@ -23,10 +23,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.math.BigDecimal;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -66,10 +62,10 @@ public class Campaign extends BaseCreatedAtEntity {
     private LocalDateTime usageEndAt;
 
     @Column(name = "target_amount")
-    private BigDecimal targetAmount;
+    private Long targetAmount;
 
     @Column(name = "current_amount")
-    private Long currentAmount;
+    private BigDecimal currentAmount;
 
     @Column(name = "achieved_at")
     private LocalDateTime achievedAt;
@@ -122,8 +118,9 @@ public class Campaign extends BaseCreatedAtEntity {
         this.approvalStatus = ApprovalStatus.REJECTED;
         this.rejectReason = reason;
     }
-
-    public Long addCurrentAmount(BigDecimal amount) {
-        return this.currentAmount+= amount.longValue();
+    //[채원] add함수
+    public BigDecimal addCurrentAmount(BigDecimal amount) {
+        this.currentAmount = this.currentAmount.add(amount);
+        return this.currentAmount;
     }
 }
