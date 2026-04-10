@@ -1,0 +1,45 @@
+package com.merge.final_project.admin.controller;
+
+import com.merge.final_project.org.AccountStatus;
+import com.merge.final_project.org.FoundationService;
+import com.merge.final_project.org.dto.FoundationListResponseDTO;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/admin/foundation")
+@RequiredArgsConstructor
+public class AdminFoundationController {
+
+    private final FoundationService foundationService;
+
+    // 상세 조회 및 승인 후 리스트(가입완료) 조회는 추후 다른 곳에서도 쓸 수 있을 것 같아서 관리자 권한에서 제외시킴
+    // 승인 전 기부단체 리스트 조회 (CLEAN, SIMILAR, ILLEGAL)
+    @GetMapping("/applications")
+    public ResponseEntity<Page<FoundationListResponseDTO>> getApplicationList(Pageable pageable) {
+        return ResponseEntity.ok(foundationService.getFoundationApplicationList(pageable));
+    }
+
+    // 반려된 기부단체 리스트 조회
+    @GetMapping("/rejected")
+    public ResponseEntity<Page<FoundationListResponseDTO>> getRejectedList(Pageable pageable) {
+        return ResponseEntity.ok(foundationService.getRejectedFoundationList(pageable));
+    }
+
+    // 기부단체 승인
+    @PatchMapping("/{foundationNo}/approve")
+    public ResponseEntity<Void> approve(@PathVariable Long foundationNo) {
+        foundationService.approveFoundation(foundationNo);
+        return ResponseEntity.ok().build();
+    }
+
+    // 기부단체 반려
+    @PatchMapping("/{foundationNo}/reject")
+    public ResponseEntity<Void> reject(@PathVariable Long foundationNo) {
+        foundationService.rejectFoundationForIllegal(foundationNo);
+        return ResponseEntity.ok().build();
+    }
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>최종 보고서 작성</title>
+</head>
+<body>
+    <h1>최종 보고서 작성</h1>
+    <p>캠페인 번호: <span id="campaignNo" th:text="${campaignNo}"></span></p>
+
+    <form id="reportForm">
+        제목: <input type="text" id="title" required /><br>
+        내용: <textarea id="content" required></textarea><br>
+        사용 목적: <input type="text" id="usagePurpose" required /><br>
+        <hr>
+        <div id="imageInputs">
+            <div>
+                파일: <input type="file" name="files" required />
+                설명: 
+                <select name="purposes">
+                    <option value="FIELD_PHOTO">활동사진</option>
+                    <option value="RECEIPT">영수증</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" onclick="addImageInput()">사진 추가</button>
+        <hr>
+        <button type="button" onclick="submitReport()">제출하기</button>
+        <a href="/finalReport/list"><button type="button">취소</button></a>
+    </form>
+
+    <script>
+        function addImageInput() {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                파일: <input type="file" name="files" />
+                설명: 
+                <select name="purposes">
+                    <option value="FIELD_PHOTO">활동사진</option>
+                    <option value="RECEIPT">영수증</option>
+                </select>
+            `;
+            document.getElementById('imageInputs').appendChild(div);
+        }
+
+        async function submitReport() {
+            const formData = new FormData();
+            
+            // 1. 목적(purposes) 리스트 먼저 준비
+            const purposeInputs = document.getElementsByName('purposes');
+            const purposesArray = [];
+            for (let i = 0; i < purposeInputs.length; i++) {
+                purposesArray.push(purposeInputs[i].value || "GENERAL");
+            }
+
+            // 2. DTO 구성 (purposes 포함)
+            const dto = {
+                title: document.getElementById('title').value,
+                content: document.getElementById('content').value,
+                usagePurpose: document.getElementById('usagePurpose').value,
+                campaign_no: parseInt(document.getElementById('campaignNo').innerText),
+                purposes: purposesArray
+            };
+            
+            formData.append("dto", new Blob([JSON.stringify(dto)], { type: "application/json" }));
+
+            // 3. 파일 추가
+            const fileInputs = document.getElementsByName('files');
+            for (let i = 0; i < fileInputs.length; i++) {
+                if (fileInputs[i].files[0]) {
+                    formData.append("files", fileInputs[i].files[0]);
+                }
+            }
+
+            try {
+                const response = await fetch('/finalReport/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    alert("성공");
+                    location.href = "/finalReport/list";
+                } else {
+                    const errorMsg = await response.text();
+                    alert("실패: " + errorMsg);
+                }
+            } catch (error) {
+                alert("오류 발생");
+            }
+        }
+    </script>
+</body>
+</html>

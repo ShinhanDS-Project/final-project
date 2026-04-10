@@ -3,7 +3,7 @@ package com.merge.final_project.campaign.campaigns.entity;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.global.BaseCreatedAtEntity;
-import com.merge.final_project.org.foundation.Foundation;
+import com.merge.final_project.org.Foundation;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -85,9 +85,6 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(name = "campaign_status")
     private CampaignStatus campaignStatus;
 
-    @Column(name = "reject_reason")
-    private String rejectReason;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "foundation_no", insertable = false, updatable = false)
     private Foundation foundation;
@@ -101,7 +98,6 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(name = "beneficiary_no")
     private Long beneficiaryNo;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
+    @Column(name = "reject_reason")
+    private String rejectReason;
 }

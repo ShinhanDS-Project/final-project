@@ -8,7 +8,7 @@ public class UsePlanRequestDTO {
     private String planContent;
     private Long planAmount;
 
-    // DTO -> 엔티티
+    // DTO -> 엔티티 변환
     public UsePlan toEntity(Long campaignNo) {
         return UsePlan.builder()
                 .planContent(this.planContent)

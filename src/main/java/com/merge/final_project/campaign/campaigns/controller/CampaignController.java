@@ -26,7 +26,7 @@ public class CampaignController {
     // 캠페인 목록 조회
     @GetMapping
     public ResponseEntity<List<CampaignListResponseDTO>> getCampaignList(
-            // 정렬 기준 (기본값: 마감임박)
+            // 정렬 기준 (기본값: 마감임박순)
             @RequestParam(value = "sort", defaultValue = "deadline") String sort
     ) {
         // 백엔드 정렬을 위해 파라미터를 서비스 계층으로 전달
@@ -40,7 +40,7 @@ public class CampaignController {
             @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
             @RequestPart(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles
     ) {
-        // 임시 기본 단체 번호 (추후 시큐리티 도입 시 세션에서 추출)
+        // 임시 기관 단체 번호 (추후 시큐리티 도입 시 세션에서 추출)
         Long foundationNo = 1L;
 
         campaignService.registerCampaign(dto, imageFile, detailImageFiles, foundationNo);
@@ -48,3 +48,4 @@ public class CampaignController {
         return ResponseEntity.ok("캠페인 등록 신청 완료");
     }
 }
+
