@@ -5,7 +5,6 @@ import com.merge.final_project.donation.payment.PaymentStatus;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
@@ -15,7 +14,7 @@ public class PaymentBody {
     private String orderId;
     private PaymentStatus status; // 상태값들
     private PaymentMethod method; // method- card, pay
-    private BigDecimal totalAmount;    // 실제로 결제된 총 금액
+    private BigDecimal amount;    // 실제로 결제된 총 금액
     private LocalDateTime requestedAt;  // 결제가 요청된 시각
     private OffsetDateTime approvedAt; //승인시간
 }

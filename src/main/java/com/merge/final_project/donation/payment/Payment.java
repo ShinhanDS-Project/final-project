@@ -42,8 +42,8 @@ public class Payment {
     @Column(name = "payment_key",unique = true)
     private String paymentKey;
 
-//    @Column(name="privatekey_no",nullable = false) --> 선우
-//    private Long privateKeyNo;
+    @Column(name="privatekey_no",nullable = false)
+    private Long privateKeyNo;
 
     @Column(name = "order_key",unique = true)
     private String orderKey;
