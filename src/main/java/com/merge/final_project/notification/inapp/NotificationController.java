@@ -20,7 +20,7 @@ public class NotificationController {
     // 알림 목록 조회
     @GetMapping
     public ResponseEntity<Page<NotificationResponseDTO>> getNotifications(
-            @PageableDefault(sort="createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(sort="created_at", direction = Sort.Direction.DESC) Pageable pageable) {
         //수행 대상 PK와 수행대상 테이블 명을 토큰에서 추출해내기 위함.
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long receiverNo = (Long) auth.getDetails();

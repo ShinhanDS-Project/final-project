@@ -1,5 +1,7 @@
 package com.merge.final_project.campaign.campaigns.service;
 
+import com.merge.final_project.admin.adminlog.TargetType;
+import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
@@ -18,6 +20,7 @@ import com.merge.final_project.wallet.repository.WalletRepository;
 import com.merge.final_project.wallet.entity.WalletStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,6 +48,7 @@ public class CampaignServiceImpl implements CampaignService {
     private final UsePlanRepository usePlanRepository;
     private final ImageRepository imageRepository;
     private final FileUtil fileUtil;
+    private final ApplicationEventPublisher eventPublisher; // [가빈] SSE 이벤트 발행용
 
     @Override
     @Transactional
@@ -84,6 +88,12 @@ public class CampaignServiceImpl implements CampaignService {
 
         availableWallet.changeStatus(WalletStatus.ACTIVE);
         walletRepository.save(availableWallet);
+
+        // [가빈] 관리자에게 캠페인 승인 요청 SSE 알림
+        eventPublisher.publishEvent(new ApprovalRequestEvent(
+                TargetType.CAMPAIGN,
+                savedCampaign.getCampaignNo(),
+                savedCampaign.getTitle() + " 캠페인 승인 요청"));
     }
 
     @Override

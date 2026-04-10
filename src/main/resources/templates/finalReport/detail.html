@@ -10,7 +10,7 @@
     보고서 번호: <span th:text="${report.reportNo}"></span><br>
     캠페인 번호: <span th:text="${report.campaignNo}"></span><br>
     승인 상태: <span th:text="${report.approvalStatus}"></span><br>
-    작성일: <span th:text="${report.createdAt}"></span><br>
+    작성일: <span th:text="${#temporals.format(report.createdAt, 'yyyy-MM-dd HH:mm')}"></span><br>
     <hr>
     제목: <span th:text="${report.title}"></span><br>
     내용: <p th:text="${report.content}"></p>

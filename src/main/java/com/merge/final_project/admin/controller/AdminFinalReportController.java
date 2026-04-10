@@ -1,0 +1,38 @@
+package com.merge.final_project.admin.controller;
+
+import com.merge.final_project.admin.service.AdminFinalReportService;
+import com.merge.final_project.report.finalreport.dto.FinalReportResponseDTO;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/admin/reports")
+@RequiredArgsConstructor
+public class AdminFinalReportController {
+
+    private final AdminFinalReportService adminFinalReportService;
+
+    // 승인 대기 활동 보고서 목록
+    @GetMapping("/pending")
+    public ResponseEntity<Page<FinalReportResponseDTO>> getPendingReports(Pageable pageable) {
+        return ResponseEntity.ok(adminFinalReportService.getPendingReports(pageable));
+    }
+
+    // 활동 보고서 승인
+    @PatchMapping("/{reportNo}/approve")
+    public ResponseEntity<Void> approve(@PathVariable Long reportNo) {
+        adminFinalReportService.approveReport(reportNo);
+        return ResponseEntity.ok().build();
+    }
+
+    // 활동 보고서 반려
+    @PatchMapping("/{reportNo}/reject")
+    public ResponseEntity<Void> reject(@PathVariable Long reportNo,
+                                       @RequestParam String reason) {
+        adminFinalReportService.rejectReport(reportNo, reason);
+        return ResponseEntity.ok().build();
+    }
+}
