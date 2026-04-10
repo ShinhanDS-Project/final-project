@@ -48,4 +48,5 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
 
     // [가빈] 승인 상태별 캠페인 목록 조회 (PENDING, REJECTED 등)
     Page<Campaign> findByApprovalStatus(ApprovalStatus approvalStatus, Pageable pageable);
+    Page<Campaign> findByFoundationNo(Long foundationNo);
 }
