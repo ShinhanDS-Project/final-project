@@ -1,7 +1,5 @@
-package com.merge.final_project.campaign;
+package com.merge.final_project.campaign.campaigns;
 
-import com.merge.final_project.campaign.campaigns.ApprovalStatus;
-import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class CampaignRepositoryTests {
 
+    //캠페인 상태변화 확인 좀 하려고 만들었어용
     @Autowired
     private CampaignRepository campaignRepository;
 
