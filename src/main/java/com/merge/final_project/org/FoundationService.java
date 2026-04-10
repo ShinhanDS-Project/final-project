@@ -1,5 +1,7 @@
 package com.merge.final_project.org;
 
+import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.org.dto.*;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationResponseDTO;
 import org.springframework.data.domain.Page;
@@ -25,5 +27,5 @@ public interface FoundationService {
     Long approveFoundation(Long foundationNo);
     Long rejectFoundationForIllegal(Long foundationNo);
 
-
+    Page<CampaignListResponseDTO> getMyCampaigns(Long foundationNo, Pageable pageable);
 }
