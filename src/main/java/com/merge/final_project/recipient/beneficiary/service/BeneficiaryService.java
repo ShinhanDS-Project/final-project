@@ -1,8 +1,11 @@
 package com.merge.final_project.recipient.beneficiary.service;
 
+import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
+import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryInfoResponseDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
+import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryUpdateRequestDTO;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySignupRequestDTO;
@@ -17,7 +20,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,7 @@ public class BeneficiaryService implements UserDetailsService {
     private final CampaignRepository campaignRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SignupWalletHookService signupWalletHookService;
 
     @Transactional
     public Long signup(BeneficiarySignupRequestDTO dto){
@@ -46,14 +52,16 @@ public class BeneficiaryService implements UserDetailsService {
                 .beneficiaryHash("init_hash")
                 .build();
         Beneficiary saved = beneficiaryRepository.save(beneficiary);
+        // 수혜자 계정 생성 직후 수혜자 전용 지갑을 생성하고 beneficiary 테이블에 바인딩한다.
+        // signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
         return saved.getBeneficiaryNo();
     }
 
-    //일단 랜덤 아무거나 넣을게요 참여코드
-    private int generatedEntryCode(){
-        Random random = new Random();
-        return 100000 + random.nextInt(900000);
+
+    private String generatedEntryCode(){
+        return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
+
 
 
     @Override
@@ -79,7 +87,9 @@ public class BeneficiaryService implements UserDetailsService {
                 .password(encodedPassword) // 암호화된 비번 세팅!
                 .build();
 
-        beneficiaryRepository.save(beneficiary);
+        Beneficiary saved = beneficiaryRepository.save(beneficiary);
+        // 테스트/임시 가입 경로에서도 동일한 지갑 생성 훅을 적용한다.
+        signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
     }
     public List<Campaign> getMyCampaigns(String email) {
         // 1. 이메일로 수혜자 번호 찾기
@@ -88,6 +98,55 @@ public class BeneficiaryService implements UserDetailsService {
 
         // 2. 그 번호로 등록된 캠페인들 가져오기
         return campaignRepository.findByBeneficiaryNo(beneficiary.getBeneficiaryNo());
+    }
+
+    /**
+     * 본인 상세 정보 조회 (조회용)
+     */
+    public BeneficiaryInfoResponseDTO getMyDetailInfo(String email) {
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
+        return new BeneficiaryInfoResponseDTO(beneficiary);
+    }
+
+    /**
+     * 본인 정보 조회 (수정 폼용)
+     */
+    public BeneficiaryUpdateRequestDTO getMyInfo(String email) {
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
+
+        BeneficiaryUpdateRequestDTO dto = new BeneficiaryUpdateRequestDTO();
+        dto.setName(beneficiary.getName());
+        dto.setPhone(beneficiary.getPhone());
+        dto.setAccount(beneficiary.getAccount());
+        dto.setBeneficiaryType(beneficiary.getBeneficiaryType());
+
+        return dto;
+    }
+
+    /**
+     * 본인 정보 수정 로직
+     */
+    @Transactional
+    public void updateMyInfo(String email, BeneficiaryUpdateRequestDTO dto) {
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
+
+        // 1. 기본 인적 사항 업데이트
+        beneficiary.updateInfo(dto.getName(), dto.getPhone(), dto.getAccount(), dto.getBeneficiaryType());
+
+        // 2. 비밀번호 변경 요청 시 처리
+        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
+            beneficiary.updatePassword(passwordEncoder.encode(dto.getPassword()));
+        }
+    }
+
+    public Long getBeneficiaryNoByEntryCode(String entryCode){
+        Beneficiary beneficiary = beneficiaryRepository.findByEntryCode(entryCode)
+                     .orElseThrow(() -> new RuntimeException("해당 엔트리 코드를 가진 수혜자를 찾을 수 없습니다: " + entryCode));
+
+        return beneficiary.getBeneficiaryNo();
     }
 
 }

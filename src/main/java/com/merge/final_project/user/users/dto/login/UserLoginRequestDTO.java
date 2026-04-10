@@ -17,4 +17,6 @@ public class UserLoginRequestDTO {
 
     private String password;
     private LoginType userType;
+
+
 }

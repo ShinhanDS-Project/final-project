@@ -24,6 +24,7 @@ public class FinalReportResponseDTO {
     private Long campaignNo;
     private ReportApprovalStatus approvalStatus;
     private LocalDateTime createdAt;
+    private String rejectReason; // 💡 반려 사유 추가
 
     // 💡 이 보고서에 첨부된 이미지 리스트 (중요!)
     private List<ImageDTO> images;
@@ -39,6 +40,7 @@ public class FinalReportResponseDTO {
         this.campaignNo = entity.getCampaign_no();
         this.approvalStatus = entity.getApprovalStatus();
         this.createdAt = entity.getCreatedAt();
+        this.rejectReason = entity.getRejectReason(); // 💡 반려 사유 매핑
 
         // Image 엔티티 리스트를 내부 ImageDTO 리스트로 변환
         this.images = imageEntities.stream()

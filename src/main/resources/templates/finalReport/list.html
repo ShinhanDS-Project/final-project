@@ -1,32 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>보고서 관리 리스트</title>
 </head>
 <body>
-<h2>내 참여 캠페인 목록</h2>
-<table border="1">
-    <thead>
-    <tr>
-        <th>캠페인 번호</th>
-        <th>캠페인 제목</th>
-        <th>상태</th>
-        <th>보고서 작성</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="campaign : ${campaignList}">
-        <td th:text="${campaign.campaignNo}">번호</td>
-        <td th:text="${campaign.title}">제목</td>
-        <td th:text="${campaign.campaignStatus}">진행상태</td>
-        <td>
-            <a th:href="@{/finalReport/submit(campaignNo=${campaign.campaignNo})}">
-                <button type="button">보고서 작성하기</button>
-            </a>
-        </td>
-    </tr>
-    </tbody>
-</table>
+    <div style="text-align: right; margin-bottom: 10px;">
+        <a href="/api/beneficiary/info"><button type="button">내 정보 보기</button></a>
+        <a href="/api/beneficiary/edit"><button type="button">내 정보 수정</button></a>
+        <form th:action="@{/api/beneficiary/logout}" method="post" style="display: inline;">
+            <button type="submit">로그아웃</button>
+        </form>
+    </div>
+    <h1>내 보고서 관리</h1>
+
+    <!-- 1. 작성 대기 (보고서가 없는 캠페인) -->
+    <section>
+        <h2>📝 작성해야 할 보고서</h2>
+        <table border="1">
+            <thead>
+                <tr><th>캠페인 번호</th><th>캠페인 제목</th><th>작업</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="campaign : ${campaignList}" 
+                    th:if="${#lists.isEmpty(reportList.?[campaignNo == __${campaign.campaignNo}__])}">
+                    <td th:text="${campaign.campaignNo}"></td>
+                    <td th:text="${campaign.title}"></td>
+                    <td>
+                        <a th:href="@{/finalReport/submit(campaignNo=${campaign.campaignNo})}">
+                            <button type="button">보고서 작성하기</button>
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <hr>
+
+    <!-- 2. 검토 대기 (PENDING) -->
+    <section>
+        <h2>⏳ 검토 대기 중인 보고서</h2>
+        <table border="1">
+            <thead>
+                <tr><th>보고서 번호</th><th>제목</th><th>작성일</th><th>작업</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="report : ${reportList}" th:if="${report.approvalStatus.name() == 'PENDING'}">
+                    <td th:text="${report.reportNo}"></td>
+                    <td th:text="${report.title}"></td>
+                    <td th:text="${#temporals.format(report.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td>
+                        <button type="button" th:onclick="'viewReport(' + ${report.reportNo} + ')'">상세 보기</button>
+                        <button type="button" th:onclick="'editReport(' + ${report.reportNo} + ')'">수정하기</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <hr>
+
+    <!-- 3. 승인 완료 (APPROVED) -->
+    <section>
+        <h2>✅ 승인 완료된 보고서</h2>
+        <table border="1">
+            <thead>
+                <tr><th>보고서 번호</th><th>제목</th><th>승인일</th><th>작업</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="report : ${reportList}" th:if="${report.approvalStatus.name() == 'APPROVED'}">
+                    <td th:text="${report.reportNo}"></td>
+                    <td th:text="${report.title}"></td>
+                    <td th:text="${#temporals.format(report.createdAt, 'yyyy-MM-dd HH:mm')}"></td> <!-- 승인일이 따로 있다면 그걸 쓰는게 좋음 -->
+                    <td>
+                        <button type="button" th:onclick="'viewReport(' + ${report.reportNo} + ')'">상세 보기</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <hr>
+
+    <!-- 4. 반려됨 (REJECTED) -->
+    <section>
+        <h2>❌ 반려된 보고서 (수정 필요)</h2>
+        <table border="1">
+            <thead>
+                <tr><th>보고서 번호</th><th>제목</th><th>반려 사유</th><th>작업</th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="report : ${reportList}" th:if="${report.approvalStatus.name() == 'REJECTED'}">
+                    <td th:text="${report.reportNo}"></td>
+                    <td th:text="${report.title}"></td>
+                    <td style="color: red;" th:text="${report.rejectReason}"></td>
+                    <td>
+                        <button type="button" th:onclick="'editReport(' + ${report.reportNo} + ')'">수정하기</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <script>
+        function viewReport(reportNo) {
+            location.href = "/finalReport/" + reportNo;
+        }
+        function editReport(reportNo) {
+            location.href = "/finalReport/update?reportNo=" + reportNo;
+        }
+    </script>
 </body>
 </html>

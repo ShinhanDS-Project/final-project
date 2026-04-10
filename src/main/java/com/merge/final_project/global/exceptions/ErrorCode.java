@@ -15,12 +15,27 @@ public enum ErrorCode {
     DUPLICATE_BUSINESS_REGISTRATION(HttpStatus.CONFLICT, "FOUNDATION_001", "이미 신청된 사업자등록번호입니다."),
     FOUNDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "FOUNDATION_002", "존재하지 않는 기부단체입니다."),
     CANNOT_APPROVE_ILLEGAL_FOUNDATION(HttpStatus.CONFLICT, "FOUNDATION_003", "불성실기부단체에 포함되는 단체는 가입이 안됩니다."),
-
-    // 파일
+    FOUNDATION_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "FOUNDATION_004", "이메일 또는 비밀번호가 올바르지 않습니다."),
+    FOUNDATION_NOT_ACTIVATED(HttpStatus.FORBIDDEN, "FOUNDATION_005", "승인되지 않은 단체입니다. 관리자 승인 후 로그인 가능합니다."),
+    // 파일 관련
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
-
+    FILE_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_002", "파일 업로드 중 오류가 발생했습니다."),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "FILE_003", "지원하지 않는 파일 형식입니다."),
+    // 공통 입력값 검증
+    INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "COMMON_001", "입력값이 올바르지 않습니다."),
     // 메일
-    MAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MAIL_001", "메일 발송에 실패했습니다.");
+    MAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MAIL_001", "메일 발송에 실패했습니다."),
+    // 캠페인
+    CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_001", "존재하지 않는 캠페인입니다."),
+    CAMPAIGN_ALREADY_PROCESSED(HttpStatus.CONFLICT, "CAMPAIGN_002", "이미 처리된 캠페인입니다."),
+    // 활동 보고서
+    FINAL_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_001", "존재하지 않는 활동 보고서입니다."),
+    FINAL_REPORT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "REPORT_002", "이미 처리된 활동 보고서입니다."),
+    // 알림
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001", "존재하지 않는 알림입니다."),
+    NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근 권한이 없습니다.");
+
+
 
     private final HttpStatus status;
     private final String code;
