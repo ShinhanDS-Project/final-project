@@ -7,6 +7,8 @@ import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.auth.useraccount.SignupWalletHookService;
+import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
@@ -48,6 +50,7 @@ public class FoundationServiceImpl implements FoundationService {
     private final AdminLogService adminLogService;
     private final AdminRepository adminRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final CampaignRepository campaignRepository;
 
 
     @Override
@@ -362,5 +365,10 @@ public class FoundationServiceImpl implements FoundationService {
         adminLogService.log(ActionType.REJECT, TargetType.FOUNDATION, foundationNo, description, admin);
 
         return foundation.getFoundationNo();
+    }
+
+    @Override
+    public Page<CampaignListResponseDTO> getMyCampaigns(Long foundationNo, Pageable pageable) {
+        return campaignRepository.findByFoundationNo(foundationNo, pageable);
     }
 }
