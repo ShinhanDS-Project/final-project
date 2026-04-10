@@ -45,7 +45,7 @@ public class S3FileService implements FileService {
         s3Client.putObject(putObjectRequest, 
                 RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-        return storedName;
+        return storedName; //
     }
 
     @Override

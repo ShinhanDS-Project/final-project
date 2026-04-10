@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>내 정보 보기</title>
+</head>
+<body>
+    <h1>내 정보 상세 보기</h1>
+    <hr>
+    <div>
+        <strong>이름:</strong> <span th:text="${myInfo.name}"></span>
+    </div>
+    <div>
+        <strong>전화번호:</strong> <span th:text="${myInfo.phone}"></span>
+    </div>
+    <div>
+        <strong>계좌번호:</strong> <span th:text="${myInfo.account}"></span>
+    </div>
+    <div>
+        <strong>Entry Code:</strong> <code th:text="${myInfo.entryCode}"></code>
+    </div>
+    <div>
+        <strong>수혜자 유형:</strong> <span th:text="${myInfo.beneficiaryType}"></span>
+    </div>
+    <hr>
+    <a href="/api/beneficiary/edit"><button type="button">수정하기</button></a>
+    <a href="/finalReport/list"><button type="button">목록으로</button></a>
+</body>
+</html>

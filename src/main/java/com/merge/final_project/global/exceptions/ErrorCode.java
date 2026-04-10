@@ -36,6 +36,11 @@ public enum ErrorCode {
     MAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MAIL_001", "메일 발송에 실패했습니다."),
     // 캠페인
     CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_001", "존재하지 않는 캠페인입니다."),
+    CAMPAIGN_ALREADY_PROCESSED(HttpStatus.CONFLICT, "CAMPAIGN_002", "이미 처리된 캠페인입니다."),
+    // 활동 보고서
+    FINAL_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_001", "존재하지 않는 활동 보고서입니다."),
+    FINAL_REPORT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "REPORT_002", "이미 처리된 활동 보고서입니다."),
+    // 캠페인
     CAMPAIGN_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "CAMPAIGN_002", "현재 모금기간이 아닙니다."),
     CAMPAIGN_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_003", "캠페인 지갑 정보를 찾을 수 없습니다."),
     // 기부단체

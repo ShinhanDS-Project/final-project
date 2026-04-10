@@ -79,6 +79,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 수혜자 로그인/회원가입은 인증 없이 접근 가능
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
+
                         // 그 외 보고서 작성 등은 모두 인증 필요
                         .anyRequest().authenticated()
                 )
@@ -137,6 +138,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        // 1. [공개 경로] 누구나 접근 가능
                         .requestMatchers(
                                 "/",
                                 "/error",
@@ -152,9 +154,15 @@ public class SecurityConfig {
                                 "/social-info",
                                 "/users/support/**"
                         ).permitAll()
+
+                        // 2. [인증 경로] 로그인한 사용자만 가능
+                        .requestMatchers("/finalReport/**").authenticated()
+
+                        // 3. 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
 
+                // OAuth2 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
