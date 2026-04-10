@@ -5,6 +5,8 @@ import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryInfoResponse
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySignupRequestDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryUpdateRequestDTO;
+import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
+import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.recipient.beneficiary.service.BeneficiaryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -25,6 +27,7 @@ public class BeneficiaryController {
     private final BeneficiaryService beneficiaryService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final BeneficiaryRepository beneficiaryRepository;
 
     /**
      * 회원 상세 정보 페이지 이동
@@ -81,19 +84,20 @@ public class BeneficiaryController {
     /**
      * 로그인 처리 (API)
      */
-    @PostMapping("/signin")
-    @ResponseBody
-    public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto, 
-                                 jakarta.servlet.http.HttpServletResponse response) {
-        
+    @PostMapping("/signin")@ResponseBody
+    public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto,
+                                   jakarta.servlet.http.HttpServletResponse response) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword()));
 
-        // createAdminAccessToken -> 추후 수혜자 전용 메서드명으로 변경 권장
-        String accessToken = jwtTokenProvider.createAdminAccessToken(
-                authentication.getName(),
-                authentication.getAuthorities().iterator().next().getAuthority()
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 수혜자입니다."));
+
+        String accessToken = jwtTokenProvider.createGeneralAccessToken(
+                beneficiary.getName(),
+                beneficiary.getEmail(),
+                "ROLE_BENEFICIARY",
+                beneficiary.getBeneficiaryNo()
         );
 
         jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("accessToken", accessToken);
@@ -102,7 +106,7 @@ public class BeneficiaryController {
         cookie.setMaxAge(60 * 60 * 24);
         response.addCookie(cookie);
 
-        log.info("수혜자 로그인 성공: {}", loginDto.getEmail());
+        log.info("수혜자 로그인 성공 및 쿠키 발급 완료: {}", loginDto.getEmail());
 
         return ResponseEntity.ok(accessToken);
     }
