@@ -18,7 +18,7 @@ import java.util.Base64;
 @Component
 public class TossPaymentClient {
 
-    @Value("${toss.secret.key}")
+    @Value("${TOSS_SECRET_KEY}")
     private String secretKey;
     //restTemplate 코드 -> 토스 외부 api 호출
     private final RestTemplate restTemplate = new RestTemplate();

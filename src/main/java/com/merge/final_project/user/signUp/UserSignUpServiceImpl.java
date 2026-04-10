@@ -1,8 +1,10 @@
 package com.merge.final_project.user.signUp;
 
+import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
+import com.merge.final_project.global.utils.S3FileService;
 import com.merge.final_project.user.signUp.dto.UserSignUpResponseDTO;
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.users.User;
