@@ -1,5 +1,6 @@
 package com.merge.final_project.recipient.beneficiary.service;
 
+import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
@@ -27,6 +28,7 @@ public class BeneficiaryService implements UserDetailsService {
     private final CampaignRepository campaignRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SignupWalletHookService signupWalletHookService;
 
     @Transactional
     public Long signup(BeneficiarySignupRequestDTO dto){
@@ -48,6 +50,8 @@ public class BeneficiaryService implements UserDetailsService {
                 .beneficiaryHash("init_hash")
                 .build();
         Beneficiary saved = beneficiaryRepository.save(beneficiary);
+        // 수혜자 계정 생성 직후 수혜자 전용 지갑을 생성하고 beneficiary 테이블에 바인딩한다.
+        signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
         return saved.getBeneficiaryNo();
     }
 
@@ -81,7 +85,9 @@ public class BeneficiaryService implements UserDetailsService {
                 .password(encodedPassword) // 암호화된 비번 세팅!
                 .build();
 
-        beneficiaryRepository.save(beneficiary);
+        Beneficiary saved = beneficiaryRepository.save(beneficiary);
+        // 테스트/임시 가입 경로에서도 동일한 지갑 생성 훅을 적용한다.
+        signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
     }
     public List<Campaign> getMyCampaigns(String email) {
         // 1. 이메일로 수혜자 번호 찾기
