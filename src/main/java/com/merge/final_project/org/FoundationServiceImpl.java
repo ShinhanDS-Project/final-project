@@ -6,15 +6,14 @@ import com.merge.final_project.admin.adminlog.ActionType;
 import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.admin.sse.ApprovalRequestEvent;
+import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
+import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.notification.email.event.FoundationApprovedEvent;
 import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
-import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
-import com.merge.final_project.org.dto.FoundationApplyResponseDTO;
-import com.merge.final_project.org.dto.FoundationDetailResponseDTO;
-import com.merge.final_project.org.dto.FoundationListResponseDTO;
+import com.merge.final_project.org.dto.*;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundation;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationDTO;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationRepository;
@@ -45,8 +44,10 @@ public class FoundationServiceImpl implements FoundationService {
     private final FileUtil upload;    //프로필 이미지는 위한 업로드 필드 추가
     private final PasswordEncoder passwordEncoder;  //임시 비밀번호 생성 시 암호화 하여 저장하기 위함
     private final ApplicationEventPublisher eventPublisher; // 언제 이벤트 발행할지 설정하기 위함.
+    private final SignupWalletHookService signupWalletHookService;
     private final AdminLogService adminLogService;
     private final AdminRepository adminRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
 
     @Override
@@ -155,6 +156,110 @@ public class FoundationServiceImpl implements FoundationService {
                 .build();
     }
 
+    //로그인
+    @Override
+    public FoundationSigninResponseDTO login(FoundationSigninRequestDTO requestDTO) {
+
+        // 이메일로 단체 조회 (보안상 이메일/비밀번호 오류를 동일 메시지로 반환하고 로그로만 남김.)
+        Foundation foundation = foundationRepository.findByFoundationEmail(requestDTO.getEmail())
+                .orElseThrow(() -> {
+                    log.warn("로그인 실패 - 존재하지 않는 이메일");
+                    return new BusinessException(ErrorCode.FOUNDATION_LOGIN_FAILED);
+                });
+
+        // 비밀번호 검증
+        if (!passwordEncoder.matches(requestDTO.getPassword(), foundation.getFoundationPassword())) {
+            log.warn("로그인 실패 - 비밀번호 불일치, 이메일");
+            throw new BusinessException(ErrorCode.FOUNDATION_LOGIN_FAILED);
+        }
+
+        // 승인된 단체만 로그인 가능 (ACTIVE 상태 검증)
+        if (foundation.getAccountStatus() != AccountStatus.ACTIVE) {
+            log.warn("로그인 실패 - 미승인 단체");
+            throw new BusinessException(ErrorCode.FOUNDATION_NOT_ACTIVATED);
+        }
+
+        //로그인 토큰 발급 (no 클레임에 foundationNo 담아서 알림 조회 등에 활용)
+        String accessToken = jwtTokenProvider.createGeneralAccessToken(
+                foundation.getFoundationName(),
+                foundation.getFoundationEmail(),
+                "ROLE_FOUNDATION",
+                foundation.getFoundationNo()
+        );
+
+        return FoundationSigninResponseDTO.builder()
+                .accessToken(accessToken)
+                .tokenType("Bearer")
+                .foundationNo(foundation.getFoundationNo())
+                .foundationName(foundation.getFoundationName())
+                .email(foundation.getFoundationEmail())
+                .build();
+    }
+
+    //프로필 정보 수정. -> 비밀번호는 별도 서비스로 구현. 이미지 변경 가능하여 멀티파일 타입으로 이미지 받음.
+    @Transactional
+    @Override
+    public FoundationDetailResponseDTO updateFoundationInfo(Long foundationNo, FoundationUpdateRequestDTO requestDTO, MultipartFile profileImage) {
+        //pk에 해당하는 기부단체 반환
+        Foundation foundation = foundationRepository.findById(foundationNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+
+        //활성화(승인됨) 단체만 정보 변경 가능하게 처리
+        if (foundation.getAccountStatus()!= AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FOUNDATION_NOT_ACTIVATED);
+        }
+
+        // 새 프로필 이미지가 있으면 교체
+        if (profileImage != null && !profileImage.isEmpty()) {
+            try {
+                String newProfilePath = upload.saveFile(profileImage);
+                foundation.updateProfilePath(newProfilePath);
+            } catch (IOException e) {
+                log.error("프로필 이미지 저장 실패", e);
+                throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
+            }
+        }
+
+        foundation.update(
+                requestDTO.getDescription(),
+                requestDTO.getContactPhone(),
+                requestDTO.getAccount(),
+                requestDTO.getBankName(),
+                requestDTO.getFeeRate()
+        );
+
+        return FoundationDetailResponseDTO.from(foundation);
+    }
+
+    //비밀번호 수정
+    @Transactional
+    @Override
+    public void updateFoundationPassword(Long foundationNo, FoundationPasswordUpdateRequestDTO requestDTO) {
+        Foundation foundation = foundationRepository.findById(foundationNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+
+        //활성화(승인됨) 단체만 정보 변경 가능하게 처리
+        if (foundation.getAccountStatus()!= AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FOUNDATION_NOT_ACTIVATED);
+        }
+
+        //입력받은 비밀번호를 인코딩 한 값이 현재 암호화된 기부단체 비밀번호와 다른지 Encoder.matches로 확인.
+        if (!passwordEncoder.matches(requestDTO.getCurrentPassword(), foundation.getFoundationPassword())) {
+            throw new BusinessException(ErrorCode.FOUNDATION_LOGIN_FAILED);
+        }
+
+        //변경
+        foundation.updatePassword(passwordEncoder.encode(requestDTO.getNewPassword()));
+    }
+
+    //로그아웃
+    @Override
+    public void logout(String bearerToken) {
+        // JWT는 stateless이므로 프론트에서 토큰 제거로 처리
+        // 추후 시간 남으면 블랙리스트 구현해서 체크하는 서비스로 확장 예정
+    }
+
+
     @Override
     public Page<FoundationListResponseDTO> getFoundationApplicationList(Pageable pageable) {
         // 신청 해놓고 승인되지 않은 기부단체들을 볼 수 있는 목록 (승인인지 반려인지를 제외)
@@ -200,6 +305,7 @@ public class FoundationServiceImpl implements FoundationService {
     public Long approveFoundation(Long foundationNo) {
         Foundation foundation = foundationRepository.findById(foundationNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+        boolean alreadyApproved = foundation.getReviewStatus() == ReviewStatus.APPROVED;
 
         //불법 단체는 승인 불가 하도록 한 번 더 조회 + 반려되는 경우는 비활성화랑 다름. 재가입 불가. 따라서 반려되는 경우도 조회.
         if (foundation.getReviewStatus() == ReviewStatus.ILLEGAL || foundation.getReviewStatus() == ReviewStatus.REJECTED) {
@@ -213,6 +319,10 @@ public class FoundationServiceImpl implements FoundationService {
         String tempPassword = passwordEncoder.encode(sendTempPassword);
 
         foundation.updatePassword(tempPassword);
+        if (!alreadyApproved) {
+            // 최초 승인 시점에만 단체 지갑/캠페인 지갑 세트를 생성한다.
+            signupWalletHookService.onFoundationSignupCompleted(foundationNo);
+        }
 
         //트랜잭션 커밋 성공한 이후에만 메일 발송 -> 이벤트 기반으로 구현.
         eventPublisher.publishEvent(new FoundationApprovedEvent(foundationNo,foundation.getFoundationEmail(), foundation.getFoundationName(), sendTempPassword));

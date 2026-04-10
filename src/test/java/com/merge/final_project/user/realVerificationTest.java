@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-public class realVerificationTest {
+public class
+realVerificationTest {
     @Autowired
     private VerificationService verificationService;
 //

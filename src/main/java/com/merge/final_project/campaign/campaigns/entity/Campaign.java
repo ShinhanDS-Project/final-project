@@ -84,6 +84,6 @@ public class Campaign extends BaseCreatedAtEntity {
     private String rejectReason;
 
     public Long addCurrentAmount(BigDecimal amount) {
-        return this.currentAmount + amount.longValue();
+        return this.currentAmount+= amount.longValue();
     }
 }

@@ -99,4 +99,16 @@ public class Foundation extends BaseEntity {
         this.foundationPassword = encodedPassword;
     }
 
+    public void update(String description, String contactPhone, String account, String bankName, BigDecimal feeRate) {
+        this.description = description;
+        this.contactPhone = contactPhone;
+        this.account = account;
+        this.bankName = bankName;
+        this.feeRate = feeRate;
+    }
+
+    public void updateProfilePath(String profilePath) {
+        this.profilePath = profilePath;
+    }
+
 }

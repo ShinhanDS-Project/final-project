@@ -1,13 +1,19 @@
 package com.merge.final_project.org;
 
+import com.merge.final_project.admin.Admin;
+import com.merge.final_project.admin.AdminRepository;
+import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
+import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.notification.email.event.FoundationApprovedEvent;
 import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
 import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundation;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +22,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
@@ -47,6 +55,31 @@ class FoundationServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private AdminLogService adminLogService;
+
+    @Mock
+    private AdminRepository adminRepository;
+
+    @Mock
+    private JwtTokenProvider jwtTokenProvider;
+
+    @BeforeEach
+    void setUp() {
+        // approveFoundation / rejectFoundationForIllegal 내부에서
+        // SecurityContextHolder.getContext().getAuthentication()을 사용하므로 테스트용 Authentication 세팅 필요
+        var auth = new UsernamePasswordAuthenticationToken("testAdmin", null, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        Admin mockAdmin = mock(Admin.class);
+        lenient().when(adminRepository.findByAdminId("testAdmin")).thenReturn(Optional.of(mockAdmin));
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
     private Foundation foundationOf(ReviewStatus reviewStatus, String rejectReason) {
         return Foundation.builder()

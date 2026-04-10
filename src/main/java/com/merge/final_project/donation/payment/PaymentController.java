@@ -11,7 +11,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Transactional
 @RequestMapping("/api/payments")
 public class PaymentController {
    @Autowired

@@ -1,4 +1,4 @@
-package com.merge.final_project.notification;
+package com.merge.final_project.notification.email;
 
 public enum EmailTemplateType {
     DONATION_COMPLETE, CAMPAIGN_APPROVED, CAMPAIGN_REJECTED,
