@@ -29,8 +29,7 @@ public class Foundation extends BaseEntity {
     @Column(name = "foundation_name")
     private String foundationName;
 
-    //사업자등록번호로 중복체크 하기에 unique로 설정할 것.
-    @Column(name = "business_registration_number", unique = true)
+    @Column(name = "business_registration_number")
     private String businessRegistrationNumber;
 
     @Column(name = "representative_name")
@@ -91,7 +90,6 @@ public class Foundation extends BaseEntity {
 
     public void reject(String rejectReason) {
         this.reviewStatus = ReviewStatus.REJECTED;
-        this.accountStatus = AccountStatus.INACTIVE;
         this.rejectReason = rejectReason;
     }
 
@@ -99,16 +97,9 @@ public class Foundation extends BaseEntity {
         this.foundationPassword = encodedPassword;
     }
 
-    public void update(String description, String contactPhone, String account, String bankName, BigDecimal feeRate) {
-        this.description = description;
-        this.contactPhone = contactPhone;
-        this.account = account;
-        this.bankName = bankName;
-        this.feeRate = feeRate;
-    }
-
-    public void updateProfilePath(String profilePath) {
-        this.profilePath = profilePath;
+    // [가빈] 활동 보고서 14일 미제출 시 단체 비활성화
+    public void deactivate() {
+        this.accountStatus = AccountStatus.INACTIVE;
     }
 
 }
