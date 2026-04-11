@@ -20,7 +20,7 @@ public class Foundation extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long foundationNo;
 
-    @Column(name = "foundation_email")
+    @Column(name = "foundation_email", unique = true)
     private String foundationEmail;
 
     @Column(name = "foundation_password")
@@ -29,7 +29,8 @@ public class Foundation extends BaseEntity {
     @Column(name = "foundation_name")
     private String foundationName;
 
-    @Column(name = "business_registration_number")
+    //사업자등록번호로 중복체크 하기에 unique로 설정할 것.
+    @Column(name = "business_registration_number", unique = true)
     private String businessRegistrationNumber;
 
     @Column(name = "representative_name")
