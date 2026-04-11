@@ -83,9 +83,9 @@ public class TossPaymentClient {
         try {
             restTemplate.postForEntity(url, entity, Object.class);
         } catch (Exception e) {
-            // 취소 요청 자체가 실패한 경우 (이건 정말 로그를 세게 남겨야 함)
-            System.err.println("!!! 결제 취소 요청 실패 !!! paymentKey: " + paymentKey);
-            e.printStackTrace();
+            // 취소 요청 자체가 실패한 경우
+            //System.err.println("!!! 결제 취소 요청 실패 !!! paymentKey: " + paymentKey);
+          //  e.printStackTrace();
         }
     }
 }
