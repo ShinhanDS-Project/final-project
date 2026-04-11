@@ -124,4 +124,9 @@ public class Campaign extends BaseCreatedAtEntity {
     public void ended(){
         this.campaignStatus = CampaignStatus.ENDED;
     }
+
+    // [가빈] 활동 보고서 승인 이후 캠페인최종 완료 처리하기 위해 사용하는 메서드
+    public void complete() {
+        this.campaignStatus = CampaignStatus.COMPLETED;
+    }
 }

@@ -8,6 +8,9 @@ import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
+import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.notification.inapp.NotificationService;
 import com.merge.final_project.notification.inapp.NotificationType;
 import com.merge.final_project.notification.inapp.RecipientType;
@@ -58,6 +61,9 @@ class AdminFinalReportServiceTest {
 
     @Mock
     private ImageRepository imageRepository;
+
+    @Mock
+    private CampaignRepository campaignRepository;
 
     private Admin admin;
 
