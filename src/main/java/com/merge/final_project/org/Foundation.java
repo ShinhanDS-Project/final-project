@@ -97,7 +97,20 @@ public class Foundation extends BaseEntity {
         this.foundationPassword = encodedPassword;
     }
 
-    // [가빈] 활동 보고서 14일 미제출 시 단체 비활성화
+    public void update(String description, String contactPhone, String account, String bankName, BigDecimal feeRate) {
+        this.description = description;
+        this.contactPhone = contactPhone;
+        this.account = account;
+        this.bankName = bankName;
+        this.feeRate = feeRate;
+    }
+
+    public void updateProfilePath(String profilePath) {
+        this.profilePath = profilePath;
+    }
+
+    // 활동 보고서 작성 안 한 수혜자들이 있을 경우 (일단은) 기부단체가 비활성화됨. => 관리 이유.
+    // 수혜 단체 쪽에 active 컬럼이 없었기에 이런 방식을 구현헀으나 추후 얘기 나눠볼 것.
     public void deactivate() {
         this.accountStatus = AccountStatus.INACTIVE;
     }
