@@ -2,18 +2,17 @@ package com.merge.final_project.donation.payment;
 
 import com.merge.final_project.donation.payment.dto.PaymentBody;
 import com.merge.final_project.donation.payment.dto.PaymentConfirmRequest;
-import com.merge.final_project.donation.payment.dto.TossResponse;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class TossPaymentClient {
@@ -32,8 +31,12 @@ public class TossPaymentClient {
         headers.set("Authorization", "Basic "+encodedKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<PaymentConfirmRequest> entity = new HttpEntity<>(requestDTO,headers);
+        Map<String, Object> tossRequestBody = new HashMap<>();
+        tossRequestBody.put("paymentKey", requestDTO.getPaymentKey());
+        tossRequestBody.put("orderId", requestDTO.getOrderId());
+        tossRequestBody.put("amount", requestDTO.getAmount());
 
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(tossRequestBody,headers);
         //2. 토스 서버에 승인 요청 전송
         //응답을 tossResponse<PayMentBody>형태로 받음
         // 토스가 응답을 한번더 감싸서 와서 tossResponse<T>로 받음
