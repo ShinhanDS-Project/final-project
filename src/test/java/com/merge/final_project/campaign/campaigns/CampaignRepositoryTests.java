@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime; //가빈 추가
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,7 +40,7 @@ class CampaignRepositoryTests {
                 .approvalStatus(approvalStatus)
                 .campaignStatus(CampaignStatus.PENDING)
                 .targetAmount(1000000L)
-                .currentAmount(0L)
+                .currentAmount(BigDecimal.valueOf(10000))
                 .build();
     }
 

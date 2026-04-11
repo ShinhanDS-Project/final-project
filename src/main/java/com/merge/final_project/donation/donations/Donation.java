@@ -62,5 +62,7 @@ public class Donation {
     @Column(name="created_at",nullable = false)
     private Timestamp createdAt;
 
+    @Column(name = "key_no")
+    private Long keyNo;
 
 }

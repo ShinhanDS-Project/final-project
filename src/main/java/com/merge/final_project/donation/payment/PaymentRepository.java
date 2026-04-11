@@ -14,4 +14,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     // payment no 기준으로 존재 찾기
     boolean existsByPaymentNo(Long paymentNo);
+
+    boolean existsByPaymentKey(String paymentKey);
+    // orderkey와 userno로 payment 찾기
+    Optional<Payment> findByOrderKeyAndUserNo(String orderKey, Long userNo);
 }

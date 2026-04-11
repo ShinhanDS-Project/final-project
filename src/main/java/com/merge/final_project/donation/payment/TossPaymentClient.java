@@ -51,16 +51,41 @@ public class TossPaymentClient {
        }
        catch(HttpClientErrorException e){
            //400번대 에러
-           //토스가 보낸 에러를 확인 후 던wla
+           //토스가 보낸 에러를 확인 후 던짐
+//           System.err.println("##### 토스 API 에러 발생 #####");
+//           System.err.println("상태 코드: " + e.getStatusCode());
+//           System.err.println("에러 본문: " + e.getResponseBodyAsString()); // 이게 핵심입니다!
+
            throw new BusinessException(ErrorCode.PAYMENT_CONFIRM_FAILED);
        }catch (Exception e){
            //네트워크등 기타 에러
+//           System.err.println("##### 기타 네트워크 에러 #####");
+//           e.printStackTrace(); // 어디서 터졌는지 스택트레이스 전체 출력
            throw new BusinessException(ErrorCode.PAYMENT_CONFIRM_FAILED);
        }
         // 3. 알맹이(entityBody)만 쏙 빼서 반환
 
     }
-    //추가기능
-    //에러 핸들링 :confirm Payment 메서드에 감싸서 로그 남기기
-    //로그: log.error써서 로그 잡기
+    // 결제는 됐는데, 만약의 예외상황으로 기부가 불가능해진 경우를 고려.
+    public void cancelPayment(String paymentKey, String cancelReason) {
+        String url = "https://api.tosspayments.com/v1/payments/" + paymentKey + "/cancel";
+
+        HttpHeaders headers = new HttpHeaders();
+        String encodedKey = Base64.getEncoder().encodeToString((secretKey + ":").getBytes());
+        headers.set("Authorization", "Basic " + encodedKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("cancelReason", cancelReason);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.postForEntity(url, entity, Object.class);
+        } catch (Exception e) {
+            // 취소 요청 자체가 실패한 경우 (이건 정말 로그를 세게 남겨야 함)
+            System.err.println("!!! 결제 취소 요청 실패 !!! paymentKey: " + paymentKey);
+            e.printStackTrace();
+        }
+    }
 }

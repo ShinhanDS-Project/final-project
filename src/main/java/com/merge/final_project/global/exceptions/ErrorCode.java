@@ -20,6 +20,7 @@ public enum ErrorCode {
     PAYMENT_CONFIRM_FAILED(HttpStatus.BAD_GATEWAY, "PAYMENT_005", "결제 승인에 실패했습니다."),
     PAYMENT_READY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT_006", "결제 준비 중 오류가 발생했습니다."),
     PAYMENT_METHOD_MISMATCH(HttpStatus.BAD_REQUEST,"PAYMENT_007","유효하지않은 결제 방식입니다."),
+    DUPLICATE_PAYMENT_KEY(HttpStatus.BAD_REQUEST,"PAYMENT_008","중복된 결제건입니다."),
     // 기부단체 가입 관련
     DUPLICATE_BUSINESS_REGISTRATION(HttpStatus.CONFLICT, "FOUNDATION_001", "이미 신청된 사업자등록번호입니다."),
     FOUNDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "FOUNDATION_002", "존재하지 않는 기부단체입니다."),
@@ -47,6 +48,8 @@ public enum ErrorCode {
     FOUNDATION_INACTIVE(HttpStatus.FORBIDDEN, "FOUNDATION_006", "현재 후원 가능한 기부단체가 아닙니다."),
     // 기부
     DONATION_CREATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "DONATION_001", "기부 내역 생성에 실패했습니다."),
+    DUPLICATE_DONATION(HttpStatus.BAD_REQUEST,"DONTATION_002","중복된 기부건입니다."),
+    INVALID_DONATION_AMOUNT(HttpStatus.BAD_REQUEST,"DONATION_003","잘못된 기부금액입니다."),
     // 알림
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001", "존재하지 않는 알림입니다."),
     NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근 권한이 없습니다.");
