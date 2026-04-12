@@ -4,6 +4,7 @@ import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.campaign.campaigns.CampaignCategory;
 import com.merge.final_project.campaign.campaigns.dto.CampaignBeneficiaryCheckResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignDetailResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignFoundationCheckResponseDTO;
@@ -69,6 +70,10 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional
     public void registerCampaign(CampaignRequestDTO dto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new IllegalArgumentException("대표 이미지는 필수입니다.");
+        }
+
         Foundation foundation = foundationRepository.findById(foundationNo)
             .orElseThrow(() -> new IllegalArgumentException("?? ??? ?? ? ????."));
 
@@ -118,14 +123,26 @@ public class CampaignServiceImpl implements CampaignService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CampaignListResponseDTO> getCampaignList(String sort) {
-        List<Campaign> campaigns;
+    public List<CampaignListResponseDTO> getCampaignList(String sort, String searchType, String keyword, String category) {
+        Comparator<Campaign> comparator;
 
         if ("participation".equalsIgnoreCase(sort)) {
-            campaigns = campaignRepository.findByCampaignStatusInOrderByCurrentAmountDescCampaignNoDesc(LIST_VISIBLE_STATUSES);
+            comparator = Comparator
+                .comparing((Campaign campaign) -> campaign.getCurrentAmount() == null ? 0L : campaign.getCurrentAmount())
+                .reversed()
+                .thenComparing(Campaign::getCampaignNo, Comparator.reverseOrder());
         } else {
-            campaigns = campaignRepository.findByCampaignStatusInOrderByEndAtAscCampaignNoDesc(LIST_VISIBLE_STATUSES);
+            comparator = Comparator
+                .comparing(Campaign::getEndAt, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(Campaign::getCampaignNo, Comparator.reverseOrder());
         }
+
+        List<Campaign> campaigns = campaignRepository.findAll().stream()
+            .filter(campaign -> campaign.getCampaignStatus() != null && LIST_VISIBLE_STATUSES.contains(campaign.getCampaignStatus()))
+            .filter(campaign -> matchesCategory(campaign, category))
+            .filter(campaign -> matchesKeyword(campaign, searchType, keyword))
+            .sorted(comparator)
+            .toList();
 
         return toCampaignListResponse(campaigns);
     }
@@ -261,7 +278,7 @@ public class CampaignServiceImpl implements CampaignService {
                     .sorted(Comparator.comparing(Image::getCreatedAt).reversed())
                     .map(Image::getImgPath)
                     .findFirst()
-                    .orElse(null)
+                    .orElse(campaign.getImagePath() == null ? "" : campaign.getImagePath())
             ));
 
         return campaigns.stream()
@@ -270,13 +287,67 @@ public class CampaignServiceImpl implements CampaignService {
                 .foundationNo(campaign.getFoundationNo())
                 .imagePath(imagePathByCampaignNo.get(campaign.getCampaignNo()))
                 .title(campaign.getTitle())
-                .foundationName(campaign.getFoundation() != null ? campaign.getFoundation().getFoundationName() : null)
+                .foundationName(
+                    campaign.getFoundationNo() == null
+                        ? null
+                        : foundationRepository.findByFoundationNo(campaign.getFoundationNo())
+                            .map(Foundation::getFoundationName)
+                            .orElse(null)
+                )
                 .targetAmount(campaign.getTargetAmount())
                 .currentAmount(campaign.getCurrentAmount())
-                .category(campaign.getCategory() == null ? null : campaign.getCategory().getLabel())
+                .category(toCampaignCategoryLabel(campaign.getCategory()))
                 .endAt(campaign.getEndAt())
                 .build())
             .toList();
+    }
+
+    private boolean matchesCategory(Campaign campaign, String category) {
+        if (category == null || category.isBlank()) {
+            return true;
+        }
+
+        try {
+            CampaignCategory campaignCategory = CampaignCategory.valueOf(category.trim().toUpperCase());
+            return campaignCategory.equals(campaign.getCategory());
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private boolean matchesKeyword(Campaign campaign, String searchType, String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return true;
+        }
+
+        String normalizedKeyword = keyword.trim().toLowerCase();
+
+        if ("foundation".equalsIgnoreCase(searchType)) {
+            String foundationName = campaign.getFoundationNo() == null
+                ? null
+                : foundationRepository.findByFoundationNo(campaign.getFoundationNo())
+                    .map(Foundation::getFoundationName)
+                    .orElse(null);
+            return foundationName != null && foundationName.toLowerCase().contains(normalizedKeyword);
+        }
+
+        String title = campaign.getTitle();
+        return title != null && title.toLowerCase().contains(normalizedKeyword);
+    }
+
+    private String toCampaignCategoryLabel(CampaignCategory category) {
+        if (category == null) {
+            return null;
+        }
+
+        return switch (category) {
+            case CHILD_YOUTH -> "아동/청소년";
+            case SENIOR -> "어르신";
+            case DISABLED -> "장애인";
+            case ANIMAL -> "동물";
+            case ENVIRONMENT -> "환경";
+            case ETC -> "기타";
+        };
     }
 
     private void saveDetailImages(List<MultipartFile> detailImageFiles, Long campaignNo) {

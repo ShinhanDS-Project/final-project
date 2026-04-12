@@ -17,7 +17,7 @@ public interface CampaignService {
             Long foundationNo
     );
 
-    List<CampaignListResponseDTO> getCampaignList(String sort);
+    List<CampaignListResponseDTO> getCampaignList(String sort, String searchType, String keyword, String category);
 
     CampaignDetailResponseDTO getCampaignDetail(Long campaignNo);
 
