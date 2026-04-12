@@ -8,7 +8,7 @@ public interface VerificationService {
 
     void sendPasswordResetCode(String email); // 비밀번호 재설정용
 
-    void verifyCode(String email, String code);
+    boolean verifyCode(String email, String code);
 
     boolean isVerifiedEmail(String email);
 

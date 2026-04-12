@@ -24,19 +24,18 @@ public class VerificationServiceImpl implements VerificationService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Override
+    @Transactional
     public UserVerifyResponseDTO sendVerificationCode(UserVerifyRequestDTO dto) {
-        String email = dto.getEmail();
-
-        if (userSignUpRepository.existsByEmailAndLoginType(email, dto.getLoginType())) {
+        // 1. 가입 여부 확인
+        if (userSignUpRepository.existsByEmailAndLoginType(dto.getEmail(), dto.getLoginType())) {
             throw new IllegalStateException("이미 가입된 이메일입니다.");
         }
 
-        issueVerificationCode(email, "[giveNtoken] 회원가입 인증 번호입니다.");
+        issueVerificationCode(dto.getEmail(), "[giveNtoken] 회원가입 인증 번호입니다.");
 
         return UserVerifyResponseDTO.builder()
                 .success(true)
-                .available(true)
-                .message("인증번호가 발송되었습니다. 이메일을 확인해주세요.")
+                .message("인증번호가 발송되었습니다.")
                 .build();
     }
 
@@ -46,7 +45,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public void verifyCode(String email, String code) {
+    public boolean verifyCode(String email, String code) {
         EmailVerification verification = emailVerificationRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("인증 요청 이력이 없는 이메일입니다."));
 
@@ -63,6 +62,7 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         verification.setVerified(true);
+        return true;
     }
 
     @Override
@@ -81,34 +81,33 @@ public class VerificationServiceImpl implements VerificationService {
         EmailVerification verification = emailVerificationRepository.findByEmail(email)
                 .orElse(null);
 
+        String code = createVerificationCode();
         LocalDateTime now = LocalDateTime.now();
-        int currentCount = 0;
 
         if (verification != null) {
-            if (verification.getExpiredAt() != null && verification.getExpiredAt().isBefore(now)) {
-                currentCount = 0;
-            } else {
-                currentCount = verification.getRequestCount();
-
-                if (verification.getExpiredAt() != null && verification.getExpiredAt().isAfter(now.plusMinutes(4))) {
-                    throw new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다.");
-                }
-
-                if (currentCount >= 5) {
-                    throw new IllegalStateException("인증번호 요청 횟수(5회)를 초과했습니다. 잠시 후 다시 시도해주세요.");
-                }
+            // 만료 여부와 상관없이 너무 빈번한 요청 제한 (예: 1분 이내 재요청 금지)
+            // 'updatedAt' 필드가 엔티티에 있다고 가정할 때 훨씬 깔끔함
+            if (verification.getExpiredAt().isAfter(now.minusMinutes(1))) {
+                throw new IllegalStateException("1분 후에 다시 시도해주세요.");
             }
+
+            if (verification.getRequestCount() >= 5) {
+                // 5회 초과 시 특정 시간이 지나야 초기화되도록 로직 보완 필요
+                throw new IllegalStateException("요청 횟수 초과");
+            }
+
+            verification.updateVerification(code, now.plusMinutes(5));
+        } else {
+            verification = EmailVerification.builder()
+                    .email(email)
+                    .verificationCode(code)
+                    .expiredAt(now.plusMinutes(5))
+                    .requestCount(1)
+                    .build();
         }
 
-        String code = createVerificationCode();
-        LocalDateTime expiredAt = now.plusMinutes(5);
-        int newCount = currentCount + 1;
-
-        EmailVerification savedVerification = (verification != null)
-                ? updateExistingVerification(verification, code, expiredAt, newCount)
-                : createNewVerification(email, code, expiredAt, newCount);
-
-        emailVerificationRepository.save(savedVerification);
+        emailVerificationRepository.save(verification);
+        // 트랜잭션 외부에서 실행하거나, 이벤트를 발행하여 비동기로 처리하는 것을 추천
         sendEmail(email, code, subject);
     }
 

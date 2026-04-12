@@ -21,19 +21,8 @@ public class VerificationController {
     }
 
     @PostMapping("/users/verification/verify")
-    public ResponseEntity<UserVerifyResponseDTO> verify(@Valid @RequestBody UserVerifyCodeRequestDTO dto) {
-        return ResponseEntity.ok(verificationService.verifyCode(dto));
+    public boolean verify(@Valid @RequestBody UserVerifyCodeRequestDTO dto) {
+        return verificationService.verifyCode(dto.getEmail(),dto.getCode());
     }
 
-    // 비밀번호 재설정( 로그인 전 5번이상 로그인 실패시 재설정하게끔 유도)
-    @PostMapping("/password/change")
-    public void changePassword(){
-        //  UserService.
-    }
-
-    // 비밀번호 변경
-    @PostMapping("/password/edit")
-    public void editPassword(){
-
-    }
 }

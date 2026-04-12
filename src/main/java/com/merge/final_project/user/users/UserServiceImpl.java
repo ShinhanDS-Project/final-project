@@ -1,5 +1,7 @@
 package com.merge.final_project.user.users;
 
+import com.merge.final_project.donation.donations.Donation;
+import com.merge.final_project.donation.donations.DonationRepository;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
@@ -24,6 +26,8 @@ public class UserServiceImpl implements UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final VerificationService verificationService;
     private final S3FileService fileService;
+    private final DonationRepository donationRepository;
+
     @Override
     @Transactional
     public String login(UserLoginRequestDTO dto) {
@@ -90,10 +94,10 @@ public class UserServiceImpl implements UserService {
         }
 
         if (dto.getNewPassword() == null || dto.getNewPassword().isBlank()) {
-            throw new IllegalArgumentException("새 비밀번호는 필수야.");
+            throw new IllegalArgumentException("새 비밀번호는 필수입니다.");
         }
-        if (!passwordEncoder.matches(dto.getCurrentPassword(), dto.getNewPassword())) {
-            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않아.");
+        if (!passwordEncoder.matches(dto.getNewPassword2(), dto.getNewPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
         }
     }
 
@@ -166,7 +170,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<MyDonationResponseDTO> getMyDonations(Long userNo) {
-        return List.of();
+        // 기부내역 조회해오기
+        List<Donation> selectDonate= donationRepository.findByUserNo(userNo);
+
+        return List.of(
+                MyDonationResponseDTO.builder()
+        );
+
     }
 
 

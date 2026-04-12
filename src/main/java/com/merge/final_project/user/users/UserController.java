@@ -77,16 +77,16 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // 증서
-    @GetMapping("/certificates/{donationNo}")
-    public ResponseEntity<DonationCertificateResponseDTO> getDonationCertificate(
-            Authentication authentication,
-            @PathVariable Long donationNo
-    ) {
-        Long userNo = (Long) authentication.getDetails();
-        DonationCertificateResponseDTO response = userService.getDonationCertificate(userNo, donationNo);
-        return ResponseEntity.ok(response);
-    }
+//    // 증서
+//    @GetMapping("/certificates/{donationNo}")
+//    public ResponseEntity<DonationCertificateResponseDTO> getDonationCertificate(
+//            Authentication authentication,
+//            @PathVariable Long donationNo
+//    ) {
+//        Long userNo = (Long) authentication.getDetails();
+//        DonationCertificateResponseDTO response = userService.getDonationCertificate(userNo, donationNo);
+//        return ResponseEntity.ok(response);
+//    }
 //    // 기부금 영수증 신청
 //    @PostMapping("/receipts")
 //    public ResponseEntity<Void> requestDonationReceipt(
