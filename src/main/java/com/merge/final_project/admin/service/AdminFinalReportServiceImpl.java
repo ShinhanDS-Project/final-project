@@ -5,6 +5,9 @@ import com.merge.final_project.admin.AdminRepository;
 import com.merge.final_project.admin.adminlog.ActionType;
 import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.admin.adminlog.TargetType;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
+import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.global.ImageRepository;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
@@ -34,6 +37,7 @@ public class AdminFinalReportServiceImpl implements AdminFinalReportService {
     private final AdminLogService adminLogService;
     private final NotificationService notificationService;
     private final ImageRepository imageRepository;
+    private final CampaignRepository campaignRepository;
 
     // 승인 대기 중인 활동 보고서 목록 조회하는 기능.
     @Override
@@ -59,6 +63,19 @@ public class AdminFinalReportServiceImpl implements AdminFinalReportService {
         }
 
         report.changeStatus(ReportApprovalStatus.APPROVED, null);
+
+        //해당 보고서의 캠페인 찾아오고
+        Campaign campaign = campaignRepository.findByCampaignNo(report.getCampaign_no())
+                .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
+
+        //이미 완료된 상태면 중복 승인을 방지하기 위해 에러처리
+        if (campaign.getCampaignStatus() == CampaignStatus.COMPLETED) {
+            throw new BusinessException(ErrorCode.CAMPAIGN_ALREADY_PROCESSED);
+        }
+        if (campaign.getCampaignStatus() != CampaignStatus.SETTLED) {
+            throw new BusinessException(ErrorCode.CAMPAIGN_INVALID_STATUS);
+        }
+        campaign.complete();
 
         //현재 활동 보고서 승인한 관리자의 이력도 기록해야 함.
         Admin admin = getAdmin();

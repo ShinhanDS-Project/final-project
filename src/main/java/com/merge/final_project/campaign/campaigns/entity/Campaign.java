@@ -99,6 +99,7 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(name = "beneficiary_no")
     private Long beneficiaryNo;
 
+    //[이채원] 이거 왜 빠져있는걸까요?
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -122,5 +123,20 @@ public class Campaign extends BaseCreatedAtEntity {
     public BigDecimal addCurrentAmount(BigDecimal amount) {
         this.currentAmount = this.currentAmount.add(amount);
         return this.currentAmount;
+    }
+
+    // [가빈] 캠페인 승인 후 모금시작일 되면 상태 변경하기 위해 사용하는 메서드
+    public void active(){
+        this.campaignStatus = CampaignStatus.ACTIVE;
+    }
+
+    // [가빈] 캠페인 모금 종료일이 되면 상태 변경하기 위해 사용하는 메서드
+    public void ended(){
+        this.campaignStatus = CampaignStatus.ENDED;
+    }
+
+    // [가빈] 활동 보고서 승인 이후 캠페인최종 완료 처리하기 위해 사용하는 메서드
+    public void complete() {
+        this.campaignStatus = CampaignStatus.COMPLETED;
     }
 }

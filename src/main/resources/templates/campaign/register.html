@@ -258,7 +258,8 @@
         });
 
         try {
-            const response = await fetch('/campaigns/register/form', {
+            // [가빈] 호연언니랑 얘기한 후 캠페인 전체 컨트롤러 경로 수정 → html 경로도 맞춤
+            const response = await fetch('/api/foundation/campaigns/register/form', {
                 method: 'POST',
                 body: formData
             });

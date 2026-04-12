@@ -38,6 +38,7 @@ public enum ErrorCode {
     // 캠페인
     CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_001", "존재하지 않는 캠페인입니다."),
     CAMPAIGN_ALREADY_PROCESSED(HttpStatus.CONFLICT, "CAMPAIGN_002", "이미 처리된 캠페인입니다."),
+    CAMPAIGN_INVALID_STATUS(HttpStatus.CONFLICT, "CAMPAIGN_003", "유효한 상태가 아닙니다."),
     // 활동 보고서
     FINAL_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_001", "존재하지 않는 활동 보고서입니다."),
     FINAL_REPORT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "REPORT_002", "이미 처리된 활동 보고서입니다."),
