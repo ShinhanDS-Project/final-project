@@ -5,6 +5,7 @@ import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.notification.email.event.FoundationInactiveEvent;
+import com.merge.final_project.notification.inapp.NotificationRepository;
 import com.merge.final_project.notification.inapp.NotificationService;
 import com.merge.final_project.notification.inapp.NotificationType;
 import com.merge.final_project.notification.inapp.RecipientType;
@@ -27,6 +28,7 @@ public class FinalReportReminderService {
 
     private final CampaignRepository campaignRepository;
     private final NotificationService notificationService;
+    private final NotificationRepository notificationRepository;
     private final FoundationRepository foundationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -36,6 +38,13 @@ public class FinalReportReminderService {
         List<Campaign> campaigns = campaignRepository.findSettledCampaignsWithNoReport(cutoff7);
 
         for (Campaign campaign : campaigns) {
+            // 이미 7일 알림을 받은 수혜자는 skip (중복 발송 방지)
+            if (notificationRepository.existsByReceiverNoAndNotificationType(
+                    campaign.getBeneficiaryNo(), NotificationType.FINAL_REPORT_DUE_WARNING)) {
+                log.info("7일 알림 중복 skip campaignNo={}", campaign.getCampaignNo());
+                continue;
+            }
+
             // 수혜자 - 보고서 제출 목록
             notificationService.send(
                     RecipientType.BENEFICIARY,
@@ -65,6 +74,13 @@ public class FinalReportReminderService {
                 .findSettledCampaignsWithNoReport(cutoff14);
 
         for (Campaign campaign : campaigns) {
+            // 이미 14일 알림(비활성화)을 처리한 캠페인은 skip (중복 처리 방지)
+            if (notificationRepository.existsByReceiverNoAndNotificationType(
+                    campaign.getBeneficiaryNo(), NotificationType.FINAL_REPORT_OVERDUE)) {
+                log.info("14일 알림 중복 skip campaignNo={}", campaign.getCampaignNo());
+                continue;
+            }
+
             // 수혜자 — 미제출 경고
             notificationService.send(
                     RecipientType.BENEFICIARY,

@@ -72,6 +72,9 @@ public class AdminFinalReportServiceImpl implements AdminFinalReportService {
         if (campaign.getCampaignStatus() == CampaignStatus.COMPLETED) {
             throw new BusinessException(ErrorCode.CAMPAIGN_ALREADY_PROCESSED);
         }
+        if (campaign.getCampaignStatus() != CampaignStatus.SETTLED) {
+            throw new BusinessException(ErrorCode.CAMPAIGN_INVALID_STATUS);
+        }
         campaign.complete();
 
         //현재 활동 보고서 승인한 관리자의 이력도 기록해야 함.

@@ -11,6 +11,9 @@ import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
+import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.notification.inapp.NotificationService;
 import com.merge.final_project.notification.inapp.NotificationType;
 import com.merge.final_project.notification.inapp.RecipientType;
@@ -83,23 +86,28 @@ class AdminFinalReportServiceTest {
     // ===================== 승인 테스트 =====================
 
     @Test
-    @DisplayName("PENDING 상태 보고서 승인 시 상태가 APPROVED로 변경되고 로그와 알림이 발송된다")
+    @DisplayName("PENDING 상태 보고서 승인 시 상태가 APPROVED로 변경되고 캠페인이 COMPLETED가 되며 로그와 알림이 발송된다")
     void 보고서_승인_성공() {
         FinalReport report = FinalReport.builder()
                 .reportNo(1L)
                 .title("테스트 보고서")
                 .beneficiary_no(20L)
+                .campaign_no(10L)
                 .approvalStatus(ReportApprovalStatus.PENDING)
                 .build();
 
+        Campaign campaign = mock(Campaign.class);
+        when(campaign.getCampaignStatus()).thenReturn(CampaignStatus.SETTLED);
+
         when(finalReportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(campaignRepository.findByCampaignNo(10L)).thenReturn(Optional.of(campaign));
         when(adminRepository.findByAdminId("test-admin")).thenReturn(Optional.of(admin));
 
         adminFinalReportService.approveReport(1L);
 
         assertThat(report.getApprovalStatus()).isEqualTo(ReportApprovalStatus.APPROVED);
         assertThat(report.getRejectReason()).isNull();
-
+        verify(campaign).complete();
         verify(adminLogService).log(eq(ActionType.APPROVE), eq(TargetType.FINAL_REPORT), eq(1L), anyString(), eq(admin));
         verify(notificationService).send(eq(RecipientType.BENEFICIARY), eq(20L), eq(NotificationType.FINAL_REPORT_APPROVED), anyString());
     }
@@ -139,16 +147,65 @@ class AdminFinalReportServiceTest {
                 .reportNo(1L)
                 .title("테스트 보고서")
                 .beneficiary_no(20L)
+                .campaign_no(10L)
                 .approvalStatus(ReportApprovalStatus.REJECTED)
                 .build();
 
+        Campaign campaign = mock(Campaign.class);
+        when(campaign.getCampaignStatus()).thenReturn(CampaignStatus.SETTLED);
+
         when(finalReportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(campaignRepository.findByCampaignNo(10L)).thenReturn(Optional.of(campaign));
         when(adminRepository.findByAdminId("test-admin")).thenReturn(Optional.of(admin));
 
         adminFinalReportService.approveReport(1L);
 
         assertThat(report.getApprovalStatus()).isEqualTo(ReportApprovalStatus.APPROVED);
+        verify(campaign).complete();
         verify(adminLogService).log(eq(ActionType.APPROVE), eq(TargetType.FINAL_REPORT), eq(1L), anyString(), eq(admin));
+    }
+
+    @Test
+    @DisplayName("보고서 승인 시 연결된 캠페인이 없으면 CAMPAIGN_NOT_FOUND 예외가 발생한다")
+    void 보고서_승인_캠페인_없음_예외() {
+        FinalReport report = FinalReport.builder()
+                .reportNo(1L)
+                .title("테스트 보고서")
+                .beneficiary_no(20L)
+                .campaign_no(999L)
+                .approvalStatus(ReportApprovalStatus.PENDING)
+                .build();
+
+        when(finalReportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(campaignRepository.findByCampaignNo(999L)).thenReturn(Optional.empty());
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> adminFinalReportService.approveReport(1L));
+
+        assertThat(exception.getMessage()).isEqualTo(ErrorCode.CAMPAIGN_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("보고서 승인 시 캠페인이 이미 COMPLETED 상태면 CAMPAIGN_ALREADY_PROCESSED 예외가 발생한다")
+    void 보고서_승인_캠페인_이미완료_예외() {
+        FinalReport report = FinalReport.builder()
+                .reportNo(1L)
+                .title("테스트 보고서")
+                .beneficiary_no(20L)
+                .campaign_no(10L)
+                .approvalStatus(ReportApprovalStatus.PENDING)
+                .build();
+
+        Campaign campaign = mock(Campaign.class);
+        when(campaign.getCampaignStatus()).thenReturn(CampaignStatus.COMPLETED);
+
+        when(finalReportRepository.findById(1L)).thenReturn(Optional.of(report));
+        when(campaignRepository.findByCampaignNo(10L)).thenReturn(Optional.of(campaign));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> adminFinalReportService.approveReport(1L));
+
+        assertThat(exception.getMessage()).isEqualTo(ErrorCode.CAMPAIGN_ALREADY_PROCESSED.getMessage());
     }
 
     // ===================== 반려 테스트 =====================

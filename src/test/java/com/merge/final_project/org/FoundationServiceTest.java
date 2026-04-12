@@ -10,6 +10,7 @@ import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.notification.email.event.FoundationApprovedEvent;
 import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
+import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundation;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationRepository;
@@ -257,8 +258,9 @@ class FoundationServiceTest {
 
         foundationService.rejectFoundationForIllegal(1L);
 
-        //반려하면 아예 가입도 안 된 거니까 비활성도 아님. 그저 null
+        // 가입 전 반려든 활동 중 반려든 accountStatus는 INACTIVE로 통일
         assertThat(foundation.getReviewStatus()).isEqualTo(ReviewStatus.REJECTED);
+        assertThat(foundation.getAccountStatus()).isEqualTo(AccountStatus.INACTIVE);
         verify(eventPublisher).publishEvent(any(FoundationRejectedEvent.class));
     }
 
