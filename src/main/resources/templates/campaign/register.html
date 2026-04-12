@@ -13,6 +13,10 @@
             --muted: #6b7280;
             --accent: #1d4ed8;
             --accent-soft: #dbeafe;
+            --success: #166534;
+            --success-soft: #dcfce7;
+            --danger: #b91c1c;
+            --danger-soft: #fee2e2;
         }
         * { box-sizing: border-box; }
         body {
@@ -57,6 +61,12 @@
         }
         .field.full {
             grid-column: 1 / -1;
+        }
+        .inline-field {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
         }
         label {
             font-weight: 700;
@@ -123,8 +133,44 @@
             color: var(--muted);
             font-size: 14px;
         }
+        .check-result {
+            display: none;
+            border-radius: 14px;
+            padding: 14px 16px;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+        .check-result.success {
+            display: block;
+            background: var(--success-soft);
+            color: var(--success);
+        }
+        .check-result.error {
+            display: block;
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+        .wallet-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .wallet-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.75);
+        }
+        .wallet-item strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+        .hint {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
         @media (max-width: 720px) {
-            .grid, .row-grid {
+            .grid, .row-grid, .inline-field {
                 grid-template-columns: 1fr;
             }
             .actions {
@@ -137,7 +183,7 @@
 <div class="page">
     <div class="header">
         <h1>캠페인 등록</h1>
-        <p>대표 이미지 1장과 상세 이미지 여러 장을 포함해 캠페인 등록 요청을 보낼 수 있습니다.</p>
+        <p>수혜자 코드와 재단 지갑 상태를 먼저 확인하고 등록할 수 있습니다.</p>
     </div>
 
     <div class="panel">
@@ -149,7 +195,33 @@
                 </div>
                 <div class="field">
                     <label for="category">카테고리</label>
-                    <input id="category" type="text" placeholder="예: 장애인/환자" required>
+                    <select id="category" required>
+                        <option value="">카테고리 선택</option>
+                        <option value="CHILD_YOUTH">아동/청소년</option>
+                        <option value="SENIOR">어르신</option>
+                        <option value="DISABLED">장애인</option>
+                        <option value="ANIMAL">동물</option>
+                        <option value="ENVIRONMENT">환경</option>
+                        <option value="ETC">기타</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="entryCode">Beneficiary Entry Code</label>
+                    <div class="inline-field">
+                        <input id="entryCode" type="text" placeholder="수혜자 entry code 입력" required>
+                        <button class="secondary" type="button" id="checkBeneficiaryButton">확인</button>
+                    </div>
+                    <div class="hint">entry code 확인 후 beneficiary 이름을 표시합니다.</div>
+                    <div id="beneficiaryResult" class="check-result"></div>
+                </div>
+                <div class="field">
+                    <label for="foundationNo">Foundation No</label>
+                    <div class="inline-field">
+                        <input id="foundationNo" type="number" min="1" placeholder="재단 번호 입력" required>
+                        <button class="secondary" type="button" id="checkFoundationButton">확인</button>
+                    </div>
+                    <div class="hint">재단의 캠페인 지갑 3개 중 사용 가능한 INACTIVE 지갑이 있는지 확인합니다.</div>
+                    <div id="foundationResult" class="check-result"></div>
                 </div>
                 <div class="field full">
                     <label for="description">설명</label>
@@ -183,14 +255,14 @@
 
             <h2 class="section-title">지출 계획</h2>
             <div id="planList" class="inline-list"></div>
-            <button type="button" class="secondary" onclick="addPlanRow()">지출 계획 추가</button>
+            <button type="button" class="secondary" id="addPlanButton">지출 계획 추가</button>
 
             <h2 class="section-title">상세 이미지</h2>
             <div id="detailImageList" class="inline-list"></div>
-            <button type="button" class="secondary" onclick="addDetailImageRow()">상세 이미지 추가</button>
+            <button type="button" class="secondary" id="addDetailImageButton">상세 이미지 추가</button>
 
             <div class="actions">
-                <button type="button" class="primary" onclick="submitCampaign()">등록 요청</button>
+                <button type="button" class="primary" id="submitCampaignButton">등록 요청</button>
                 <button type="reset" class="ghost">초기화</button>
             </div>
             <p id="status" class="status"></p>
@@ -199,6 +271,10 @@
 </div>
 
 <script>
+    let beneficiaryChecked = false;
+    let foundationChecked = false;
+    let foundationHasAvailableWallet = false;
+
     function addPlanRow() {
         const wrapper = document.createElement('div');
         wrapper.className = 'row-card';
@@ -214,7 +290,7 @@
     function addDetailImageRow() {
         const wrapper = document.createElement('div');
         wrapper.className = 'row-card';
-        wrapper.innerHTML = `<input type="file" name="detailImageFiles" accept="image/*">`;
+        wrapper.innerHTML = '<input type="file" name="detailImageFiles" accept="image/*">';
         document.getElementById('detailImageList').appendChild(wrapper);
     }
 
@@ -222,9 +298,103 @@
         return value ? new Date(value).toISOString().slice(0, 19) : null;
     }
 
+    function setCheckResult(elementId, type, html) {
+        const element = document.getElementById(elementId);
+        element.className = `check-result ${type}`;
+        element.innerHTML = html;
+    }
+
+    async function checkBeneficiary() {
+        const entryCode = document.getElementById('entryCode').value.trim();
+        beneficiaryChecked = false;
+
+        if (!entryCode) {
+            setCheckResult('beneficiaryResult', 'error', 'entry code를 입력하세요.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/foundation/campaigns/beneficiary-check?entryCode=${encodeURIComponent(entryCode)}`);
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const data = await response.json();
+            if (!data.valid) {
+                setCheckResult('beneficiaryResult', 'error', data.message || '수혜자를 찾을 수 없습니다.');
+                return;
+            }
+
+            beneficiaryChecked = true;
+            setCheckResult(
+                'beneficiaryResult',
+                'success',
+                `이름: ${data.name}<br>수혜자 번호: ${data.beneficiaryNo}<br>유형: ${data.beneficiaryType ?? '-'}`
+            );
+        } catch (error) {
+            setCheckResult('beneficiaryResult', 'error', `확인 실패: ${error.message}`);
+        }
+    }
+
+    async function checkFoundation() {
+        const foundationNo = document.getElementById('foundationNo').value.trim();
+        foundationChecked = false;
+        foundationHasAvailableWallet = false;
+
+        if (!foundationNo) {
+            setCheckResult('foundationResult', 'error', 'foundationNo를 입력하세요.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/foundation/campaigns/foundation-check?foundationNo=${encodeURIComponent(foundationNo)}`);
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const data = await response.json();
+            foundationChecked = true;
+            foundationHasAvailableWallet = Boolean(data.hasAvailableWallet);
+
+            const walletHtml = (data.wallets || []).map(wallet => `
+                <div class="wallet-item">
+                    <strong>${wallet.walletLabel}</strong>
+                    주소: ${wallet.walletAddress ?? '-'}<br>
+                    상태: ${wallet.status}<br>
+                    사용 가능: ${wallet.available ? '예' : '아니오'}
+                </div>
+            `).join('');
+
+            setCheckResult(
+                'foundationResult',
+                data.hasAvailableWallet ? 'success' : 'error',
+                `재단명: ${data.foundationName ?? '-'}<br>${data.message}<div class="wallet-list">${walletHtml}</div>`
+            );
+        } catch (error) {
+            setCheckResult('foundationResult', 'error', `확인 실패: ${error.message}`);
+        }
+    }
+
     async function submitCampaign() {
         const status = document.getElementById('status');
         status.textContent = '';
+
+        const foundationNo = document.getElementById('foundationNo').value.trim();
+
+        if (!beneficiaryChecked) {
+            status.textContent = '수혜자 확인을 먼저 완료하세요.';
+            return;
+        }
+
+        if (!foundationChecked) {
+            status.textContent = '재단 지갑 확인을 먼저 완료하세요.';
+            return;
+        }
+
+        if (!foundationHasAvailableWallet) {
+            status.textContent = '사용 가능한 캠페인 지갑이 없어 등록할 수 없습니다.';
+            return;
+        }
 
         const plans = Array.from(document.querySelectorAll('#planList .row-card')).map(card => ({
             planContent: card.querySelector('[name="planContent"]').value,
@@ -235,6 +405,7 @@
             title: document.getElementById('title').value,
             description: document.getElementById('description').value,
             category: document.getElementById('category').value,
+            entryCode: document.getElementById('entryCode').value.trim(),
             targetAmount: Number(document.getElementById('targetAmount').value),
             startAt: toIsoOrNull(document.getElementById('startAt').value),
             endAt: toIsoOrNull(document.getElementById('endAt').value),
@@ -258,8 +429,7 @@
         });
 
         try {
-            // [가빈] 호연언니랑 얘기한 후 캠페인 전체 컨트롤러 경로 수정 → html 경로도 맞춤
-            const response = await fetch('/api/foundation/campaigns/register/form', {
+            const response = await fetch(`/api/foundation/campaigns/register?foundationNo=${encodeURIComponent(foundationNo)}`, {
                 method: 'POST',
                 body: formData
             });
@@ -268,11 +438,30 @@
                 throw new Error(await response.text());
             }
 
-            status.textContent = '등록 요청이 완료되었습니다.';
+            status.textContent = '등록 요청이 완료되었습니다. 사용된 지갑 상태는 ACTIVE로 변경됩니다.';
         } catch (error) {
             status.textContent = `요청 실패: ${error.message}`;
         }
     }
+
+    document.getElementById('checkBeneficiaryButton').addEventListener('click', checkBeneficiary);
+    document.getElementById('checkFoundationButton').addEventListener('click', checkFoundation);
+    document.getElementById('addPlanButton').addEventListener('click', addPlanRow);
+    document.getElementById('addDetailImageButton').addEventListener('click', addDetailImageRow);
+    document.getElementById('submitCampaignButton').addEventListener('click', submitCampaign);
+
+    document.getElementById('entryCode').addEventListener('input', () => {
+        beneficiaryChecked = false;
+        document.getElementById('beneficiaryResult').className = 'check-result';
+        document.getElementById('beneficiaryResult').innerHTML = '';
+    });
+
+    document.getElementById('foundationNo').addEventListener('input', () => {
+        foundationChecked = false;
+        foundationHasAvailableWallet = false;
+        document.getElementById('foundationResult').className = 'check-result';
+        document.getElementById('foundationResult').innerHTML = '';
+    });
 
     addPlanRow();
     addDetailImageRow();

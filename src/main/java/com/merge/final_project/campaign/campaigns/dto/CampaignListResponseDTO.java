@@ -33,7 +33,7 @@ public class CampaignListResponseDTO {  //[가빈] 관리자 측에서 캠페인
         return CampaignListResponseDTO.builder()
                 .campaignNo(campaign.getCampaignNo())
                 .title(campaign.getTitle())
-                .category(campaign.getCategory())
+                .category(campaign.getCategory() == null ? null : campaign.getCategory().getLabel())
                 .targetAmount(campaign.getTargetAmount())
                 .foundationNo(campaign.getFoundationNo())
                 .approvalStatus(campaign.getApprovalStatus())
