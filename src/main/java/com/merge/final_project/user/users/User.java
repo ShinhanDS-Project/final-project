@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
         @UniqueConstraint(name = "uk_user_email_login_type", columnNames = {"email", "login_type"})
 }) //로그인 타입,별로 이메일 중복 허용ㅇ
 @Getter
-
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -39,6 +39,7 @@ public class User {
     @Column(name="email", nullable = false)
     private String email;
 
+    //닉네임 용도로 변경
     @Column(name="name_hash", unique = true, nullable = false)
     private String nameHash;
 

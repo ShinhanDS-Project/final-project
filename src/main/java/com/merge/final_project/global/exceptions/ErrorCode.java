@@ -7,7 +7,19 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     // 사용자
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "존재하지 않는 사용자입니다."),
+    DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST,"USER_002","중복된 닉네임입니다."),
+    // 비밀번호
+    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "PASSWORD_001", "새 비밀번호와 비밀번호 확인이 일치하지 않습니다."),
+    INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "PASSWORD_002", "비밀번호 형식이 올바르지 않습니다."),
+    PASSWORD_REUSE_NOT_ALLOWED(HttpStatus.CONFLICT, "PASSWORD_003", "기존 비밀번호와 동일한 비밀번호는 사용할 수 없습니다."),
+    CURRENT_PASSWORD_MISMATCH(HttpStatus.UNAUTHORIZED, "PASSWORD_004", "현재 비밀번호가 일치하지 않습니다."),
 
+    // 비밀번호 재설정 / 이메일 인증
+    PASSWORD_RESET_USER_MISMATCH(HttpStatus.BAD_REQUEST, "PASSWORD_RESET_001", "입력한 이메일 또는 이름이 올바르지 않습니다."),
+    PASSWORD_RESET_CODE_INVALID(HttpStatus.BAD_REQUEST, "PASSWORD_RESET_002", "인증 코드가 올바르지 않습니다."),
+    PASSWORD_RESET_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "PASSWORD_RESET_003", "인증 코드가 만료되었습니다."),
+    PASSWORD_RESET_NOT_VERIFIED(HttpStatus.FORBIDDEN, "PASSWORD_RESET_004", "이메일 인증이 완료되지 않았습니다."),
+    PASSWORD_RESET_TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "PASSWORD_RESET_005", "비밀번호 재설정 요청이 너무 많습니다. 잠시 후 다시 시도해주세요."),
     AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "ADMIN_001","아이디 또는 비밀번호가 올바르지 않습니다."),
     // 보안을 위해 외부로는 안 남기지만 내부 로깅 용으로 남길 코드들.
     ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_002", "존재하지 않는 관리자입니다."),
