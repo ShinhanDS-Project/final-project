@@ -3,12 +3,14 @@ package com.merge.final_project.org;
 import com.merge.final_project.admin.Admin;
 import com.merge.final_project.admin.AdminRepository;
 import com.merge.final_project.admin.adminlog.AdminLogService;
+import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.notification.email.event.FoundationApprovedEvent;
 import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
+import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundation;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationRepository;
@@ -65,9 +67,15 @@ class FoundationServiceTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    private SignupWalletHookService signupWalletHookService;
+
+    @Mock
+    private com.merge.final_project.campaign.campaigns.repository.CampaignRepository campaignRepository;
+
     @BeforeEach
     void setUp() {
-        // approveFoundation / rejectFoundationForIllegal 내부에서
+        // approveFoundation랑 rejectFoundationForIllegal 내부에서
         // SecurityContextHolder.getContext().getAuthentication()을 사용하므로 테스트용 Authentication 세팅 필요
         var auth = new UsernamePasswordAuthenticationToken("testAdmin", null, List.of());
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -79,7 +87,7 @@ class FoundationServiceTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
-    }
+    }   //사용한 거 지움.
 
     private Foundation foundationOf(ReviewStatus reviewStatus, String rejectReason) {
         return Foundation.builder()
@@ -250,6 +258,7 @@ class FoundationServiceTest {
 
         foundationService.rejectFoundationForIllegal(1L);
 
+        // 가입 전 반려든 활동 중 반려든 accountStatus는 INACTIVE로 통일
         assertThat(foundation.getReviewStatus()).isEqualTo(ReviewStatus.REJECTED);
         assertThat(foundation.getAccountStatus()).isEqualTo(AccountStatus.INACTIVE);
         verify(eventPublisher).publishEvent(any(FoundationRejectedEvent.class));

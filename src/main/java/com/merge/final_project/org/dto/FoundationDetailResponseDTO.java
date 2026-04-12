@@ -24,6 +24,7 @@ public class FoundationDetailResponseDTO {
     private String account;
     private ReviewStatus reviewStatus;   // PENDING / ILLEGAL / APPROVED / REJECTED -> 가입 상태
     private AccountStatus accountStatus;  // PRE_REGISTERED / ACTIVE / INACTIVE    -> 기부단체 계정 상태
+    private String profilePath;
     private String rejectReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -39,6 +40,7 @@ public class FoundationDetailResponseDTO {
                 .contactPhone(foundation.getContactPhone())
                 .description(foundation.getDescription())
                 .account(foundation.getAccount())
+                .profilePath(foundation.getProfilePath())
                 .reviewStatus(foundation.getReviewStatus())
                 .accountStatus(foundation.getAccountStatus())
                 .rejectReason(foundation.getRejectReason())

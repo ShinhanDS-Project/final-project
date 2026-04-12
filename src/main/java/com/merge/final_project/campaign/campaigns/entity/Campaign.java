@@ -114,4 +114,19 @@ public class Campaign extends BaseCreatedAtEntity {
         this.approvalStatus = ApprovalStatus.REJECTED;
         this.rejectReason = reason;
     }
+
+    // [가빈] 캠페인 승인 후 모금시작일 되면 상태 변경하기 위해 사용하는 메서드
+    public void active(){
+        this.campaignStatus = CampaignStatus.ACTIVE;
+    }
+
+    // [가빈] 캠페인 모금 종료일이 되면 상태 변경하기 위해 사용하는 메서드
+    public void ended(){
+        this.campaignStatus = CampaignStatus.ENDED;
+    }
+
+    // [가빈] 활동 보고서 승인 이후 캠페인최종 완료 처리하기 위해 사용하는 메서드
+    public void complete() {
+        this.campaignStatus = CampaignStatus.COMPLETED;
+    }
 }

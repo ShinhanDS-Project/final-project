@@ -2,14 +2,16 @@ package com.merge.final_project.campaign.campaigns.repository;
 
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
-import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -58,4 +60,19 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     Page<Campaign> findByApprovalStatus(ApprovalStatus approvalStatus, Pageable pageable);
     //[가빈] 기부단체 별 캠페인 목록 조회
     Page<Campaign> findByFoundationNo(Long foundationNo, Pageable pageable);
+
+    // [가빈] SETTLED + usage_end_at 경과 + 보고서 미제출 캠페인 조회
+    // cutoffDate = today - 7일 or today - 14일 (서비스에서 계산해서 넘김)
+    @Query(value = """
+        SELECT c.* FROM campaign c
+        WHERE c.campaign_status = 'SETTLED'
+        AND c.usage_end_at < :cutoffDate
+        AND NOT EXISTS (
+            SELECT 1 FROM final_report f WHERE f.campaign_no = c.campaign_no
+        )
+        """, nativeQuery = true)
+    List<Campaign> findSettledCampaignsWithNoReport(@Param("cutoffDate") LocalDateTime cutoffDate);
+
+    Optional<Campaign> findByCampaignNo(Long campaignNo);
+
 }
