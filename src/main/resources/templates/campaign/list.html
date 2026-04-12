@@ -177,7 +177,8 @@
         <div class="actions">
             <button class="secondary" type="button" onclick="loadCampaigns('deadline')">마감임박순</button>
             <button class="secondary" type="button" onclick="loadCampaigns('participation')">참여순</button>
-            <button class="primary" type="button" onclick="location.href='/campaign/register'">등록 화면</button>
+            <!-- [가빈] 호연언니랑 얘기한 후 캠페인 전체 컨트롤러 경로 수정 → html 경로도 맞춤 -->
+            <button class="primary" type="button" onclick="location.href='/api/foundation/campaigns/register'">등록 화면</button>
         </div>
     </div>
 
@@ -253,7 +254,8 @@
 
     async function loadCampaigns(sort = 'deadline') {
         try {
-            const response = await fetch(`/campaigns?sort=${encodeURIComponent(sort)}`);
+            // [가빈] 호연언니랑 얘기한 후 캠페인 전체 컨트롤러 경로 수정 → html 경로도 맞춤
+            const response = await fetch(`/api/foundation/campaigns?sort=${encodeURIComponent(sort)}`);
             if (!response.ok) {
                 throw new Error(await response.text());
             }

@@ -26,4 +26,10 @@ public class FoundationEventListener {
     public CompletableFuture<Void> handleRejected(FoundationRejectedEvent event) {
         return gmailService.sendRejectMail(event.getEmail(), event.getFoundationName(), event.getRejectedReason());
     }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public CompletableFuture<Void> handleInactive(FoundationInactiveEvent event) {
+        return gmailService.sendInactiveMail(event.getEmail(), event.getFoundationName(), event.getCampaignTitle());
+    }
 }

@@ -64,10 +64,10 @@ class FoundationRepositoryTest {
 
         Page<Foundation> result = foundationRepository.findByReviewStatus(ReviewStatus.APPROVED, PageRequest.of(0, 10));
 
+        // 실제 DB 데이터가 섞여도 쿼리 필터 자체를 검증
         assertThat(result.getContent())
-                .extracting(Foundation::getFoundationName)
-                .contains("승인단체")
-                .doesNotContain("검토중단체", "유사단체");
+                .isNotEmpty()
+                .allMatch(f -> f.getReviewStatus() == ReviewStatus.APPROVED);
     }
 
     @Test
@@ -82,9 +82,10 @@ class FoundationRepositoryTest {
         Page<Foundation> result = foundationRepository.findByReviewStatusNotIn(
                 List.of(ReviewStatus.APPROVED, ReviewStatus.REJECTED), PageRequest.of(0, 10));
 
+        // 실제 DB 데이터가 섞여도 쿼리 필터 자체를 검증
         assertThat(result.getContent())
-                .extracting(Foundation::getFoundationName)
-                .contains("검토중단체", "유사단체", "불법단체")
-                .doesNotContain("승인단체", "반려단체");
+                .isNotEmpty()
+                .allMatch(f -> f.getReviewStatus() != ReviewStatus.APPROVED
+                            && f.getReviewStatus() != ReviewStatus.REJECTED);
     }
 }

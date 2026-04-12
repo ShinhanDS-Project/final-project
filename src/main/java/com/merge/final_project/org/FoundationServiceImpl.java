@@ -107,7 +107,8 @@ public class  FoundationServiceImpl implements FoundationService {
         String profilePath = null;
         if (profileImage != null && !profileImage.isEmpty()) {
             try {
-                profilePath = upload.saveFile(profileImage);
+                String storedName = upload.saveFile(profileImage);
+                profilePath = upload.getFilePath(storedName);
             } catch (IOException e) {
                 log.error("프로필 이미지 저장 실패", e);
                 throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
@@ -215,8 +216,8 @@ public class  FoundationServiceImpl implements FoundationService {
         // 새 프로필 이미지가 있으면 교체
         if (profileImage != null && !profileImage.isEmpty()) {
             try {
-                String newProfilePath = upload.saveFile(profileImage);
-                foundation.updateProfilePath(newProfilePath);
+                String storedName = upload.saveFile(profileImage);
+                foundation.updateProfilePath(upload.getFilePath(storedName));
             } catch (IOException e) {
                 log.error("프로필 이미지 저장 실패", e);
                 throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
