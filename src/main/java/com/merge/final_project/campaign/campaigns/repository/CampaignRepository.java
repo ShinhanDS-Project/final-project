@@ -39,6 +39,12 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     @EntityGraph(attributePaths = "foundation")
     List<Campaign> findByCampaignStatusOrderByCurrentAmountDescCampaignNoDesc(CampaignStatus campaignStatus);
 
+    @EntityGraph(attributePaths = "foundation")
+    List<Campaign> findByCampaignStatusInOrderByEndAtAscCampaignNoDesc(Collection<CampaignStatus> campaignStatuses);
+
+    @EntityGraph(attributePaths = "foundation")
+    List<Campaign> findByCampaignStatusInOrderByCurrentAmountDescCampaignNoDesc(Collection<CampaignStatus> campaignStatuses);
+
     /**
      * wallet_no로 캠페인 단건 조회.
      * 지갑 상세 -> 캠페인명 역추적에 사용한다.
@@ -74,5 +80,7 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     List<Campaign> findSettledCampaignsWithNoReport(@Param("cutoffDate") LocalDateTime cutoffDate);
 
     Optional<Campaign> findByCampaignNo(Long campaignNo);
+
+    Optional<Campaign> findByCampaignNoAndApprovalStatus(Long campaignNo, ApprovalStatus approvalStatus);
 
 }

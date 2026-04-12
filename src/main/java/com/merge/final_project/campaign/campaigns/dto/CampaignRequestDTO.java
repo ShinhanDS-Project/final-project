@@ -1,5 +1,6 @@
 package com.merge.final_project.campaign.campaigns.dto;
 
+import com.merge.final_project.campaign.campaigns.CampaignCategory;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDTO;
 import lombok.Data;
@@ -12,7 +13,7 @@ public class CampaignRequestDTO {
     private String title;
     private String description;
     private String imagePath;
-    private String category;
+    private CampaignCategory category;
     private Long targetAmount;
     private String entryCode;
 
