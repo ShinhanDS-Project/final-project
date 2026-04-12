@@ -27,5 +27,10 @@ public interface FoundationService {
     Long approveFoundation(Long foundationNo);
     Long rejectFoundationForIllegal(Long foundationNo);
 
+    // [가빈] 관리자 기부단체 활성화 (임시 비밀번호 발급 + 메일 발송)
+    void activateFoundation(Long foundationNo);
+    // [가빈] 관리자 기부단체 비활성화
+    void deactivateFoundation(Long foundationNo);
+
     Page<CampaignListResponseDTO> getMyCampaigns(Long foundationNo, Pageable pageable);
 }

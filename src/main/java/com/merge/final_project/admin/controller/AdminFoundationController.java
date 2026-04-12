@@ -42,4 +42,18 @@ public class AdminFoundationController {
         foundationService.rejectFoundationForIllegal(foundationNo);
         return ResponseEntity.ok().build();
     }
+
+    // [가빈] 기부단체 활성화 (임시 비밀번호 발급 + 메일 발송)
+    @PatchMapping("/{foundationNo}/activate")
+    public ResponseEntity<Void> activate(@PathVariable Long foundationNo) {
+        foundationService.activateFoundation(foundationNo);
+        return ResponseEntity.ok().build();
+    }
+
+    // [가빈] 기부단체 비활성화 (비활성화 메일 발송)
+    @PatchMapping("/{foundationNo}/deactivate")
+    public ResponseEntity<Void> deactivate(@PathVariable Long foundationNo) {
+        foundationService.deactivateFoundation(foundationNo);
+        return ResponseEntity.ok().build();
+    }
 }
