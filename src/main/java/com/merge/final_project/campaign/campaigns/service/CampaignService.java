@@ -1,5 +1,8 @@
 package com.merge.final_project.campaign.campaigns.service;
 
+import com.merge.final_project.campaign.campaigns.dto.CampaignBeneficiaryCheckResponseDTO;
+import com.merge.final_project.campaign.campaigns.dto.CampaignDetailResponseDTO;
+import com.merge.final_project.campaign.campaigns.dto.CampaignFoundationCheckResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,4 +18,10 @@ public interface CampaignService {
     );
 
     List<CampaignListResponseDTO> getCampaignList(String sort);
+
+    CampaignDetailResponseDTO getCampaignDetail(Long campaignNo);
+
+    CampaignBeneficiaryCheckResponseDTO checkBeneficiaryByEntryCode(String entryCode);
+
+    CampaignFoundationCheckResponseDTO checkFoundationWalletStatus(Long foundationNo);
 }

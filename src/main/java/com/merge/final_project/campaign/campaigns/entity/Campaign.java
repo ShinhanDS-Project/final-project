@@ -1,6 +1,7 @@
 package com.merge.final_project.campaign.campaigns.entity;
 
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
+import com.merge.final_project.campaign.campaigns.CampaignCategory;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.global.BaseCreatedAtEntity;
 import com.merge.final_project.org.Foundation;
@@ -69,7 +70,9 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(name = "achieved_at")
     private LocalDateTime achievedAt;
 
-    private String category;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category")
+    private CampaignCategory category;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status")

@@ -69,6 +69,7 @@
             border-radius: 24px;
             overflow: hidden;
             box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+            cursor: pointer;
         }
         .thumb {
             position: relative;
@@ -177,7 +178,6 @@
         <div class="actions">
             <button class="secondary" type="button" onclick="loadCampaigns('deadline')">마감임박순</button>
             <button class="secondary" type="button" onclick="loadCampaigns('participation')">참여순</button>
-            <!-- [가빈] 호연언니랑 얘기한 후 캠페인 전체 컨트롤러 경로 수정 → html 경로도 맞춤 -->
             <button class="primary" type="button" onclick="location.href='/api/foundation/campaigns/register'">등록 화면</button>
         </div>
     </div>
@@ -195,13 +195,15 @@
         if (!targetAmount || targetAmount <= 0) {
             return 0;
         }
-        return Math.min(100, Math.floor((currentAmount / targetAmount) * 100));
+
+        return Math.min(100, Math.floor(((currentAmount || 0) / targetAmount) * 100));
     }
 
     function calculateDday(endAt) {
         if (!endAt) {
             return 'D-0';
         }
+
         const end = new Date(endAt);
         const today = new Date();
         const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
@@ -224,6 +226,9 @@
             const progressRate = calculateProgress(item.currentAmount, item.targetAmount);
             const card = document.createElement('article');
             card.className = 'card';
+            card.onclick = () => {
+                location.href = `/api/foundation/campaigns/${item.campaignNo}`;
+            };
             card.innerHTML = `
                 <div class="thumb">
                     ${item.imagePath ? `<img src="${item.imagePath}" alt="${item.title}">` : ''}
@@ -234,7 +239,7 @@
                 </div>
                 <div class="body">
                     <h2 class="title">${item.title ?? ''}</h2>
-                    <p class="org">${item.foundationName ?? '단체명 없음'}</p>
+                    <p class="org">${item.foundationName ?? '기부단체 정보 없음'}</p>
                     <div class="stats">
                         <div>
                             <div class="percent">${progressRate}%</div>
@@ -254,18 +259,18 @@
 
     async function loadCampaigns(sort = 'deadline') {
         try {
-            // [가빈] 호연언니랑 얘기한 후 캠페인 전체 컨트롤러 경로 수정 → html 경로도 맞춤
             const response = await fetch(`/api/foundation/campaigns?sort=${encodeURIComponent(sort)}`);
             if (!response.ok) {
                 throw new Error(await response.text());
             }
+
             const data = await response.json();
             renderCampaigns(data);
         } catch (error) {
             document.getElementById('list').innerHTML = '';
             const empty = document.getElementById('empty');
             empty.style.display = 'block';
-            empty.textContent = `목록을 불러오지 못했습니다: ${error.message}`;
+            empty.textContent = `목록을 불러오지 못했습니다. ${error.message}`;
         }
     }
 
