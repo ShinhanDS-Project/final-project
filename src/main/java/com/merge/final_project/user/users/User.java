@@ -79,4 +79,13 @@ public class User {
     public void setsLoginCount(Integer loginCount) {
         this.loginCount = loginCount;
     }
+
+    // [가빈] 관리자 활성화/비활성화 기능 추가하면서 setter 대신 도메인 메서드로 추가함
+    public void activate() {
+        this.status = UserStatus.ACTIVE;
+    }
+
+    public void deactivate() {
+        this.status = UserStatus.INACTIVE;
+    }
 }

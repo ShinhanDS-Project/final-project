@@ -117,4 +117,9 @@ public class Foundation extends BaseEntity {
         this.accountStatus = AccountStatus.INACTIVE;
     }
 
+    // [가빈] 관리자 직접 활성화 — reviewStatus는 건드리지 않고 accountStatus만 ACTIVE로 변경 + 임시 비밀번호 재발급
+    public void activate() {
+        this.accountStatus = AccountStatus.ACTIVE;
+    }
+
 }

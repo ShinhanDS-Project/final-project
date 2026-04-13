@@ -18,7 +18,7 @@ public class UserLoginRequestDTO {
     @Email
     private String email;
 
-    @NotBlank(message = "비밀번호는 필수입니다.")
+   // @NotBlank(message = "비밀번호는 필수입니다.")
     @Size(min = 8, max = 20, message = "비밀번호는 8자 이상 20자 이하여야 해.")
     @Pattern(
             regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).*$",

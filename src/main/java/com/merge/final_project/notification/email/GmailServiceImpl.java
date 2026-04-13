@@ -91,4 +91,27 @@ public class GmailServiceImpl implements GmailService {
 
         return CompletableFuture.completedFuture(null);
     }
+
+    // [가빈] 관리자 직접 비활성화 메일 (배치 비활성화와 분리 — 캠페인 제목 없음)
+    @Override
+    public CompletableFuture<Void> sendDeactivateByAdminMail(String to, String foundationName) {
+        Context context = new Context();
+        context.setVariable("foundationName", foundationName);
+
+        String html = templateEngine.process("mail/deactivate-by-admin-mail", context);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("[giveNtoken] 계정 비활성화 안내");
+            helper.setText(html, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            log.error("메일 발송 실패 - 수신주소: {}", to);
+            throw new BusinessException(ErrorCode.MAIL_SEND_FAILED);
+        }
+
+        return CompletableFuture.completedFuture(null);
+    }
 }

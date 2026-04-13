@@ -40,6 +40,12 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     @EntityGraph(attributePaths = "foundation")
     List<Campaign> findByCampaignStatusOrderByCurrentAmountDescCampaignNoDesc(CampaignStatus campaignStatus);
 
+    @EntityGraph(attributePaths = "foundation")
+    List<Campaign> findByCampaignStatusInOrderByEndAtAscCampaignNoDesc(Collection<CampaignStatus> campaignStatuses);
+
+    @EntityGraph(attributePaths = "foundation")
+    List<Campaign> findByCampaignStatusInOrderByCurrentAmountDescCampaignNoDesc(Collection<CampaignStatus> campaignStatuses);
+
     /**
      * wallet_no로 캠페인 단건 조회.
      * 지갑 상세 -> 캠페인명 역추적에 사용한다.
@@ -62,6 +68,8 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     //[가빈] 기부단체 별 캠페인 목록 조회
     Page<Campaign> findByFoundationNo(Long foundationNo, Pageable pageable);
 
+
+
     // [가빈] SETTLED + usage_end_at 경과 + 보고서 미제출 캠페인 조회
     // cutoffDate = today - 7일 or today - 14일 (서비스에서 계산해서 넘김)
     @Query(value = """
@@ -76,5 +84,20 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
 
 
     Optional<Campaign> findByCampaignNo(Long campaignNo);
+
+    Optional<Campaign> findByCampaignNoAndApprovalStatus(Long campaignNo, ApprovalStatus approvalStatus);
+
+    // [가빈] 대시보드용 카운트
+    long countByCampaignStatus(CampaignStatus campaignStatus);
+
+    long countByApprovalStatus(ApprovalStatus approvalStatus);
+
+    @Query("SELECT COUNT(c) FROM Campaign c WHERE c.approvalStatus = :approvalStatus AND c.currentAmount >= c.targetAmount")
+    long countAchievedCampaigns(@Param("approvalStatus") ApprovalStatus approvalStatus);
+
+    // [가빈] 카테고리별 캠페인 수 (승인된 것만)
+    // Object[] = [category(String), count(Long)]
+    @Query("SELECT c.category, COUNT(c) FROM Campaign c WHERE c.approvalStatus = :approvalStatus GROUP BY c.category")
+    List<Object[]> countCampaignByCategory(@Param("approvalStatus") ApprovalStatus approvalStatus);
 
 }

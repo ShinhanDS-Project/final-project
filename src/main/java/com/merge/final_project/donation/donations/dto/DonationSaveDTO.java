@@ -12,7 +12,7 @@ public class DonationSaveDTO {
     private Long userNo;// 기부한 유저의 고유 번호
     private Long campaignNo;// 기부 대상 캠페인 번호
     private BigDecimal amount;// 실제 기부된 금액 (donation_amount)
-    private boolean isAnonymous;// 익명 기부 여부
+    private Boolean isAnonymous;// 익명 기부 여부
 
     //토큰, 지갑은 여기에 추가? 잘 모르겠음
 }

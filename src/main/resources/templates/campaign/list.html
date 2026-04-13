@@ -6,74 +6,185 @@
     <title>캠페인 목록</title>
     <style>
         :root {
-            --bg: #f3f6fb;
+            --bg: #f4f7fb;
             --surface: #ffffff;
-            --line: #d9e2ec;
-            --text: #102a43;
-            --muted: #7b8794;
-            --accent: #2563eb;
-            --accent-soft: #e0ecff;
+            --surface-soft: #eef4ff;
+            --line: #d6deea;
+            --text: #142033;
+            --muted: #6f7d93;
+            --accent: #1f5eff;
+            --accent-strong: #174bd1;
         }
         * { box-sizing: border-box; }
         body {
             margin: 0;
             font-family: "Malgun Gothic", sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 30%),
-                linear-gradient(180deg, #f8fafc 0%, #eef4fb 100%);
             color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(31, 94, 255, 0.10), transparent 28%),
+                linear-gradient(180deg, #fbfcfe 0%, #eef3f9 100%);
         }
-        .page {
-            max-width: 1240px;
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(14px);
+            background: rgba(255, 255, 255, 0.88);
+            border-bottom: 1px solid rgba(214, 222, 234, 0.8);
+        }
+        .topbar-inner {
+            max-width: 1280px;
             margin: 0 auto;
-            padding: 36px 20px 80px;
-        }
-        .toolbar {
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 16px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
             gap: 12px;
-            margin-bottom: 24px;
+            font-weight: 800;
+            font-size: 20px;
         }
-        .toolbar h1 {
-            margin: 0;
-            font-size: 32px;
+        .brand-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), #57a2ff);
+            box-shadow: 0 10px 18px rgba(31, 94, 255, 0.24);
         }
-        .toolbar .actions {
+        .top-actions {
             display: flex;
             gap: 10px;
+            align-items: center;
         }
-        .toolbar button {
+        .top-actions button {
             border: 0;
             border-radius: 999px;
             padding: 10px 16px;
             font: inherit;
             cursor: pointer;
         }
-        .toolbar .primary {
+        .ghost {
+            background: var(--surface-soft);
+            color: var(--accent);
+        }
+        .primary {
             background: var(--accent);
             color: #fff;
         }
-        .toolbar .secondary {
-            background: var(--accent-soft);
-            color: var(--accent);
+        .page {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 34px 20px 80px;
+        }
+        .hero {
+            margin-bottom: 24px;
+        }
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(30px, 5vw, 44px);
+            letter-spacing: -0.03em;
+        }
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+        .search-panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            padding: 22px;
+            box-shadow: 0 20px 40px rgba(20, 32, 51, 0.08);
+            margin-bottom: 24px;
+        }
+        .search-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .field label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+        }
+        .field input,
+        .field select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 14px 16px;
+            font: inherit;
+            background: #fff;
+        }
+        .search-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .search-buttons button {
+            border: 0;
+            border-radius: 16px;
+            padding: 14px 18px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .sort-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .sort-row button {
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 10px 16px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .sort-row button.active {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--accent), #4f97ff);
+            color: #fff;
+        }
+        .result-summary {
+            margin-bottom: 18px;
+            color: var(--muted);
+            font-size: 14px;
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
             gap: 20px;
         }
         .card {
             background: var(--surface);
-            border: 1px solid rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(20, 32, 51, 0.08);
             border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 16px 30px rgba(20, 32, 51, 0.08);
+            cursor: pointer;
         }
         .thumb {
             position: relative;
             height: 220px;
-            background: linear-gradient(135deg, #dbeafe, #eff6ff);
+            background: linear-gradient(135deg, #dbeafe, #eef5ff);
         }
         .thumb img {
             width: 100%;
@@ -81,12 +192,21 @@
             object-fit: cover;
             display: block;
         }
+        .thumb-empty {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            place-items: center;
+            color: var(--muted);
+            font-weight: 700;
+        }
         .badge-wrap {
             position: absolute;
             top: 14px;
             left: 14px;
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .badge {
             padding: 6px 10px;
@@ -94,18 +214,18 @@
             font-size: 12px;
             font-weight: 700;
             color: #fff;
-            background: rgba(37, 99, 235, 0.9);
+            background: rgba(31, 94, 255, 0.92);
         }
         .badge.subtle {
-            background: rgba(255, 255, 255, 0.88);
-            color: var(--accent);
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--accent-strong);
         }
-        .body {
+        .card-body {
             padding: 18px 18px 20px;
         }
         .title {
             margin: 0 0 8px;
-            font-size: 21px;
+            font-size: 22px;
             line-height: 1.4;
         }
         .org {
@@ -116,6 +236,7 @@
         .stats {
             display: flex;
             justify-content: space-between;
+            gap: 12px;
             align-items: flex-end;
             margin-bottom: 12px;
         }
@@ -139,54 +260,112 @@
             width: 100%;
             height: 10px;
             border-radius: 999px;
-            background: #eef2f7;
+            background: #e8eef7;
             overflow: hidden;
         }
         .bar > span {
             display: block;
             height: 100%;
-            background: linear-gradient(90deg, #2563eb, #38bdf8);
+            background: linear-gradient(90deg, var(--accent), #45b0ff);
             border-radius: inherit;
         }
         .empty {
-            padding: 80px 20px;
+            padding: 84px 20px;
             text-align: center;
             color: var(--muted);
             border: 1px dashed var(--line);
             border-radius: 24px;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.76);
+        }
+        @media (max-width: 920px) {
+            .search-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
         @media (max-width: 720px) {
-            .toolbar {
+            .topbar-inner,
+            .toolbar,
+            .search-grid,
+            .search-buttons,
+            .top-actions {
                 flex-direction: column;
                 align-items: stretch;
             }
-            .toolbar .actions {
-                justify-content: stretch;
+            .search-grid {
+                grid-template-columns: 1fr;
             }
-            .toolbar .actions button {
-                flex: 1;
+            .search-buttons button,
+            .top-actions button {
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
-<div class="page">
-    <div class="toolbar">
-        <h1>캠페인 목록</h1>
-        <div class="actions">
-            <button class="secondary" type="button" onclick="loadCampaigns('deadline')">마감임박순</button>
-            <button class="secondary" type="button" onclick="loadCampaigns('participation')">참여순</button>
-            <!-- [가빈] 호연언니랑 얘기한 후 캠페인 전체 컨트롤러 경로 수정 → html 경로도 맞춤 -->
-            <button class="primary" type="button" onclick="location.href='/api/foundation/campaigns/register'">등록 화면</button>
+<header class="topbar">
+    <div class="topbar-inner">
+        <div class="brand">
+            <div class="brand-badge">C</div>
+            <span>캠페인</span>
+        </div>
+        <div class="top-actions">
+            <button class="ghost" type="button" onclick="location.href='/api/foundation/campaigns/list'">캠페인 목록 조회</button>
+            <button class="primary" type="button" onclick="location.href='/api/foundation/campaigns/register'">캠페인 등록</button>
         </div>
     </div>
+</header>
 
+<main class="page">
+    <section class="hero">
+        <h1>캠페인 목록</h1>
+        <p>캠페인 제목, 기부단체 이름, 카테고리 기준으로 원하는 캠페인을 찾을 수 있습니다.</p>
+    </section>
+
+    <section class="search-panel">
+        <div class="search-grid">
+            <div class="field">
+                <label for="searchType">검색 조건</label>
+                <select id="searchType">
+                    <option value="title">캠페인 제목</option>
+                    <option value="foundation">기부단체 이름</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="keyword">검색어</label>
+                <input id="keyword" type="text" placeholder="검색어를 입력하세요">
+            </div>
+            <div class="field">
+                <label for="category">카테고리</label>
+                <select id="category">
+                    <option value="">전체</option>
+                    <option value="CHILD_YOUTH">아동/청소년</option>
+                    <option value="SENIOR">어르신</option>
+                    <option value="DISABLED">장애인</option>
+                    <option value="ANIMAL">동물</option>
+                    <option value="ENVIRONMENT">환경</option>
+                    <option value="ETC">기타</option>
+                </select>
+            </div>
+            <div class="search-buttons">
+                <button class="primary" type="button" id="searchButton">검색</button>
+                <button class="ghost" type="button" id="resetButton">초기화</button>
+            </div>
+        </div>
+    </section>
+
+    <div class="sort-row">
+        <button type="button" data-sort="deadline" class="active">마감임박순</button>
+        <button type="button" data-sort="participation">참여순</button>
+    </div>
+
+    <div id="resultSummary" class="result-summary">목록을 불러오는 중입니다.</div>
     <div id="list" class="grid"></div>
     <div id="empty" class="empty" style="display:none;">표시할 캠페인이 없습니다.</div>
-</div>
+</main>
 
 <script>
+    let currentSort = 'deadline';
+
     function formatAmount(value) {
         return `${Number(value || 0).toLocaleString()}원`;
     }
@@ -195,46 +374,81 @@
         if (!targetAmount || targetAmount <= 0) {
             return 0;
         }
-        return Math.min(100, Math.floor((currentAmount / targetAmount) * 100));
+
+        return Math.min(100, Math.floor(((currentAmount || 0) / targetAmount) * 100));
     }
 
     function calculateDday(endAt) {
         if (!endAt) {
             return 'D-0';
         }
+
         const end = new Date(endAt);
         const today = new Date();
         const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
         return `D-${Math.max(diff, 0)}`;
     }
 
+    function updateSortButtons() {
+        document.querySelectorAll('[data-sort]').forEach(button => {
+            button.classList.toggle('active', button.dataset.sort === currentSort);
+        });
+    }
+
+    function buildQuery() {
+        const params = new URLSearchParams();
+        params.set('sort', currentSort);
+
+        const searchType = document.getElementById('searchType').value;
+        const keyword = document.getElementById('keyword').value.trim();
+        const category = document.getElementById('category').value;
+
+        if (searchType) {
+            params.set('searchType', searchType);
+        }
+        if (keyword) {
+            params.set('keyword', keyword);
+        }
+        if (category) {
+            params.set('category', category);
+        }
+
+        return params.toString();
+    }
+
     function renderCampaigns(items) {
         const list = document.getElementById('list');
         const empty = document.getElementById('empty');
+        const summary = document.getElementById('resultSummary');
         list.innerHTML = '';
 
         if (!items.length) {
             empty.style.display = 'block';
+            summary.textContent = '검색 조건에 맞는 캠페인이 없습니다.';
             return;
         }
 
         empty.style.display = 'none';
+        summary.textContent = `총 ${items.length}개의 캠페인을 찾았습니다.`;
 
         items.forEach(item => {
             const progressRate = calculateProgress(item.currentAmount, item.targetAmount);
             const card = document.createElement('article');
             card.className = 'card';
+            card.onclick = () => {
+                location.href = `/api/foundation/campaigns/${item.campaignNo}`;
+            };
             card.innerHTML = `
                 <div class="thumb">
-                    ${item.imagePath ? `<img src="${item.imagePath}" alt="${item.title}">` : ''}
+                    ${item.imagePath ? `<img src="${item.imagePath}" alt="${item.title}">` : '<div class="thumb-empty">대표 이미지 없음</div>'}
                     <div class="badge-wrap">
                         <span class="badge">${item.category ?? '카테고리'}</span>
                         <span class="badge subtle">${calculateDday(item.endAt)}</span>
                     </div>
                 </div>
-                <div class="body">
+                <div class="card-body">
                     <h2 class="title">${item.title ?? ''}</h2>
-                    <p class="org">${item.foundationName ?? '단체명 없음'}</p>
+                    <p class="org">${item.foundationName ?? '기부단체 정보 없음'}</p>
                     <div class="stats">
                         <div>
                             <div class="percent">${progressRate}%</div>
@@ -252,22 +466,51 @@
         });
     }
 
-    async function loadCampaigns(sort = 'deadline') {
+    async function loadCampaigns() {
+        const list = document.getElementById('list');
+        const empty = document.getElementById('empty');
+        const summary = document.getElementById('resultSummary');
+
         try {
-            // [가빈] 호연언니랑 얘기한 후 캠페인 전체 컨트롤러 경로 수정 → html 경로도 맞춤
-            const response = await fetch(`/api/foundation/campaigns?sort=${encodeURIComponent(sort)}`);
+            updateSortButtons();
+            summary.textContent = '목록을 불러오는 중입니다.';
+
+            const response = await fetch(`/api/foundation/campaigns?${buildQuery()}`);
             if (!response.ok) {
                 throw new Error(await response.text());
             }
+
             const data = await response.json();
             renderCampaigns(data);
         } catch (error) {
-            document.getElementById('list').innerHTML = '';
-            const empty = document.getElementById('empty');
+            list.innerHTML = '';
             empty.style.display = 'block';
-            empty.textContent = `목록을 불러오지 못했습니다: ${error.message}`;
+            summary.textContent = '목록 조회 중 오류가 발생했습니다.';
+            empty.textContent = `목록을 불러오지 못했습니다. ${error.message}`;
         }
     }
+
+    document.querySelectorAll('[data-sort]').forEach(button => {
+        button.addEventListener('click', () => {
+            currentSort = button.dataset.sort;
+            loadCampaigns();
+        });
+    });
+
+    document.getElementById('searchButton').addEventListener('click', loadCampaigns);
+    document.getElementById('resetButton').addEventListener('click', () => {
+        document.getElementById('searchType').value = 'title';
+        document.getElementById('keyword').value = '';
+        document.getElementById('category').value = '';
+        currentSort = 'deadline';
+        loadCampaigns();
+    });
+
+    document.getElementById('keyword').addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            loadCampaigns();
+        }
+    });
 
     loadCampaigns();
 </script>
