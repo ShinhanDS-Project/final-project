@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -27,7 +28,7 @@ public class FoundationEventListener {
     private static final String DELIMITER = "||";
 
     @Async
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public CompletableFuture<Void> handleApproved(FoundationApprovedEvent event) {
         // content = "foundationName||tempPassword(평문)" — 재시도 시 필요
@@ -43,7 +44,7 @@ public class FoundationEventListener {
     }
 
     @Async
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public CompletableFuture<Void> handleRejected(FoundationRejectedEvent event) {
         // content = "foundationName||rejectReason"
@@ -59,7 +60,7 @@ public class FoundationEventListener {
     }
 
     @Async
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public CompletableFuture<Void> handleInactive(FoundationInactiveEvent event) {
         // content = "foundationName||campaignTitle"
@@ -76,7 +77,7 @@ public class FoundationEventListener {
 
     // [가빈] 관리자 직접 비활성화 메일 핸들러
     @Async
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public CompletableFuture<Void> handleDeactivatedByAdmin(FoundationDeactivatedByAdminEvent event) {
         // content = foundationName
