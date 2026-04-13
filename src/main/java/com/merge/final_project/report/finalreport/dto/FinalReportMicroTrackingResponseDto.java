@@ -11,6 +11,7 @@ public class FinalReportMicroTrackingResponseDto {
     FinalReportData reportData;
     Long dayPassed;
     Boolean isExist;
+    Boolean isPassed; //지났는지 여부
 
     @Getter
     @Builder
@@ -18,5 +19,6 @@ public class FinalReportMicroTrackingResponseDto {
         private String title;
         private String content;
         private String reportFileUrl; // 예시: 리포트 파일 경로 등
+
     }
 }

@@ -1,14 +1,8 @@
 package com.merge.final_project.user.users;
 
-import com.merge.final_project.global.exceptions.BusinessException;
-import com.merge.final_project.global.exceptions.ErrorCode;
-import com.merge.final_project.user.users.dto.support.*;
+import com.merge.final_project.user.users.dto.MicroTrackingDTO;
 import com.merge.final_project.user.users.dto.login.UserLoginRequestDTO;
-import com.merge.final_project.user.verify.VerificationService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import com.merge.final_project.user.users.dto.support.*;
 
 public interface UserService {
 
@@ -34,6 +28,7 @@ public interface UserService {
 
   //  List<MyDonationResponseDTO> getMyDonations(Long userNo);
 
+    MicroTrackingDTO showMicroTracking(Long campaignNo);
     //4. 마이페이지 -1. 개인정보 불러오기 :
     //5. 마이페이지 -1. 계정별 기부 결과 불러오기:
     //6. 기부내역 -1. 기부 증서 조회하기

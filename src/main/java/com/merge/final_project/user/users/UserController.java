@@ -1,6 +1,7 @@
 package com.merge.final_project.user.users;
 
 import com.merge.final_project.donation.donations.DonationService;
+import com.merge.final_project.user.users.dto.MicroTrackingDTO;
 import com.merge.final_project.user.users.dto.support.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,7 +70,14 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
     // 나의 기부 내역-> DonationController에 존재
-    //마이크로트래킹도 ->
+    //마이크로트래킹도
+    @GetMapping("/see")
+    public ResponseEntity<MicroTrackingDTO> showMicro(Long campaignNo){
+
+        MicroTrackingDTO microTracking=userService.showMicroTracking(campaignNo);
+        return ResponseEntity.ok(microTracking);
+
+    }
 
 
 //    // 증서
@@ -82,14 +90,5 @@ public class UserController {
 //        DonationCertificateResponseDTO response = userService.getDonationCertificate(userNo, donationNo);
 //        return ResponseEntity.ok(response);
 //    }
-//    // 기부금 영수증 신청
-//    @PostMapping("/receipts")
-//    public ResponseEntity<Void> requestDonationReceipt(
-//            Authentication authentication,
-//            @Valid @RequestBody DonationReceiptRequestDTO dto
-//    ) {
-//        Long userNo = (Long) authentication.getDetails();
-//        userService.requestDonationReceipt(userNo, dto);
-//        return ResponseEntity.ok().build();
-//    }
+
 }
