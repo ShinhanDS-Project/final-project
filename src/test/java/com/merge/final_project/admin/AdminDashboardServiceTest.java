@@ -24,6 +24,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -111,13 +112,11 @@ class AdminDashboardServiceTest {
     @Test
     @DisplayName("카테고리별_비중_정상조회")
     void 카테고리별_비중_정상조회() {
-        Object[] campaignRow = new Object[]{"CHILD_YOUTH", 10L};
         when(campaignRepository.countCampaignByCategory(ApprovalStatus.APPROVED))
-                .thenReturn(List.of(campaignRow));
+                .thenReturn(Arrays.asList(new Object[]{"CHILD_YOUTH", 10L}));
 
-        Object[] donationRow = new Object[]{"CHILD_YOUTH", new BigDecimal("200000")};
         when(paymentRepository.findDonationAmountByCategory())
-                .thenReturn(List.of(donationRow));
+                .thenReturn(Arrays.asList(new Object[]{"CHILD_YOUTH", new BigDecimal("200000")}));
 
         List<CategoryRatioDTO> result = adminDashboardService.getCategoryRatio();
 
