@@ -2,9 +2,12 @@ package com.merge.final_project.report.finalreport.service;
 
 import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.admin.sse.ApprovalRequestEvent;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileService;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -179,5 +183,30 @@ public class FinalReportService {
 
     //[이채원] --> 예외 캠페인에서 사업종료일 다음날 00시 00분 이 지났고, 리포트 제추안한거 (캠페인 상태 ,
     // localdateTime.now()이 사업종료일 그다음날 00시 00분보다 크면 00일 지났습니다로 조회)
-    //있으면 조회해오고
+    //있으면 조회해오기
+
+    public FinalReport showReport(Long campaignNo){
+        //1. 실제로 존재하는 캠페인인지 확인
+        Campaign campaign= campaignRepository.findByCampaignNo(campaignNo)
+                .orElseThrow(()-> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
+
+        //2. 리포트 여부 확인
+        FinalReport finalReport= finalReportRepository.findByCampaignNo(campaignNo)
+                .orElseThrow(()-> new BusinessException(ErrorCode.FINAL_REPORT_NOT_FOUND));
+
+        //3. 사업 종료일 확인
+        // 캠페인 엔티티에서 사업종료일+1 가져오기
+        LocalDateTime usageEndAt= campaign.getUsageEndAt();
+
+        // 기준은 종료일 다음날 00시 00분 설정이므로
+        // 종료일 다음날 00시 00분 설정
+        LocalDateTime nextDayMidnight = usageEndAt.plusDays(1).toLocalDate().atStartOfDay();
+        if(LocalDateTime.now().isAfter(nextDayMidnight)){
+                // 몇일 지났는지 확인해야함
+                int day= nextDayMidnight.minusDays(LocalDateTime.now());
+        }
+        // 3. 모든 조건을 통과하면 리포트 반환 (이미지에 있던 'Missing return statement' 해결)
+        return finalReport;
+    }
+
 }
