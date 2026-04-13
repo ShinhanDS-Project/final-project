@@ -1,9 +1,18 @@
 package com.merge.final_project.campaign.campaigns.service;
 
-import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDto;
+import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public interface CampaignService {
-    // 캠페인 등록 및 기부단체 지갑 상태 변경
-    void registerCampaign(CampaignRequestDto requestDto, MultipartFile imageFile, Long foundationNo);
+    void registerCampaign(
+            CampaignRequestDTO requestDto,
+            MultipartFile imageFile,
+            List<MultipartFile> detailImageFiles,
+            Long foundationNo
+    );
+
+    List<CampaignListResponseDTO> getCampaignList(String sort);
 }

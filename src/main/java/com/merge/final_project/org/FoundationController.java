@@ -1,5 +1,6 @@
 package com.merge.final_project.org;
 
+import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.org.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -80,5 +81,14 @@ public class FoundationController {
         Long foundationNo = (Long) authentication.getDetails();
         foundationService.updateFoundationPassword(foundationNo, requestDTO);
         return ResponseEntity.ok().build();
+    }
+
+    //기부단체가 본인 캠페인 리스트 조회
+    @GetMapping("/me/campaigns")
+    public ResponseEntity<Page<CampaignListResponseDTO>> getMyCampaigns(
+            Authentication authentication,
+            Pageable pageable) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMyCampaigns(foundationNo, pageable));
     }
 }

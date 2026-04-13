@@ -1,5 +1,7 @@
 package com.merge.final_project.report.finalreport.service;
 
+import com.merge.final_project.admin.adminlog.TargetType;
+import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
@@ -13,6 +15,7 @@ import com.merge.final_project.report.finalreport.entitiy.FinalReport;
 import com.merge.final_project.report.finalreport.repository.FinalReportRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,12 +35,21 @@ public class FinalReportService {
     private final CampaignRepository campaignRepository;
     private final ImageRepository imageRepository;
     private final FileService fileService; // 💡 인터페이스 주입
+    private final ApplicationEventPublisher eventPublisher; //[가빈] 활동 보고서 등록 시 관리자 화면에서 볼 수 있게 이벤트 발생
 
     @Transactional(rollbackFor = Exception.class)
     public void saveFullReport(FinalReportRequestDTO dto, List<MultipartFile> files, List<String> purposes, String email) throws IOException {
         validateImages(files);
         FinalReport report = saveReportEntity(dto, email);
         saveImageEntities(report, files, purposes);
+
+        //[가빈]어떤 수혜자가 쓴 활동 보고서인지 관리자 화면에서 확인할 수 있게 이벤트 발생
+        Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
+
+        eventPublisher.publishEvent(new ApprovalRequestEvent(
+                TargetType.FINAL_REPORT, report.getReportNo(), beneficiary.getName() + "의 활동 보고서 승인 요청"
+        ));
     }
 
     private void validateImages(List<MultipartFile> files) {

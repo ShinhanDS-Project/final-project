@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>캠페인 등록</title>
+    <style>
+        :root {
+            --bg: #f6f4ef;
+            --panel: #fffdf8;
+            --line: #ddd6c8;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #1d4ed8;
+            --accent-soft: #dbeafe;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Malgun Gothic", sans-serif;
+            background: linear-gradient(180deg, #f8f5ee 0%, #f3f6fb 100%);
+            color: var(--text);
+        }
+        .page {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+        .header {
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            margin: 0 0 8px;
+            font-size: 32px;
+        }
+        .header p {
+            margin: 0;
+            color: var(--muted);
+        }
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .field.full {
+            grid-column: 1 / -1;
+        }
+        label {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        input, textarea, select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font: inherit;
+            background: #fff;
+        }
+        textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+        .section-title {
+            margin: 28px 0 12px;
+            font-size: 18px;
+        }
+        .inline-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .row-card {
+            border: 1px dashed var(--line);
+            border-radius: 14px;
+            padding: 14px;
+            background: #fff;
+        }
+        .row-grid {
+            display: grid;
+            grid-template-columns: 1fr 180px;
+            gap: 12px;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 18px;
+            font: inherit;
+            cursor: pointer;
+        }
+        .primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .secondary {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+        .ghost {
+            background: #eef2f7;
+            color: var(--text);
+        }
+        .status {
+            margin-top: 16px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        @media (max-width: 720px) {
+            .grid, .row-grid {
+                grid-template-columns: 1fr;
+            }
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="header">
+        <h1>캠페인 등록</h1>
+        <p>대표 이미지 1장과 상세 이미지 여러 장을 포함해 캠페인 등록 요청을 보낼 수 있습니다.</p>
+    </div>
+
+    <div class="panel">
+        <form id="campaignForm">
+            <div class="grid">
+                <div class="field">
+                    <label for="title">제목</label>
+                    <input id="title" type="text" placeholder="캠페인 제목" required>
+                </div>
+                <div class="field">
+                    <label for="category">카테고리</label>
+                    <input id="category" type="text" placeholder="예: 장애인/환자" required>
+                </div>
+                <div class="field full">
+                    <label for="description">설명</label>
+                    <textarea id="description" placeholder="캠페인 설명" required></textarea>
+                </div>
+                <div class="field">
+                    <label for="targetAmount">목표 금액</label>
+                    <input id="targetAmount" type="number" min="0" placeholder="1000000" required>
+                </div>
+                <div class="field">
+                    <label for="imageFile">대표 이미지</label>
+                    <input id="imageFile" type="file" accept="image/*" required>
+                </div>
+                <div class="field">
+                    <label for="startAt">모금 시작일</label>
+                    <input id="startAt" type="datetime-local" required>
+                </div>
+                <div class="field">
+                    <label for="endAt">모금 종료일</label>
+                    <input id="endAt" type="datetime-local" required>
+                </div>
+                <div class="field">
+                    <label for="usageStartAt">사용 시작일</label>
+                    <input id="usageStartAt" type="datetime-local" required>
+                </div>
+                <div class="field">
+                    <label for="usageEndAt">사용 종료일</label>
+                    <input id="usageEndAt" type="datetime-local" required>
+                </div>
+            </div>
+
+            <h2 class="section-title">지출 계획</h2>
+            <div id="planList" class="inline-list"></div>
+            <button type="button" class="secondary" onclick="addPlanRow()">지출 계획 추가</button>
+
+            <h2 class="section-title">상세 이미지</h2>
+            <div id="detailImageList" class="inline-list"></div>
+            <button type="button" class="secondary" onclick="addDetailImageRow()">상세 이미지 추가</button>
+
+            <div class="actions">
+                <button type="button" class="primary" onclick="submitCampaign()">등록 요청</button>
+                <button type="reset" class="ghost">초기화</button>
+            </div>
+            <p id="status" class="status"></p>
+        </form>
+    </div>
+</div>
+
+<script>
+    function addPlanRow() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'row-card';
+        wrapper.innerHTML = `
+            <div class="row-grid">
+                <input type="text" name="planContent" placeholder="지출 계획 내용" required>
+                <input type="number" name="planAmount" min="0" placeholder="금액" required>
+            </div>
+        `;
+        document.getElementById('planList').appendChild(wrapper);
+    }
+
+    function addDetailImageRow() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'row-card';
+        wrapper.innerHTML = `<input type="file" name="detailImageFiles" accept="image/*">`;
+        document.getElementById('detailImageList').appendChild(wrapper);
+    }
+
+    function toIsoOrNull(value) {
+        return value ? new Date(value).toISOString().slice(0, 19) : null;
+    }
+
+    async function submitCampaign() {
+        const status = document.getElementById('status');
+        status.textContent = '';
+
+        const plans = Array.from(document.querySelectorAll('#planList .row-card')).map(card => ({
+            planContent: card.querySelector('[name="planContent"]').value,
+            planAmount: Number(card.querySelector('[name="planAmount"]').value)
+        })).filter(plan => plan.planContent && plan.planAmount >= 0);
+
+        const dto = {
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            category: document.getElementById('category').value,
+            targetAmount: Number(document.getElementById('targetAmount').value),
+            startAt: toIsoOrNull(document.getElementById('startAt').value),
+            endAt: toIsoOrNull(document.getElementById('endAt').value),
+            usageStartAt: toIsoOrNull(document.getElementById('usageStartAt').value),
+            usageEndAt: toIsoOrNull(document.getElementById('usageEndAt').value),
+            usePlans: plans
+        };
+
+        const formData = new FormData();
+        formData.append('dto', new Blob([JSON.stringify(dto)], { type: 'application/json' }));
+
+        const imageFile = document.getElementById('imageFile').files[0];
+        if (imageFile) {
+            formData.append('imageFile', imageFile);
+        }
+
+        Array.from(document.querySelectorAll('[name="detailImageFiles"]')).forEach(input => {
+            if (input.files[0]) {
+                formData.append('detailImageFiles', input.files[0]);
+            }
+        });
+
+        try {
+            const response = await fetch('/campaigns/register/form', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            status.textContent = '등록 요청이 완료되었습니다.';
+        } catch (error) {
+            status.textContent = `요청 실패: ${error.message}`;
+        }
+    }
+
+    addPlanRow();
+    addDetailImageRow();
+</script>
+</body>
+</html>

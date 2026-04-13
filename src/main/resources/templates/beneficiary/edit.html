@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>회원 정보 수정</title>
+</head>
+<body>
+    <h1>회원 정보 수정</h1>
+    <form id="editForm">
+        <div>
+            <label>이름: </label>
+            <input type="text" id="name" th:value="${myInfo.name}" required>
+        </div>
+        <div>
+            <label>전화번호: </label>
+            <input type="text" id="phone" th:value="${myInfo.phone}" required>
+        </div>
+        <div>
+            <label>계좌번호: </label>
+            <input type="text" id="account" th:value="${myInfo.account}" required>
+        </div>
+        <div>
+            <label>수혜자 유형: </label>
+            <select id="beneficiaryType">
+                <option value="INDIVIDUAL" th:selected="${myInfo.beneficiaryType.name() == 'INDIVIDUAL'}">개인</option>
+                <option value="ORGANIZATION" th:selected="${myInfo.beneficiaryType.name() == 'ORGANIZATION'}">기관</option>
+            </select>
+        </div>
+        <hr>
+        <h3>비밀번호 변경</h3>
+        <p>비밀번호를 변경하고 싶을 때만 입력하세요. (공백 시 유지)</p>
+        <div>
+            <label>새 비밀번호: </label>
+            <input type="password" id="password" placeholder="새 비밀번호">
+        </div>
+        <hr>
+        <button type="button" onclick="updateInfo()" style="padding: 10px 20px;">정보 수정 완료</button>
+        <a href="/finalReport/list"><button type="button">취소</button></a>
+    </form>
+
+    <script>
+        async function updateInfo() {
+            const dto = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                account: document.getElementById('account').value,
+                beneficiaryType: document.getElementById('beneficiaryType').value,
+                password: document.getElementById('password').value
+            };
+
+            try {
+                const response = await fetch('/api/beneficiary/edit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+
+                if (response.ok) {
+                    alert("회원 정보가 성공적으로 수정되었습니다.");
+                    location.href = "/finalReport/list";
+                } else {
+                    const errorMsg = await response.text();
+                    alert("수정 실패: " + errorMsg);
+                }
+            } catch (error) {
+                console.error("에러:", error);
+                alert("서버 통신 중 오류가 발생했습니다.");
+            }
+        }
+    </script>
+</body>
+</html>

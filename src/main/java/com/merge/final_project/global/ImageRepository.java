@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Repository
-
 public interface ImageRepository extends JpaRepository<Image, Long> {
 
     List<Image> findByTargetNameAndTargetNo(String targetName, Long targetNo);
@@ -19,5 +18,4 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     @Transactional
     @Query("DELETE FROM Image i WHERE i.targetName = :targetName AND i.targetNo = :targetNo")
     void deleteByTargetNameAndTargetNo(@Param("targetName") String targetName, @Param("targetNo") Long targetNo);
-
 }

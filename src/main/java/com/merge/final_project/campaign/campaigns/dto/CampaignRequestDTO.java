@@ -1,28 +1,28 @@
 package com.merge.final_project.campaign.campaigns.dto;
 
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
-import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDto;
+import com.merge.final_project.campaign.useplan.dto.UsePlanRequestDTO;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class CampaignRequestDto {
+public class CampaignRequestDTO {
     private String title;
     private String description;
     private String imagePath;
     private String category;
     private Long targetAmount;
+    private String entryCode;
 
     private LocalDateTime startAt;
     private LocalDateTime endAt;
     private LocalDateTime usageStartAt;
     private LocalDateTime usageEndAt;
 
-    private List<UsePlanRequestDto> usePlans;
+    private List<UsePlanRequestDTO> usePlans;
 
-    // 서비스 계층에서 DB 저장 시 사용
     public Campaign toEntity() {
         return Campaign.builder()
                 .title(this.title)
