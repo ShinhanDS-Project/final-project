@@ -83,4 +83,17 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
 
     Optional<Campaign> findByCampaignNoAndApprovalStatus(Long campaignNo, ApprovalStatus approvalStatus);
 
+    // [가빈] 대시보드용 카운트
+    long countByCampaignStatus(CampaignStatus campaignStatus);
+
+    long countByApprovalStatus(ApprovalStatus approvalStatus);
+
+    @Query("SELECT COUNT(c) FROM Campaign c WHERE c.approvalStatus = :approvalStatus AND c.currentAmount >= c.targetAmount")
+    long countAchievedCampaigns(@Param("approvalStatus") ApprovalStatus approvalStatus);
+
+    // [가빈] 카테고리별 캠페인 수 (승인된 것만)
+    // Object[] = [category(String), count(Long)]
+    @Query("SELECT c.category, COUNT(c) FROM Campaign c WHERE c.approvalStatus = :approvalStatus GROUP BY c.category")
+    List<Object[]> countCampaignByCategory(@Param("approvalStatus") ApprovalStatus approvalStatus);
+
 }
