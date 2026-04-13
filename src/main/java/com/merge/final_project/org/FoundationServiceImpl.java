@@ -14,6 +14,7 @@ import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.notification.email.event.FoundationApprovedEvent;
+import com.merge.final_project.notification.email.event.FoundationDeactivatedByAdminEvent;
 import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
 import com.merge.final_project.org.dto.*;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundation;
@@ -366,6 +367,65 @@ public class FoundationServiceImpl implements FoundationService {
         adminLogService.log(ActionType.REJECT, TargetType.FOUNDATION, foundationNo, description, admin);
 
         return foundation.getFoundationNo();
+    }
+
+    // [가빈] 관리자 기부단체 활성화 — 비활성화된 APPROVED 단체를 다시 ACTIVE로 전환 + 임시 비밀번호 재발급 + 메일 발송
+    @Transactional
+    @Override
+    public void activateFoundation(Long foundationNo) {
+        Foundation foundation = foundationRepository.findById(foundationNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+
+        if (foundation.getAccountStatus() == AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FOUNDATION_ALREADY_ACTIVE);
+        }
+
+        // APPROVED 상태인 단체만 활성화 가능 (PRE_REGISTERED, REJECTED 단체는 활성화 불가)
+        if (foundation.getReviewStatus() != ReviewStatus.APPROVED) {
+            throw new BusinessException(ErrorCode.CANNOT_APPROVE_ILLEGAL_FOUNDATION);
+        }
+
+        foundation.activate();
+
+        // 임시 비밀번호 재발급
+        String sendTempPassword = String.valueOf(UUID.randomUUID());
+        foundation.updatePassword(passwordEncoder.encode(sendTempPassword));
+
+        // 트랜잭션 커밋 후 메일 발송
+        eventPublisher.publishEvent(new FoundationApprovedEvent(
+                foundationNo, foundation.getFoundationEmail(), foundation.getFoundationName(), sendTempPassword));
+
+        // 관리자 활동 로그
+        String adminId = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
+        Admin admin = adminRepository.findByAdminId(adminId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
+        adminLogService.log(ActionType.APPROVE, TargetType.FOUNDATION, foundationNo,
+                foundation.getFoundationName() + " 기부단체 활성화 + 임시 비밀번호 메일 전송", admin);
+    }
+
+    // [가빈] 관리자 기부단체 비활성화 — ACTIVE 단체를 INACTIVE로 전환 + 비활성화 메일 발송
+    @Transactional
+    @Override
+    public void deactivateFoundation(Long foundationNo) {
+        Foundation foundation = foundationRepository.findById(foundationNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+
+        if (foundation.getAccountStatus() == AccountStatus.INACTIVE) {
+            throw new BusinessException(ErrorCode.FOUNDATION_ALREADY_INACTIVE);
+        }
+
+        foundation.deactivate();
+
+        // 트랜잭션 커밋 후 비활성화 메일 발송
+        eventPublisher.publishEvent(new FoundationDeactivatedByAdminEvent(
+                foundation.getFoundationEmail(), foundation.getFoundationName()));
+
+        // 관리자 활동 로그
+        String adminId = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
+        Admin admin = adminRepository.findByAdminId(adminId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ADMIN_NOT_FOUND));
+        adminLogService.log(ActionType.REJECT, TargetType.FOUNDATION, foundationNo,
+                foundation.getFoundationName() + " 기부단체 비활성화 + 메일 전송", admin);
     }
 
     @Override
