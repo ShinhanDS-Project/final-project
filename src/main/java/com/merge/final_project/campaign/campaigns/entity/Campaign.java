@@ -4,6 +4,8 @@ import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignCategory;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.global.BaseCreatedAtEntity;
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.org.Foundation;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,6 +26,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -65,7 +68,7 @@ public class Campaign extends BaseCreatedAtEntity {
     private Long targetAmount;
 
     @Column(name = "current_amount")
-    private Long currentAmount;
+    private BigDecimal currentAmount;
 
     @Column(name = "achieved_at")
     private LocalDateTime achievedAt;
@@ -101,6 +104,7 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(name = "beneficiary_no")
     private Long beneficiaryNo;
 
+
     @Column(name = "reject_reason")
     private String rejectReason;
 
@@ -116,6 +120,14 @@ public class Campaign extends BaseCreatedAtEntity {
     public void reject(String reason) {
         this.approvalStatus = ApprovalStatus.REJECTED;
         this.rejectReason = reason;
+    }
+    //[채원] add함수
+    public BigDecimal addCurrentAmount(BigDecimal amount) {
+       if(amount==null){
+           throw new BusinessException(ErrorCode. CAMPAIGN_INVALID_CURRENT_AMOUNT);
+       }
+        this.currentAmount = this.currentAmount.add(amount);
+        return this.currentAmount;
     }
 
     // [가빈] 캠페인 승인 후 모금시작일 되면 상태 변경하기 위해 사용하는 메서드

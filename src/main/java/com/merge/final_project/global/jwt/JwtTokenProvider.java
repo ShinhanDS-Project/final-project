@@ -119,8 +119,14 @@ public class JwtTokenProvider {
      public String getEmailFromToken(String token){
         return parseClaims(token).get("email", String.class);
      }
-    public Long getReceiverNo(String token) { return parseClaims(token).get("no", Long.class);}
-        //3. 토큰 종류 구분하기
+    //[이채원 ] JwtTokenProvider.java 수정
+    public Long getReceiverNo(String token) {
+        Object no = parseClaims(token).get("no");
+        if (no == null) return null;
+
+        // 어떤 형태의 숫자(Integer, Long, Double 등)든 String으로 바꿔서 Long으로 파싱
+        return parseClaims(token).get("no", Long.class);
+    }    //3. 토큰 종류 구분하기
     public String getTokenType(String token){return parseClaims(token).get("type", String.class);}
 
     //4. 토큰이 정상인지 검증하고 그 안에 json 데이터인 페이로드를 추출.

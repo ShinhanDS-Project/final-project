@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -96,7 +97,7 @@ public class CampaignServiceImpl implements CampaignService {
         campaign.setFoundationNo(foundationNo);
         campaign.setBeneficiaryNo(beneficiary.getBeneficiaryNo());
         campaign.setWalletNo(availableWallet.getWalletNo());
-        campaign.setCurrentAmount(0L);
+        campaign.setCurrentAmount(BigDecimal.valueOf(0)); //채원 수정
         campaign.setApprovalStatus(ApprovalStatus.PENDING);
         campaign.setCampaignStatus(CampaignStatus.PENDING);
         campaign.setUpdatedAt(LocalDateTime.now());
@@ -376,8 +377,8 @@ public class CampaignServiceImpl implements CampaignService {
         }
 
         try {
-            String storedName = fileService.saveFile(imageFile);
-            String filePath = fileService.getFilePath(storedName);
+            String storedName = fileUtil.saveFile(imageFile);
+            String filePath = fileUtil.getFilePath(storedName);
 
             imageRepository.save(Image.builder()
                     .imgPath(filePath)

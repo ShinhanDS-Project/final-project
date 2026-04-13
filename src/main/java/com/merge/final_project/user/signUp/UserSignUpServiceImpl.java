@@ -4,6 +4,7 @@ import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.utils.FileUtil;
+import com.merge.final_project.global.utils.S3FileService;
 import com.merge.final_project.user.signUp.dto.UserSignUpResponseDTO;
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.users.User;
@@ -28,6 +29,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
     private final UserSignUpRepository userSignUpRepository;
     private final VerificationService verificationService;
     private final PasswordEncoder passwordEncoder;
+    private final S3FileService s3FileService;
     private final SignupWalletHookService signupWalletHookService;
     private final FileUtil fileUtil;
 
@@ -54,8 +56,9 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         String savedPath = null;
         if (file != null && !file.isEmpty()) {
             // 위 1번의 검증 로직 포함...
-            savedPath = fileUtil.saveFile(file);
-            requestDto.setProfilePath(savedPath);
+            String storedName = s3FileService.saveFile(file);
+            savedPath = storedName; // rollback 시 delete용 key
+            requestDto.setProfilePath(s3FileService.getFilePath(storedName)); // DB 저장용 URL
         }
 
         try {
@@ -68,7 +71,11 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         } catch (Exception e) {
             // DB 저장 실패 시 저장했던 파일 삭제
             if (savedPath != null) {
-                fileUtil.deleteFile(savedPath); // FileUtil에 삭제 로직 필요
+                try {
+                    s3FileService.deleteFile(savedPath);
+                } catch (Exception deleteEx) {
+                   e.addSuppressed(deleteEx);
+                                }
             }
             throw e; // 예외를 다시 던져서 GlobalExceptionHandler가 처리하게 함
         }

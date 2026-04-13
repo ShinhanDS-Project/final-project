@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -64,7 +65,7 @@ class CampaignListServiceTest {
             .campaignNo(10L)
             .title("긴급 구호 캠페인")
             .targetAmount(1_000_000L)
-            .currentAmount(300_000L)
+            .currentAmount(BigDecimal.valueOf(300_000L))
             .category("재난")
             .endAt(LocalDateTime.of(2026, 4, 10, 0, 0))
             .foundationNo(1L)
@@ -76,7 +77,7 @@ class CampaignListServiceTest {
             .campaignNo(11L)
             .title("유기견 보호 캠페인")
             .targetAmount(2_000_000L)
-            .currentAmount(700_000L)
+            .currentAmount(BigDecimal.valueOf(700_000L))
             .category("동물")
             .endAt(LocalDateTime.of(2026, 4, 12, 0, 0))
             .foundationNo(1L)
@@ -154,7 +155,7 @@ class CampaignListServiceTest {
             .campaignNo(21L)
             .title("숲 조성 사업")
             .targetAmount(3_000_000L)
-            .currentAmount(2_500_000L)
+            .currentAmount(BigDecimal.valueOf(2_500_000L))
             .category("환경")
             .endAt(LocalDateTime.of(2026, 4, 20, 0, 0))
             .foundationNo(2L)

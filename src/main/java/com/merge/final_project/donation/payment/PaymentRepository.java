@@ -8,7 +8,22 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import java.util.Optional;
+
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    //db 저장/조회
+    //order 키 기준으로 찾기
+    Optional<Payment> findByOrderKey(String orderKey);
+
+    // payment 키 기준으로 찾기
+    Optional<Payment> findByPaymentKey(String paymentKey);
+
+    // payment no 기준으로 존재 찾기
+    boolean existsByPaymentNo(Long paymentNo);
+
+    boolean existsByPaymentKey(String paymentKey);
+    // orderkey와 userno로 payment 찾기
+    Optional<Payment> findByOrderKeyAndUserNo(String orderKey, Long userNo);
 
     // [가빈] 오늘 완료된 기부액 합계
     @Query(value = "SELECT COALESCE(SUM(p.amount), 0) FROM payment p WHERE p.payment_status = 'COMPLETED' AND DATE(p.paid_at) = CURRENT_DATE", nativeQuery = true)
