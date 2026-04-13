@@ -71,16 +71,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain beneficiaryFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
-                .securityMatcher("/api/beneficiary/**", "/finalReport/**") // 수혜자 전용 경로 지정
+                .securityMatcher("/api/beneficiary/", "/finalReport/", "/api/v1/**")
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 수혜자 로그인/회원가입은 인증 없이 접근 가능
+                        // 수혜자 로그인/회원가입은 공개 (v1 포함)
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
-
-                        // 그 외 보고서 작성 등은 모두 인증 필요
+                        .requestMatchers("/api/v1/beneficiary/signup", "/api/v1/beneficiary/signin").permitAll()
+                        // 그 외 수혜자/보고서 관련은 인증 필요
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
