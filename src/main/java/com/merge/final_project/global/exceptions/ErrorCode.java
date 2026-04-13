@@ -13,10 +13,10 @@ public enum ErrorCode {
     ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_002", "존재하지 않는 관리자입니다."),
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "ADMIN_003", "비밀번호가 일치하지 않습니다."),
     // 결제
+    PAYMENT_INVALID_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_004", "유효하지 않은 결제 상태입니다."),
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001", "존재하지 않는 결제 내역입니다."),
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_002", "결제 금액이 일치하지 않습니다."),
     PAYMENT_ALREADY_COMPLETED(HttpStatus.CONFLICT, "PAYMENT_003", "이미 완료된 결제입니다."),
-    PAYMENT_INVALID_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_004", "유효하지 않은 결제 상태입니다."),
     PAYMENT_CONFIRM_FAILED(HttpStatus.BAD_GATEWAY, "PAYMENT_005", "결제 승인에 실패했습니다."),
     PAYMENT_READY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT_006", "결제 준비 중 오류가 발생했습니다."),
     PAYMENT_METHOD_MISMATCH(HttpStatus.BAD_REQUEST,"PAYMENT_007","유효하지않은 결제 방식입니다."),
@@ -39,6 +39,7 @@ public enum ErrorCode {
     CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_001", "존재하지 않는 캠페인입니다."),
     CAMPAIGN_ALREADY_PROCESSED(HttpStatus.CONFLICT, "CAMPAIGN_002", "이미 처리된 캠페인입니다."),
     CAMPAIGN_INVALID_STATUS(HttpStatus.CONFLICT, "CAMPAIGN_003", "유효한 상태가 아닙니다."),
+    CAMPAIGN_INVALID_CURRENT_AMOUNT(HttpStatus.BAD_REQUEST,"CAMPAIGN_004","모금액 에러입니다."),
     // 활동 보고서
     FINAL_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_001", "존재하지 않는 활동 보고서입니다."),
     FINAL_REPORT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "REPORT_002", "이미 처리된 활동 보고서입니다."),
@@ -49,7 +50,7 @@ public enum ErrorCode {
     FOUNDATION_INACTIVE(HttpStatus.FORBIDDEN, "FOUNDATION_006", "현재 후원 가능한 기부단체가 아닙니다."),
     // 기부
     DONATION_CREATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "DONATION_001", "기부 내역 생성에 실패했습니다."),
-    DUPLICATE_DONATION(HttpStatus.BAD_REQUEST,"DONTATION_002","중복된 기부건입니다."),
+    DUPLICATE_DONATION(HttpStatus.BAD_REQUEST,"DONATION_002","중복된 기부건입니다."),
     INVALID_DONATION_AMOUNT(HttpStatus.BAD_REQUEST,"DONATION_003","잘못된 기부금액입니다."),
     // 알림
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001", "존재하지 않는 알림입니다."),

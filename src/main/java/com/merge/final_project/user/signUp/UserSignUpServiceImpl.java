@@ -56,8 +56,9 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         String savedPath = null;
         if (file != null && !file.isEmpty()) {
             // 위 1번의 검증 로직 포함...
-            savedPath = s3FileService.saveFile(file);
-            requestDto.setProfilePath(savedPath);
+            String storedName = s3FileService.saveFile(file);
+            savedPath = storedName; // rollback 시 delete용 key
+            requestDto.setProfilePath(s3FileService.getFilePath(storedName)); // DB 저장용 URL
         }
 
         try {

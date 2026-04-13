@@ -4,6 +4,8 @@ import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignCategory;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.global.BaseCreatedAtEntity;
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.org.Foundation;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -102,9 +104,6 @@ public class Campaign extends BaseCreatedAtEntity {
     @Column(name = "beneficiary_no")
     private Long beneficiaryNo;
 
-    //[이채원] 이거 왜 빠져있는걸까요?
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 
     @Column(name = "reject_reason")
     private String rejectReason;
@@ -124,6 +123,9 @@ public class Campaign extends BaseCreatedAtEntity {
     }
     //[채원] add함수
     public BigDecimal addCurrentAmount(BigDecimal amount) {
+       if(amount==null){
+           throw new BusinessException(ErrorCode. CAMPAIGN_INVALID_CURRENT_AMOUNT);
+       }
         this.currentAmount = this.currentAmount.add(amount);
         return this.currentAmount;
     }
