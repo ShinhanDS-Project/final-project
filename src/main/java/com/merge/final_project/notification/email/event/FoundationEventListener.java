@@ -59,6 +59,7 @@ public class FoundationEventListener {
         return CompletableFuture.completedFuture(null);
     }
 
+
     @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
