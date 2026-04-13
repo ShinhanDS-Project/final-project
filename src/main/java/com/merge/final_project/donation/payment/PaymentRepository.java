@@ -1,7 +1,9 @@
 package com.merge.final_project.donation.payment;
 
+import com.merge.final_project.donation.payment.dto.PaymentByUserResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -18,4 +20,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     boolean existsByPaymentKey(String paymentKey);
     // orderkey와 userno로 payment 찾기
     Optional<Payment> findByOrderKeyAndUserNo(String orderKey, Long userNo);
+
+
+    List<PaymentByUserResponse> findByUserNo(Long userNo);
 }

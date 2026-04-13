@@ -21,4 +21,5 @@ public class PaymentConfirmRequest {
     private PaymentMethod method;
 
 
+
 }

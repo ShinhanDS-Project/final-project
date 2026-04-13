@@ -12,6 +12,7 @@ import com.merge.final_project.global.utils.FileService;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.report.finalreport.ReportApprovalStatus;
+import com.merge.final_project.report.finalreport.dto.FinalReportMicroTrackingResponseDto;
 import com.merge.final_project.report.finalreport.dto.FinalReportRequestDTO;
 import com.merge.final_project.report.finalreport.dto.FinalReportResponseDTO;
 import com.merge.final_project.report.finalreport.entitiy.FinalReport;
@@ -24,8 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -185,13 +186,13 @@ public class FinalReportService {
     // localdateTime.now()이 사업종료일 그다음날 00시 00분보다 크면 00일 지났습니다로 조회)
     //있으면 조회해오기
 
-    public FinalReport showReport(Long campaignNo){
+    public FinalReportMicroTrackingResponseDto showReport(Long campaignNo){
         //1. 실제로 존재하는 캠페인인지 확인
         Campaign campaign= campaignRepository.findByCampaignNo(campaignNo)
                 .orElseThrow(()-> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
 
         //2. 리포트 여부 확인
-        FinalReport finalReport= finalReportRepository.findByCampaignNo(campaignNo)
+        FinalReport finalReport= finalReportRepository.findByCampaign_no(campaignNo)
                 .orElseThrow(()-> new BusinessException(ErrorCode.FINAL_REPORT_NOT_FOUND));
 
         //3. 사업 종료일 확인
@@ -201,12 +202,26 @@ public class FinalReportService {
         // 기준은 종료일 다음날 00시 00분 설정이므로
         // 종료일 다음날 00시 00분 설정
         LocalDateTime nextDayMidnight = usageEndAt.plusDays(1).toLocalDate().atStartOfDay();
+        long day= ChronoUnit.DAYS.between(nextDayMidnight, LocalDateTime.now());
         if(LocalDateTime.now().isAfter(nextDayMidnight)){
                 // 몇일 지났는지 확인해야함
-                int day= nextDayMidnight.minusDays(LocalDateTime.now());
+
+            return FinalReportMicroTrackingResponseDto.builder()
+                    .dayPassed(day)
+                    .isExist(false) // 리포트 존재 여부 플래그
+                    .reportData(null)  // 데이터는 없음
+                    .build();
         }
-        // 3. 모든 조건을 통과하면 리포트 반환 (이미지에 있던 'Missing return statement' 해결)
-        return finalReport;
+
+        // 3. 모든 조건을 통과하면 리포트 반환
+        return FinalReportMicroTrackingResponseDto.builder()
+                .dayPassed(day)
+                .isExist(true)
+                .reportData(FinalReportMicroTrackingResponseDto.FinalReportData.builder()
+                        .title(finalReport.getTitle())
+                        .content(finalReport.getContent())
+                        .build())
+                .build();
     }
 
 }

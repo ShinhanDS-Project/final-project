@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Transactional
@@ -74,6 +75,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentStatus(PaymentStatus.READY)
                 .privateKeyNo(1L)// -> 월렛팀 이거 해결해주세요.. 왜필요한지 모르겠어요
                 .isAnonymous(dto.getIsAnonymous())
+
                 .build();
         paymentRepository.save(payment);
         //3.프론트에 전송할 정보
@@ -114,10 +116,12 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
             }
 
+
             // 4) 결제 메서드가 동일한지
             if (!dto.getMethod().equals(payment.getMethod())) {
                 throw new BusinessException(ErrorCode.PAYMENT_METHOD_MISMATCH);
             }
+
 
 
         //3. 캠페인
@@ -229,6 +233,12 @@ public class PaymentServiceImpl implements PaymentService {
 
 
 
+    }
+
+    @Override
+    public List<PaymentByUserResponse> getPaymentHistoryByUser(Long userNo) {
+        List<PaymentByUserResponse> listPayment= paymentRepository.findByUserNo(userNo);
+        return listPayment;
     }
 
     @Transactional

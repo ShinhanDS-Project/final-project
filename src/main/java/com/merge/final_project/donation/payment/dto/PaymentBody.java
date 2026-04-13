@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
 @Getter
@@ -17,4 +16,5 @@ public class PaymentBody {
     private BigDecimal totalAmount;    // 실제로 결제된 총 금액
     private OffsetDateTime requestedAt;  // 결제가 요청된 시각
     private OffsetDateTime approvedAt; //승인시간
+
 }

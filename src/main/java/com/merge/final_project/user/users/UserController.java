@@ -1,16 +1,13 @@
 package com.merge.final_project.user.users;
 
+import com.merge.final_project.donation.donations.DonationService;
 import com.merge.final_project.user.users.dto.support.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/users/support")
@@ -18,6 +15,8 @@ public class UserController {
     //부가기능 또는 마이페이지 전용 컨트롤러
     @Autowired
     private UserService userService;
+    @Autowired
+    private DonationService donationService;
 
     // 이메일 찾기
     @PostMapping("/email")
@@ -69,13 +68,9 @@ public class UserController {
         userService.updateMyInfo(userNo, dto);
         return ResponseEntity.ok().build();
     }
-//    // 나의 기부 내역 (+ 결제 내역)
-//    @GetMapping("/donations")
-//    public ResponseEntity<List<MyDonationResponseDTO>> getMyDonations(Authentication authentication){
-//        Long userNo= (Long) authentication.getDetails();
-////        List<MyDonationResponseDTO> response=userService.getMyDonations(userNo);
-//        return ResponseEntity.ok(response);
-//    }
+    // 나의 기부 내역-> DonationController에 존재
+    //마이크로트래킹도 ->
+
 
 //    // 증서
 //    @GetMapping("/certificates/{donationNo}")

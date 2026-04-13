@@ -21,5 +21,5 @@ public interface FinalReportRepository extends JpaRepository<FinalReport, Long>,
     Page<FinalReport> findByApprovalStatus(ReportApprovalStatus approvalStatus, Pageable pageable);
 
     //[채원] 캠페인 아이디 기준으로 FinalReport 조회
-    Optional<FinalReport> findByCampaignNo(Long campaignNo);
+    Optional<FinalReport> findByCampaign_no(Long campaignNo);
 }
