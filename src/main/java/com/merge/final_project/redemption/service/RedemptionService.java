@@ -64,10 +64,19 @@ public class RedemptionService {
      */
     @Transactional
     public RedemptionResponse requestRedemption(RedemptionRequest request) {
+        // Preserve the direct service entry point used by tests and internal callers.
+        if (request.getRequesterType() == null || request.getRequesterNo() == null) {
+            throw new IllegalArgumentException("requesterType and requesterNo are required");
+        }
+        return requestRedemption(request, request.getRequesterType(), request.getRequesterNo());
+    }
+
+    @Transactional
+    public RedemptionResponse requestRedemption(RedemptionRequest request, RequesterType requesterType, Long requesterNo) {
         validateRequest(request);
 
-        // 요청자 타입에 따라 재단 또는 수혜자 지갑을 찾는다.
-        Wallet requesterWallet = findRequesterWallet(request.getRequesterType(), request.getRequesterNo());
+        // The authenticated requester decides which wallet is used for the cash-out.
+        Wallet requesterWallet = findRequesterWallet(requesterType, requesterNo);
         // 로컬 잔액과 실제 체인 잔액을 둘 다 확인한다.
         validateWalletForRedemption(requesterWallet, request.getAmount());
         validateOnChainBalanceForRedemption(requesterWallet, request.getAmount());
@@ -78,8 +87,8 @@ public class RedemptionService {
 
         // 환급 요청을 먼저 PENDING 상태로 생성한다.
         Redemption redemption = redemptionCommandService.createPending(
-                request.getRequesterType(),
-                request.getRequesterNo(),
+                requesterType,
+                requesterNo,
                 request.getAmount(),
                 requesterWallet
         );
@@ -226,12 +235,6 @@ public class RedemptionService {
 
     // 요청 본문의 필수값 검증
     private void validateRequest(RedemptionRequest request) {
-        if (request.getRequesterType() == null) {
-            throw new IllegalArgumentException("requesterType is required");
-        }
-        if (request.getRequesterNo() == null) {
-            throw new IllegalArgumentException("requesterNo is required");
-        }
         if (request.getAmount() == null || request.getAmount() <= 0) {
             throw new IllegalArgumentException("amount must be positive");
         }

@@ -47,7 +47,8 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class BlockchainDashboardQueryService {
 
-    private static final int DEFAULT_PAGE_SIZE = 5;
+    private static final int DASHBOARD_PAGE_SIZE = 10;
+    private static final int WALLET_DETAIL_PAGE_SIZE = 5;
 
     private final TransactionRepository transactionRepository;
     private final WalletLookupRepository walletLookupRepository;
@@ -56,11 +57,11 @@ public class BlockchainDashboardQueryService {
     private final UserRepository userRepository;
     private final BeneficiaryRepository beneficiaryRepository;
 
-    public BlockchainTransactionsResponse getTransactions(int page, String keyword, String statusText) {
+    public BlockchainTransactionsResponse getTransactions(int page, int size, String keyword, String statusText) {
         TransactionStatus status = resolveStatus(statusText);
         LookupCache cache = new LookupCache();
 
-        Page<Transaction> transactionPage = loadTransactionPage(page, status, keyword);
+        Page<Transaction> transactionPage = loadTransactionPage(page, size, status, keyword);
         List<BlockchainTransactionItemResponse> items = transactionPage.getContent().stream()
                 .map(transaction -> toTransactionItem(transaction, cache))
                 .toList();
@@ -70,7 +71,10 @@ public class BlockchainDashboardQueryService {
 
     public BlockchainSummaryResponse getSummary(int page, String statusText) {
         TransactionStatus status = resolveStatus(statusText);
-        Page<Transaction> transactionPage = transactionRepository.findByStatus(status, createPageable(page));
+        Page<Transaction> transactionPage = transactionRepository.findByStatus(
+                status,
+                createDashboardPageable(page, DASHBOARD_PAGE_SIZE)
+        );
 
         long totalGapSec = 0L;
         int gapCount = 0;
@@ -150,7 +154,7 @@ public class BlockchainDashboardQueryService {
         Page<Transaction> transactionPage = transactionRepository.findPageByWalletNoAndStatus(
                 wallet.getWalletNo(),
                 status,
-                createPageable(page)
+                createWalletDetailPageable(page)
         );
         List<BlockchainTransactionItemResponse> items = transactionPage.getContent().stream()
                 .map(transaction -> toTransactionItem(transaction, cache))
@@ -403,8 +407,8 @@ public class BlockchainDashboardQueryService {
         return transaction.getSentAt() != null ? transaction.getSentAt() : transaction.getCreatedAt();
     }
 
-    private Page<Transaction> loadTransactionPage(int page, TransactionStatus status, String keyword) {
-        Pageable pageable = createPageable(page);
+    private Page<Transaction> loadTransactionPage(int page, int size, TransactionStatus status, String keyword) {
+        Pageable pageable = createDashboardPageable(page, size);
         String normalizedKeyword = normalizeKeyword(keyword);
         if (normalizedKeyword.isEmpty()) {
             return transactionRepository.findByStatus(status, pageable);
@@ -412,13 +416,28 @@ public class BlockchainDashboardQueryService {
         return transactionRepository.searchDashboardPage(status.name(), normalizedKeyword, pageable);
     }
 
-    private Pageable createPageable(int page) {
+    private Pageable createDashboardPageable(int page, int pageSize) {
+        return createPageable(page, sanitizeDashboardPageSize(pageSize));
+    }
+
+    private Pageable createWalletDetailPageable(int page) {
+        return createPageable(page, WALLET_DETAIL_PAGE_SIZE);
+    }
+
+    private Pageable createPageable(int page, int pageSize) {
         int safePage = Math.max(0, page - 1);
         return PageRequest.of(
                 safePage,
-                DEFAULT_PAGE_SIZE,
+                pageSize,
                 Sort.by(Sort.Order.desc("sentAt"), Sort.Order.desc("transactionNo"))
         );
+    }
+
+    private int sanitizeDashboardPageSize(int pageSize) {
+        if (pageSize <= 0) {
+            return DASHBOARD_PAGE_SIZE;
+        }
+        return Math.min(pageSize, 100);
     }
 
     private String normalizeKeyword(String keyword) {

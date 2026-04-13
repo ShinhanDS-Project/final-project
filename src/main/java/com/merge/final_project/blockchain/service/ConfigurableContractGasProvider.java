@@ -2,47 +2,51 @@ package com.merge.final_project.blockchain.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.web3j.protocol.Web3j;
 import org.web3j.tx.gas.ContractGasProvider;
 
 import java.math.BigInteger;
 
 @Component
-// Spring Bean으로 등록되어 다른 서비스에서 주입받아 사용되는 가스 설정 클래스
 public class ConfigurableContractGasProvider implements ContractGasProvider {
 
-    // 트랜잭션 실행 시 사용할 가스 가격 (wei 단위)
-    private final BigInteger gasPrice;
-    // 트랜잭션 최대 가스 사용량 제한
+    private final Web3j web3j;
+    private final BigInteger minGasPrice;
     private final BigInteger gasLimit;
 
     public ConfigurableContractGasProvider(
+            Web3j web3j,
             @Value("${blockchain.gas.price}") String gasPrice,
             @Value("${blockchain.gas.limit}") String gasLimit
     ) {
-        // application.yml 또는 환경변수에서 읽어온 값을 BigInteger로 변환
-        this.gasPrice = new BigInteger(gasPrice);
+        this.web3j = web3j;
+        this.minGasPrice = new BigInteger(gasPrice);
         this.gasLimit = new BigInteger(gasLimit);
     }
 
-    // 특정 컨트랙트 함수 호출 시 사용할 gasPrice 반환 (함수별 분기 없이 동일 값 사용)
     @Override
     public BigInteger getGasPrice(String contractFunc) {
-        return gasPrice;
+        return getGasPrice();
     }
 
-    // 기본 gasPrice 반환
     @Override
     public BigInteger getGasPrice() {
-        return gasPrice;
+        try {
+            BigInteger networkGasPrice = web3j.ethGasPrice().send().getGasPrice();
+            if (networkGasPrice == null) {
+                return minGasPrice;
+            }
+            return networkGasPrice.max(minGasPrice);
+        } catch (Exception ignored) {
+            return minGasPrice;
+        }
     }
 
-    // 특정 함수 호출 시 사용할 gasLimit 반환 (함수별 분기 없이 동일 값 사용)
     @Override
     public BigInteger getGasLimit(String contractFunc) {
         return gasLimit;
     }
 
-    // 기본 gasLimit 반환
     @Override
     public BigInteger getGasLimit() {
         return gasLimit;

@@ -4,6 +4,7 @@ import com.merge.final_project.user.signUp.UserSignUpRepository;
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.verify.VerificationController;
 import com.merge.final_project.user.verify.VerificationService;
+import com.merge.final_project.user.verify.dto.UserVerifyCodeRequestDTO;
 import com.merge.final_project.user.verify.dto.UserVerifyRequestDTO;
 import com.merge.final_project.user.verify.dto.UserVerifyResponseDTO;
 import org.junit.jupiter.api.DisplayName;
@@ -114,7 +115,7 @@ class VerificationTest {
         assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
         assertNotNull(response.getBody());
         assertFalse(response.getBody().isSuccess());
-        assertTrue(response.getBody().isAvailable());
+        assertFalse(response.getBody().isAvailable());
         assertEquals("인증번호는 1분마다 재요청할 수 있습니다.", response.getBody().getMessage());
 
         verify(verificationService, times(1)).sendVerificationCode("retry@gmail.com");
@@ -139,7 +140,7 @@ class VerificationTest {
         assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
         assertNotNull(response.getBody());
         assertFalse(response.getBody().isSuccess());
-        assertTrue(response.getBody().isAvailable());
+        assertFalse(response.getBody().isAvailable());
         assertEquals("인증번호 요청 횟수 (5회)를 초과했습니다. 나중에 다시 시도해주세요.", response.getBody().getMessage());
     }
 
@@ -160,6 +161,43 @@ class VerificationTest {
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
         verify(verificationService, times(1)).sendVerificationCode("same@gmail.com");
+    }
+
+    @Test
+    @DisplayName("성공: 인증코드 확인이 완료되면 200 반환")
+    void confirmSuccessTest() {
+        // given
+        UserVerifyCodeRequestDTO request = new UserVerifyCodeRequestDTO("verify@gmail.com", "123456");
+
+        // when
+        ResponseEntity<UserVerifyResponseDTO> response = verificationController.confirm(request);
+
+        // then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isSuccess());
+        assertTrue(response.getBody().isAvailable());
+        verify(verificationService, times(1)).verifyCode("verify@gmail.com", "123456");
+    }
+
+    @Test
+    @DisplayName("실패: 인증코드 확인에 실패하면 400 반환")
+    void confirmFailTest() {
+        // given
+        UserVerifyCodeRequestDTO request = new UserVerifyCodeRequestDTO("verify@gmail.com", "000000");
+        doThrow(new IllegalArgumentException("인증코드가 일치하지 않습니다."))
+                .when(verificationService).verifyCode("verify@gmail.com", "000000");
+
+        // when
+        ResponseEntity<UserVerifyResponseDTO> response = verificationController.confirm(request);
+
+        // then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().isSuccess());
+        assertFalse(response.getBody().isAvailable());
+        assertEquals("인증코드가 일치하지 않습니다.", response.getBody().getMessage());
+        verify(verificationService, times(1)).verifyCode("verify@gmail.com", "000000");
     }
 
 //    @Test

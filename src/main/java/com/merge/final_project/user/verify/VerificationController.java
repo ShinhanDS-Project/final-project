@@ -1,14 +1,13 @@
 package com.merge.final_project.user.verify;
 
 import com.merge.final_project.user.signUp.UserSignUpRepository;
-import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
+import com.merge.final_project.user.verify.dto.UserVerifyCodeRequestDTO;
 import com.merge.final_project.user.verify.dto.UserVerifyRequestDTO;
 import com.merge.final_project.user.verify.dto.UserVerifyResponseDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -63,5 +62,28 @@ public class VerificationController {
                             .build());
         }
         }
+
+    @PostMapping("/users/verification/confirm")
+    public ResponseEntity<UserVerifyResponseDTO> confirm(@Valid @RequestBody UserVerifyCodeRequestDTO dto) {
+        try {
+            verificationService.verifyCode(dto.getEmail(), dto.getCode());
+            return ResponseEntity.ok(
+                    UserVerifyResponseDTO.builder()
+                            .success(true)
+                            .available(true)
+                            .message("이메일 인증이 완료되었습니다.")
+                            .build()
+            );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(
+                            UserVerifyResponseDTO.builder()
+                                    .success(false)
+                                    .available(false)
+                                    .message(e.getMessage())
+                                    .build()
+                    );
+        }
+    }
 
 }

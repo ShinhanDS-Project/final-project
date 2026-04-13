@@ -111,7 +111,7 @@ public class GasStationService {
         transferTransactionService.saveTransfer(
                 hotWallet,
                 wallet,
-                amountWei.longValue(),
+                0L,
                 transferResult.txHash(),
                 transferResult.blockNumber(),
                 transferResult.status(),
