@@ -32,7 +32,7 @@ public interface UserService {
 
     void updateMyInfo(Long userNo, UpdateMyInfoRequestDTO dto);
 
-    List<MyDonationResponseDTO> getMyDonations(Long userNo);
+  //  List<MyDonationResponseDTO> getMyDonations(Long userNo);
 
     //4. 마이페이지 -1. 개인정보 불러오기 :
     //5. 마이페이지 -1. 계정별 기부 결과 불러오기:

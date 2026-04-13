@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public String login(UserLoginRequestDTO dto) {
         //이메일로 사용자 조회
-        User user = userRepository.findByEmailAndLoginType(dto.getEmail(),LoginType.LOCAL)
+        User user = userRepository.findByEmailAndLoginType(dto.getEmail(), LoginType.LOCAL)
                 .orElseThrow(() -> new RuntimeException("가입되지 않은 이메일입니다."));
 
         //2. 계정상태를 확인하기
@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
         }
         //4.비밀번호 확인하기
         if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
-            user.setsLoginCount(user.getLoginCount()+1);
+            user.setsLoginCount(user.getLoginCount() + 1);
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
         //5. 정상 로그인을 위해 jwt 토큰 활용
@@ -61,7 +61,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("가입정보가 없습니다. 가입해주세요"));
         //2. 존재한다면 이메일과 login Type 반환
 
-        return new EmailResponseDTO(MaskingUtils.maskEmail(user.getEmail()),user.getLoginType());
+        return new EmailResponseDTO(MaskingUtils.maskEmail(user.getEmail()), user.getLoginType());
     }
 
     // 1단계: 비밀번호 재설정 요청
@@ -145,7 +145,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 닉네임 수정
-        if(dto.getNameHash()!=null &&!dto.getNameHash().isBlank()){
+        if (dto.getNameHash() != null && !dto.getNameHash().isBlank()) {
             if (!dto.getNameHash().equals(user.getNameHash())
                     && userRepository.existsByNameHash(dto.getNameHash())) {
                 throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
@@ -168,16 +168,16 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    @Override
-    public List<MyDonationResponseDTO> getMyDonations(Long userNo) {
-        // 기부내역 조회해오기
-        List<Donation> selectDonate= donationRepository.findByUserNo(userNo);
-
-        return List.of(
-                MyDonationResponseDTO.builder()
-        );
-
-    }
+//    @Override
+//    public List<MyDonationResponseDTO> getMyDonations(Long userNo) {
+////        // 기부내역 조회해오기
+////        List<Donation> selectDonate= donationRepository.findByUserNo(userNo);
+////
+////        return List.of(
+////                MyDonationResponseDTO.builder()
+////        );
+////
+//    }
 
 
 }

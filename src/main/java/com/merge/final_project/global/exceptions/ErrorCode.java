@@ -60,13 +60,16 @@ public enum ErrorCode {
     // 기부단체
     FOUNDATION_INACTIVE(HttpStatus.FORBIDDEN, "FOUNDATION_006", "현재 후원 가능한 기부단체가 아닙니다."),
     // 기부
+
     DONATION_CREATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "DONATION_001", "기부 내역 생성에 실패했습니다."),
-    DUPLICATE_DONATION(HttpStatus.BAD_REQUEST,"DONTATION_002","중복된 기부건입니다."),
+    DUPLICATE_DONATION(HttpStatus.BAD_REQUEST,"DONATION_002","중복된 기부건입니다."),
     INVALID_DONATION_AMOUNT(HttpStatus.BAD_REQUEST,"DONATION_003","잘못된 기부금액입니다."),
+    DONATION_INVALID(HttpStatus.BAD_REQUEST,"DONATION_004","존재하지 않는 기부입니다."),
     // 알림
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001", "존재하지 않는 알림입니다."),
-    NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근 권한이 없습니다.");
-
+    NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근 권한이 없습니다."),
+    //정산
+    SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"SETTLEMENT_001","존재하지않는 정산입니다.");
 
 
     private final HttpStatus status;

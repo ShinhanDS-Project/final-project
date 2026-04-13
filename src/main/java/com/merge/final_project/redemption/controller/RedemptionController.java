@@ -5,10 +5,7 @@ import com.merge.final_project.redemption.dto.response.RedemptionResponse;
 import com.merge.final_project.redemption.service.RedemptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,4 +23,5 @@ public class RedemptionController {
         // 서비스에서 현금화 로직 수행 후 결과 반환
         return ResponseEntity.ok(redemptionService.requestRedemption(request));
     }
+
 }

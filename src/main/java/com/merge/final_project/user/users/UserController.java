@@ -69,13 +69,13 @@ public class UserController {
         userService.updateMyInfo(userNo, dto);
         return ResponseEntity.ok().build();
     }
-    // 나의 기부 내역 (+ 결제 내역)
-    @GetMapping("/donations")
-    public ResponseEntity<List<MyDonationResponseDTO>> getMyDonations(Authentication authentication){
-        Long userNo= (Long) authentication.getDetails();
-        List<MyDonationResponseDTO> response=userService.getMyDonations(userNo);
-        return ResponseEntity.ok(response);
-    }
+//    // 나의 기부 내역 (+ 결제 내역)
+//    @GetMapping("/donations")
+//    public ResponseEntity<List<MyDonationResponseDTO>> getMyDonations(Authentication authentication){
+//        Long userNo= (Long) authentication.getDetails();
+////        List<MyDonationResponseDTO> response=userService.getMyDonations(userNo);
+//        return ResponseEntity.ok(response);
+//    }
 
 //    // 증서
 //    @GetMapping("/certificates/{donationNo}")

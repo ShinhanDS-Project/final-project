@@ -74,6 +74,7 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
         """, nativeQuery = true)
     List<Campaign> findSettledCampaignsWithNoReport(@Param("cutoffDate") LocalDateTime cutoffDate);
 
+
     Optional<Campaign> findByCampaignNo(Long campaignNo);
 
 }
