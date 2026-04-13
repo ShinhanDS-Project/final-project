@@ -71,7 +71,11 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         } catch (Exception e) {
             // DB 저장 실패 시 저장했던 파일 삭제
             if (savedPath != null) {
-                s3FileService.deleteFile(savedPath); // FileUtil에 삭제 로직 필요
+                try {
+                    s3FileService.deleteFile(savedPath);
+                } catch (Exception deleteEx) {
+                   e.addSuppressed(deleteEx);
+                                }
             }
             throw e; // 예외를 다시 던져서 GlobalExceptionHandler가 처리하게 함
         }
