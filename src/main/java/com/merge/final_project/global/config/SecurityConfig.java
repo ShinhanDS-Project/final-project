@@ -116,7 +116,8 @@ public class SecurityConfig {
                                 "/api/foundation/login",     // 로그인
                                 "/api/foundation/logout",     // 로그아웃 (토큰 만료 후에도 호출 가능해야 함),
                                 "/api/foundation/campaigns/*",   // 캠페인
-                                "/api/foundation/campaigns"   // 캠페인
+                                "/api/foundation/campaigns",   // 캠페인
+                                "/api/foundation/campaigns/*/detail"   // 캠페인
                         ).permitAll()
                         // 그 외 단체 전용 기능은 ROLE_FOUNDATION 필요
                         .anyRequest().hasAuthority("ROLE_FOUNDATION")
