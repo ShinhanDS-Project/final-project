@@ -177,5 +177,7 @@ public class FinalReportService {
         log.info("보고서 번호 {}의 상태가 {}로 변경되었습니다.", reportNo, newStatus);
     }
 
-
+    //[이채원] --> 예외 캠페인에서 사업종료일 다음날 00시 00분 이 지났고, 리포트 제추안한거 (캠페인 상태 ,
+    // localdateTime.now()이 사업종료일 그다음날 00시 00분보다 크면 00일 지났습니다로 조회)
+    //있으면 조회해오고
 }
