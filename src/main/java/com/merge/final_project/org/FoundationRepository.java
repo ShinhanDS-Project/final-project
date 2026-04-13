@@ -3,6 +3,8 @@ package com.merge.final_project.org;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query; // [가빈] 추가
+import org.springframework.data.repository.query.Param; // [가빈] 추가
 
 import java.util.List;
 import java.util.Optional;
@@ -29,4 +31,16 @@ public interface FoundationRepository extends JpaRepository<Foundation, Long> {
 
     // [가빈] 대시보드용 - 신규 신청 건수 (APPROVED, REJECTED 제외)
     long countByReviewStatusNotIn(List<ReviewStatus> reviewStatuses);
+
+    // [가빈] 관리자 승인 단체 목록 — accountStatus 필터 + 키워드 검색 (단체명, 대표자명)
+    @Query("SELECT f FROM Foundation f WHERE f.reviewStatus = 'APPROVED' AND (:accountStatus IS NULL OR f.accountStatus = :accountStatus) AND (:keyword IS NULL OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Foundation> findApprovedWithFilter(@Param("accountStatus") AccountStatus accountStatus, @Param("keyword") String keyword, Pageable pageable);
+
+    // [가빈] 관리자 신청 목록 — 키워드 검색 (단체명, 대표자명)
+    @Query("SELECT f FROM Foundation f WHERE f.reviewStatus NOT IN :statuses AND (:keyword IS NULL OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Foundation> findApplicationsWithFilter(@Param("statuses") List<ReviewStatus> statuses, @Param("keyword") String keyword, Pageable pageable);
+
+    // [가빈] 관리자 반려 목록 — 키워드 검색 (단체명, 대표자명)
+    @Query("SELECT f FROM Foundation f WHERE f.reviewStatus = :reviewStatus AND (:keyword IS NULL OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Foundation> findRejectedWithFilter(@Param("reviewStatus") ReviewStatus reviewStatus, @Param("keyword") String keyword, Pageable pageable);
 }

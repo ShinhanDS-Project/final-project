@@ -46,6 +46,17 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         """, nativeQuery = true)
     List<Object[]> findDailyDonationTrend(@Param("since") LocalDateTime since);
 
+    // [가빈] 기부단체별 이번달 모금액
+    @Query(value = """
+        SELECT COALESCE(SUM(p.amount), 0)
+        FROM payment p
+        JOIN campaign c ON p.campaign_no = c.campaign_no
+        WHERE p.payment_status = 'COMPLETED'
+          AND c.foundation_no = :foundationNo
+          AND DATE_TRUNC('month', p.paid_at) = DATE_TRUNC('month', CURRENT_DATE)
+        """, nativeQuery = true)
+    BigDecimal sumThisMonthAmountByFoundationNo(@Param("foundationNo") Long foundationNo);
+
     // [가빈] 카테고리별 기부금 합계
     // Object[] = [category(String), amount(BigDecimal)]
     @Query(value = """

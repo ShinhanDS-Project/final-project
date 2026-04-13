@@ -68,6 +68,16 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     //[가빈] 기부단체 별 캠페인 목록 조회
     Page<Campaign> findByFoundationNo(Long foundationNo, Pageable pageable);
 
+    // [가빈] 기부단체 마이페이지 — 상태 필터 포함 캠페인 목록
+    Page<Campaign> findByFoundationNoAndCampaignStatus(Long foundationNo, CampaignStatus campaignStatus, Pageable pageable);
+
+    // [가빈] 기부단체 마이페이지 — 진행 중인 캠페인 수
+    long countByFoundationNoAndCampaignStatus(Long foundationNo, CampaignStatus campaignStatus);
+
+    // [가빈] 기부단체 마이페이지 — 키워드(제목) + 상태 필터 통합 쿼리
+    @Query("SELECT c FROM Campaign c WHERE c.foundationNo = :foundationNo AND (:campaignStatus IS NULL OR c.campaignStatus = :campaignStatus) AND (:keyword IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Campaign> findByFoundationNoWithFilter(@Param("foundationNo") Long foundationNo, @Param("campaignStatus") CampaignStatus campaignStatus, @Param("keyword") String keyword, Pageable pageable);
+
 
 
     // [가빈] SETTLED + usage_end_at 경과 + 보고서 미제출 캠페인 조회

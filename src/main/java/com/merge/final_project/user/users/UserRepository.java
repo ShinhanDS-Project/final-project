@@ -1,5 +1,7 @@
 package com.merge.final_project.user.users;
 
+import org.springframework.data.domain.Page; // [가빈] 추가
+import org.springframework.data.domain.Pageable; // [가빈] 추가
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;   //[가빈] 추가
 import org.springframework.data.repository.query.Param; //[가빈] 추가
@@ -27,6 +29,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
             """, nativeQuery = true)
 
     List<Object[]> findDailyUserRegistrations(@Param("since") LocalDateTime since);
+
+    // [가빈] 관리자 회원 목록 — 상태 필터 + 키워드 검색 (이름, 이메일)
+    @Query("SELECT u FROM User u WHERE (:status IS NULL OR u.status = :status) AND (:keyword IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<User> findUsersWithFilter(@Param("status") UserStatus status, @Param("keyword") String keyword, Pageable pageable);
+
     //4. 마이페이지 -1. 개인정보 불러오기 :
     //5. 마이페이지 -1. 계정별 기부 결과 불러오기:
     //6. 기부내역 -1. 기부 증서 조회하기

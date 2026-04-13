@@ -1,5 +1,6 @@
 package com.merge.final_project.org;
 
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.org.dto.*;
 import jakarta.validation.Valid;
@@ -30,18 +31,17 @@ public class FoundationController {
 
     // 비회원 기부단체 가입 신청 (승인/반려 전)
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> apply(@RequestPart("data") @Valid FoundationApplyRequestDTO requestDTO,
+    public ResponseEntity<FoundationApplyResponseDTO> apply(@RequestPart("data") @Valid FoundationApplyRequestDTO requestDTO,
                                       @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
-        foundationService.apply(requestDTO, profileImage);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(foundationService.apply(requestDTO, profileImage));
     }
 
-    // 승인 완료된 기부단체 리스트 조회 (accountStatus 파라미터로 활성화/비활성화 필터링)
+    // 승인 완료된 기부단체 리스트 조회 (사용자용 — 키워드 검색, 페이징, 정렬)
     @GetMapping("/all")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
-            @RequestParam(required = false) AccountStatus accountStatus,
+            @RequestParam(required = false) String keyword,
             Pageable pageable) {
-        return ResponseEntity.ok(foundationService.getApprovedFoundationList(accountStatus, pageable));
+        return ResponseEntity.ok(foundationService.getPublicFoundationList(keyword, pageable));
     }
 
     // 기부단체 상세 조회
@@ -90,5 +90,23 @@ public class FoundationController {
             Pageable pageable) {
         Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyCampaigns(foundationNo, pageable));
+    }
+
+    // 기부단체 마이페이지 — 상태 필터 + 키워드 검색 캠페인 목록
+    @GetMapping("/me/campaigns/filter")
+    public ResponseEntity<Page<FoundationMyCampaignDTO>> getMyCampaignsWithFilter(
+            Authentication authentication,
+            @RequestParam(required = false) CampaignStatus campaignStatus,
+            @RequestParam(required = false) String keyword,
+            Pageable pageable) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMyCampaignsWithFilter(foundationNo, campaignStatus, keyword, pageable));
+    }
+
+    // 기부단체 마이페이지 — 진행 중 캠페인 수 + 이번달 모금액
+    @GetMapping("/me/stats")
+    public ResponseEntity<FoundationMyPageStatsDTO> getMyPageStats(Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMyPageStats(foundationNo));
     }
 }

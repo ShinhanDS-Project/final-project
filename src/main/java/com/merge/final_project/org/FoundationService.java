@@ -1,5 +1,6 @@
 package com.merge.final_project.org;
 
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.org.dto.*;
@@ -20,8 +21,18 @@ public interface FoundationService {
     void updateFoundationPassword(Long foundationNo, FoundationPasswordUpdateRequestDTO requestDTO);
 
     Page<FoundationListResponseDTO> getFoundationApplicationList(Pageable pageable);
-    Page<FoundationListResponseDTO> getRejectedFoundationList( Pageable pageable);
+    Page<FoundationListResponseDTO> getRejectedFoundationList(Pageable pageable);
     Page<FoundationListResponseDTO> getApprovedFoundationList(AccountStatus accountStatus, Pageable pageable);
+
+    // [가빈] 관리자 신청/반려 목록 — 키워드 검색 추가
+    Page<FoundationListResponseDTO> getFoundationApplicationListWithFilter(String keyword, Pageable pageable);
+    Page<FoundationListResponseDTO> getRejectedFoundationListWithFilter(String keyword, Pageable pageable);
+
+    // [가빈] 공개 단체 목록 — accountStatus 제거, 키워드 검색 추가
+    Page<FoundationListResponseDTO> getPublicFoundationList(String keyword, Pageable pageable);
+
+    // [가빈] 관리자 승인 단체 목록 — 상태 필터 + 키워드 검색 + 페이징
+    Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(AccountStatus accountStatus, String keyword, Pageable pageable);
     FoundationDetailResponseDTO getFoundationDetail(Long foundationNo);
 
     Long approveFoundation(Long foundationNo);
@@ -33,4 +44,10 @@ public interface FoundationService {
     void deactivateFoundation(Long foundationNo);
 
     Page<CampaignListResponseDTO> getMyCampaigns(Long foundationNo, Pageable pageable);
+
+    // [가빈] 기부단체 마이페이지 — 상태 필터 + 키워드 검색 캠페인 목록
+    Page<FoundationMyCampaignDTO> getMyCampaignsWithFilter(Long foundationNo, CampaignStatus campaignStatus, String keyword, Pageable pageable);
+
+    // [가빈] 기부단체 마이페이지 — 진행 중 캠페인 수 + 이번달 모금액
+    FoundationMyPageStatsDTO getMyPageStats(Long foundationNo);
 }

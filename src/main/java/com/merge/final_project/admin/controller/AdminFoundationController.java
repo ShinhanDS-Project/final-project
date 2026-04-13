@@ -17,16 +17,29 @@ public class AdminFoundationController {
     private final FoundationService foundationService;
 
     // 상세 조회 및 승인 후 리스트(가입완료) 조회는 추후 다른 곳에서도 쓸 수 있을 것 같아서 관리자 권한에서 제외시킴
-    // 승인 전 기부단체 리스트 조회 (CLEAN, SIMILAR, ILLEGAL)
+    // 승인 전 기부단체 리스트 조회 — 키워드 검색 + 페이징 + 정렬
     @GetMapping("/applications")
-    public ResponseEntity<Page<FoundationListResponseDTO>> getApplicationList(Pageable pageable) {
-        return ResponseEntity.ok(foundationService.getFoundationApplicationList(pageable));
+    public ResponseEntity<Page<FoundationListResponseDTO>> getApplicationList(
+            @RequestParam(required = false) String keyword,
+            Pageable pageable) {
+        return ResponseEntity.ok(foundationService.getFoundationApplicationListWithFilter(keyword, pageable));
     }
 
-    // 반려된 기부단체 리스트 조회
+    // 반려된 기부단체 리스트 조회 — 키워드 검색 + 페이징 + 정렬
     @GetMapping("/rejected")
-    public ResponseEntity<Page<FoundationListResponseDTO>> getRejectedList(Pageable pageable) {
-        return ResponseEntity.ok(foundationService.getRejectedFoundationList(pageable));
+    public ResponseEntity<Page<FoundationListResponseDTO>> getRejectedList(
+            @RequestParam(required = false) String keyword,
+            Pageable pageable) {
+        return ResponseEntity.ok(foundationService.getRejectedFoundationListWithFilter(keyword, pageable));
+    }
+
+    // [가빈] 승인된 기부단체 목록 조회 — 상태 필터 + 키워드 검색 + 페이징
+    @GetMapping("/approved")
+    public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
+            @RequestParam(required = false) AccountStatus accountStatus,
+            @RequestParam(required = false) String keyword,
+            Pageable pageable) {
+        return ResponseEntity.ok(foundationService.getApprovedFoundationListForAdmin(accountStatus, keyword, pageable));
     }
 
     // 기부단체 승인

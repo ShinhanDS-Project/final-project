@@ -7,8 +7,10 @@ import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.auth.useraccount.SignupWalletHookService;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
+import com.merge.final_project.donation.payment.PaymentRepository;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
@@ -33,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,6 +55,7 @@ public class  FoundationServiceImpl implements FoundationService {
     private final AdminRepository adminRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final CampaignRepository campaignRepository;
+    private final PaymentRepository paymentRepository;
 
 
     @Override
@@ -155,9 +159,11 @@ public class  FoundationServiceImpl implements FoundationService {
                 foundation.getFoundationName() + " 기부단체 가입 신청"));
 
         return FoundationApplyResponseDTO.builder()
+                .foundationNo(foundation.getFoundationNo())
                 .foundationEmail(foundation.getFoundationEmail())
                 .foundationName(foundation.getFoundationName())
                 .representativeName(foundation.getRepresentativeName())
+                .reviewStatus(foundation.getReviewStatus())
                 .build();
     }
 
@@ -284,6 +290,31 @@ public class  FoundationServiceImpl implements FoundationService {
         return foundations.map(FoundationListResponseDTO::from);
     }
 
+    // [가빈] 관리자 신청 목록 — 키워드 검색
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationListResponseDTO> getFoundationApplicationListWithFilter(String keyword, Pageable pageable) {
+        List<ReviewStatus> excluded = List.of(ReviewStatus.APPROVED, ReviewStatus.REJECTED);
+        return foundationRepository.findApplicationsWithFilter(excluded, keyword, pageable)
+                .map(FoundationListResponseDTO::from);
+    }
+
+    // [가빈] 관리자 반려 목록 — 키워드 검색
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationListResponseDTO> getRejectedFoundationListWithFilter(String keyword, Pageable pageable) {
+        return foundationRepository.findRejectedWithFilter(ReviewStatus.REJECTED, keyword, pageable)
+                .map(FoundationListResponseDTO::from);
+    }
+
+    // [가빈] 공개 단체 목록 — accountStatus 제거, 키워드 검색
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationListResponseDTO> getPublicFoundationList(String keyword, Pageable pageable) {
+        return foundationRepository.findApprovedWithFilter(null, keyword, pageable)
+                .map(FoundationListResponseDTO::from);
+    }
+
     @Override
     public Page<FoundationListResponseDTO> getApprovedFoundationList(AccountStatus accountStatus, Pageable pageable) {
         //승인된 기부단체들 보기 (비활성화, 활성화 필터링)
@@ -294,6 +325,14 @@ public class  FoundationServiceImpl implements FoundationService {
             foundations = foundationRepository.findByReviewStatusAndAccountStatus(ReviewStatus.APPROVED, accountStatus, pageable);
         }
         return foundations.map(FoundationListResponseDTO::from);
+    }
+
+    // [가빈] 관리자 승인 단체 목록 — 상태 필터 + 키워드 검색 + 페이징
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(AccountStatus accountStatus, String keyword, Pageable pageable) {
+        return foundationRepository.findApprovedWithFilter(accountStatus, keyword, pageable)
+                .map(FoundationListResponseDTO::from);
     }
 
     @Override
@@ -431,6 +470,26 @@ public class  FoundationServiceImpl implements FoundationService {
     @Override
     public Page<CampaignListResponseDTO> getMyCampaigns(Long foundationNo, Pageable pageable) {
         return campaignRepository.findByFoundationNo(foundationNo, pageable).map(CampaignListResponseDTO::from);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationMyCampaignDTO> getMyCampaignsWithFilter(Long foundationNo, CampaignStatus campaignStatus, String keyword, Pageable pageable) {
+        return campaignRepository.findByFoundationNoWithFilter(foundationNo, campaignStatus, keyword, pageable)
+                .map(FoundationMyCampaignDTO::from);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FoundationMyPageStatsDTO getMyPageStats(Long foundationNo) {
+        long activeCampaignCount = campaignRepository.countByFoundationNoAndCampaignStatus(
+                foundationNo, CampaignStatus.ACTIVE);
+        BigDecimal thisMonthDonation = paymentRepository.sumThisMonthAmountByFoundationNo(foundationNo);
+
+        return FoundationMyPageStatsDTO.builder()
+                .activeCampaignCount(activeCampaignCount)
+                .thisMonthDonationAmount(thisMonthDonation != null ? thisMonthDonation : BigDecimal.ZERO)
+                .build();
     }
 
 }
