@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>보고서 관리 리스트</title>
+    <title>보고서 관리 및 지갑</title>
 </head>
 <body>
     <div style="text-align: right; margin-bottom: 10px;">
@@ -12,9 +12,22 @@
             <button type="submit">로그아웃</button>
         </form>
     </div>
+
+    <!-- 💡 내 지갑 정보 섹션 -->
+    <div th:if="${wallet != null}" style="border: 1px solid #000; padding: 10px; margin-bottom: 20px;">
+        <h2>💰 내 지갑 정보</h2>
+        <p><strong>지갑 주소:</strong> <span th:text="${wallet.walletAddress}"></span></p>
+        <p><strong>현재 잔액:</strong> <span th:text="${wallet.balance}"></span> Token</p>
+        
+        <hr>
+        <h3>💸 현금화 요청</h3>
+        금액: <input type="number" id="redemptionAmount" placeholder="요청할 토큰 수량">
+        <button type="button" th:onclick="'requestRedemption(' + ${beneficiaryNo} + ')'">현금화 신청하기</button>
+    </div>
+
     <h1>내 보고서 관리</h1>
 
-    <!-- 1. 작성 대기 (보고서가 없는 캠페인) -->
+    <!-- 1. 작성 대기 -->
     <section>
         <h2>📝 작성해야 할 보고서</h2>
         <table border="1">
@@ -72,7 +85,7 @@
                 <tr th:each="report : ${reportList}" th:if="${report.approvalStatus.name() == 'APPROVED'}">
                     <td th:text="${report.reportNo}"></td>
                     <td th:text="${report.title}"></td>
-                    <td th:text="${#temporals.format(report.createdAt, 'yyyy-MM-dd HH:mm')}"></td> <!-- 승인일이 따로 있다면 그걸 쓰는게 좋음 -->
+                    <td th:text="${#temporals.format(report.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
                     <td>
                         <button type="button" th:onclick="'viewReport(' + ${report.reportNo} + ')'">상세 보기</button>
                     </td>
@@ -109,6 +122,40 @@
         }
         function editReport(reportNo) {
             location.href = "/finalReport/update?reportNo=" + reportNo;
+        }
+
+        // 💡 현금화 요청 함수
+        async function requestRedemption(beneficiaryNo) {
+            const amount = document.getElementById('redemptionAmount').value;
+            if(!amount || amount <= 0) {
+                alert("올바른 금액을 입력해주세요.");
+                return;
+            }
+
+            const dto = {
+                requesterType: 'BENEFICIARY',
+                requesterNo: beneficiaryNo,
+                amount: parseInt(amount)
+            };
+
+            try {
+                const response = await fetch('/api/redemptions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+
+                if (response.ok) {
+                    alert("현금화 요청이 성공적으로 접수되었습니다.");
+                    location.reload(); // 잔액 업데이트를 위해 새로고침
+                } else {
+                    const errorMsg = await response.text();
+                    alert("요청 실패: " + errorMsg);
+                }
+            } catch (error) {
+                console.error("에러:", error);
+                alert("서버 통신 오류");
+            }
         }
     </script>
 </body>

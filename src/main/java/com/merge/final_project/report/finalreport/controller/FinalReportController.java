@@ -17,6 +17,10 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
+import com.merge.final_project.blockchain.dto.BlockchainWalletDetailResponse;
+import com.merge.final_project.blockchain.service.BlockchainDashboardQueryService;
+import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
+
 @Controller
 @RequestMapping("/finalReport")
 @Log4j2
@@ -25,6 +29,7 @@ public class FinalReportController {
 
     private final FinalReportService finalReportService;
     private final BeneficiaryService beneficiaryService;
+    private final BlockchainDashboardQueryService blockchainDashboardQueryService; // 💡 지갑 조회 서비스 주입
 
     @GetMapping({"/", "/list"})
     public String list(Model model, Principal principal) {
@@ -33,8 +38,22 @@ public class FinalReportController {
         }
 
         String email = principal.getName();
+        
+        // 1. 수혜자 정보 및 참여 캠페인 목록 가져오기
+        Beneficiary beneficiary = beneficiaryService.getBeneficiaryByEmail(email);
         List<Campaign> myCampaigns = beneficiaryService.getMyCampaigns(email);
         List<FinalReportResponseDTO> myReports = finalReportService.getMyReports(email);
+
+        // 2. 💡 지갑 정보(주소, 잔액) 조회
+        if (beneficiary.getWallet() != null) {
+            String walletAddress = beneficiary.getWallet().getWalletAddress();
+            // 지갑 상세 조회 (페이지 1, 성공한 트랜잭션 기준)
+            BlockchainWalletDetailResponse walletDetail = 
+                blockchainDashboardQueryService.getWalletDetail(walletAddress, 1, "SUCCESS");
+            
+            model.addAttribute("wallet", walletDetail.wallet());
+            model.addAttribute("beneficiaryNo", beneficiary.getBeneficiaryNo());
+        }
 
         model.addAttribute("campaignList", myCampaigns);
         model.addAttribute("reportList", myReports);

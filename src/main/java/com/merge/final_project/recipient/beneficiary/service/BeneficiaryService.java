@@ -11,6 +11,7 @@ import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepos
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySignupRequestDTO;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,35 +27,56 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class BeneficiaryService implements UserDetailsService {
     private final CampaignRepository campaignRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final PasswordEncoder passwordEncoder;
     private final SignupWalletHookService signupWalletHookService;
 
+
     @Transactional
     public Long signup(BeneficiarySignupRequestDTO dto){
-        // 1. 이메일 중복 검사
+        log.info("--- 회원가입 시작: {} ---", dto.getEmail());
+        
         if(beneficiaryRepository.existsByEmail(dto.getEmail())){
             throw new RuntimeException("이미 사용 중인 이메일입니다");
         }
-        // 2. 엔티티 생성 및 저장
-        Beneficiary beneficiary = Beneficiary.builder()
-                .email(dto.getEmail())
-                .password(passwordEncoder.encode(dto.getPassword()))
-                .name(dto.getName())
-                .phone(dto.getPhone())
-                .account(dto.getAccount())
-                .entryCode(generatedEntryCode())
-                .beneficiaryType(dto.getBeneficiaryType())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .beneficiaryHash("init_hash")
-                .build();
-        Beneficiary saved = beneficiaryRepository.save(beneficiary);
-        // 수혜자 계정 생성 직후 수혜자 전용 지갑을 생성하고 beneficiary 테이블에 바인딩한다.
-        signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
-        return saved.getBeneficiaryNo();
+
+        try {
+            Beneficiary beneficiary = Beneficiary.builder()
+                    .email(dto.getEmail())
+                    .password(passwordEncoder.encode(dto.getPassword()))
+                    .name(dto.getName())
+                    .phone(dto.getPhone())
+                    .account(dto.getAccount())
+                    .entryCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                    .beneficiaryType(dto.getBeneficiaryType())
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .beneficiaryHash("init_hash")
+                    .build();
+
+            Beneficiary saved = beneficiaryRepository.save(beneficiary);
+            log.info("1. 수혜자 정보 저장 완료 (ID: {})", saved.getBeneficiaryNo());
+
+            // 💡 지갑 생성 시도
+//            try {
+//                log.info("2. 지갑 생성 훅 호출 시작...");
+//                signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
+//                log.info("3. 지갑 생성 및 바인딩 완료");
+//            } catch (Exception walletEx) {
+//                log.error("❌ 지갑 생성 중 심각한 오류 발생: {}", walletEx.getMessage());
+//                walletEx.printStackTrace(); // 💡 상세 스택트레이스 출력
+//                throw new RuntimeException("지갑 생성 오류: " + walletEx.getMessage());
+//            }
+
+            return saved.getBeneficiaryNo();
+            
+        } catch (Exception e) {
+            log.error("❌ 회원가입 최종 실패: {}", e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
 
@@ -98,6 +120,14 @@ public class BeneficiaryService implements UserDetailsService {
 
         // 2. 그 번호로 등록된 캠페인들 가져오기
         return campaignRepository.findByBeneficiaryNo(beneficiary.getBeneficiaryNo());
+    }
+
+    /**
+     * 이메일로 수혜자 엔티티 조회 (내부 로직용)
+     */
+    public Beneficiary getBeneficiaryByEmail(String email) {
+        return beneficiaryRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다: " + email));
     }
 
     /**
