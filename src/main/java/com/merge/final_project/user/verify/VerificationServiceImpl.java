@@ -87,10 +87,11 @@ public class VerificationServiceImpl implements VerificationService {
         if (verification != null) {
             // 만료 여부와 상관없이 너무 빈번한 요청 제한 (예: 1분 이내 재요청 금지)
             // 'updatedAt' 필드가 엔티티에 있다고 가정할 때 훨씬 깔끔함
+            LocalDateTime existingExpiredAt = verification.getExpiredAt();
             int currentCount = verification.getRequestCount();
 
             //시간 확인 -> 만료시간 + 4분보다 크다면 요청한 지 1분이 채 안 됐다는 의미
-            if (verification.getExpiredAt().isAfter(now.plusMinutes(4))) {
+            if (existingExpiredAt != null && existingExpiredAt.isAfter(now.plusMinutes(4))) {
                 throw new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다.");
             }
 
