@@ -6,7 +6,6 @@ import com.merge.final_project.campaign.settlement.SettlementStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     boolean existsByCampaignAndStatusIn(Campaign campaign, List<SettlementStatus> statuses);
@@ -14,5 +13,5 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     List<Settlement> findByCampaign(Campaign campaign);
 
     //findBy
-    List<Settlement> findByCampaignNo(Long campaignNo);
+    List<Settlement> findByCampaign_CampaignNo(Long campaignNo);
 }

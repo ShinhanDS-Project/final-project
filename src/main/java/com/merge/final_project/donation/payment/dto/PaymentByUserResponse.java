@@ -1,23 +1,28 @@
 package com.merge.final_project.donation.payment.dto;
 
 import com.merge.final_project.donation.payment.PaymentStatus;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
+@Getter
+@Setter
+@Builder
 public class PaymentByUserResponse {
     //상태
-    PaymentStatus paymentStatus;
+    private PaymentStatus paymentStatus;
     //가격
-    BigDecimal amount;
+    private BigDecimal amount;
 
-    Long userNo;
-    Long campaignNo;
+    private Long userNo;
+    private Long campaignNo;
 
-    String orderKey;
-    LocalDateTime paidAt;
+    private String orderKey;
+    private LocalDateTime paidAt;
 
-    String paymentMethod;
+    private String paymentMethod;
 
 
 }

@@ -109,9 +109,12 @@ public class UserServiceImpl implements UserService {
         if (dto.getNewPassword() == null || dto.getNewPassword().isBlank()) {
             throw new IllegalArgumentException("새 비밀번호는 필수입니다.");
         }
-        if (!passwordEncoder.matches(dto.getNewPassword2(), dto.getNewPassword())) {
-            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        //  평문 암호끼리의 비교
+        if (!dto.getNewPassword().equals(dto.getNewPassword2())) {
+            throw new IllegalArgumentException("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
         }
+        // [추가] 검증 완료 후 새 비밀번호를 암호화하여 DB(엔티티)에 반영
+        user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
     }
 
     // 3단계: 로그인 전 최종 비밀번호 재설정
@@ -132,6 +135,8 @@ public class UserServiceImpl implements UserService {
         if (passwordEncoder.matches(dto.getNewPassword(), user.getPasswordHash())) {
             throw new RuntimeException("기존 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.");
         }
+        //새 비밀번호 암호화하여 db에 반영하기
+        user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
         user.setsLoginCount(0);
         verificationService.deleteVerification(dto.getEmail());
     }
@@ -185,7 +190,7 @@ public class UserServiceImpl implements UserService {
     public MicroTrackingDTO showMicroTracking(Long campaignNo) {
         // ---> 1. 정산내용
         // Optional을 활용하여 정산이 없는 경우 예외를 던지지 않고 처리
-        Optional<Settlement> settlementOpt = settlementRepository.findByCampaignNo(campaignNo).stream()
+        Optional<Settlement> settlementOpt = settlementRepository.findByCampaign_CampaignNo(campaignNo).stream()
                 .filter(s -> s.getStatus().equals(SettlementStatus.COMPLETED))
                 .findFirst();
 

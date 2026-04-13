@@ -5,9 +5,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ErrorCode {
-    // 사용자
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "존재하지 않는 사용자입니다."),
-    DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST,"USER_002","중복된 닉네임입니다."),
+
     // 비밀번호
     PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "PASSWORD_001", "새 비밀번호와 비밀번호 확인이 일치하지 않습니다."),
     INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "PASSWORD_002", "비밀번호 형식이 올바르지 않습니다."),
@@ -45,6 +43,9 @@ public enum ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "존재하지 않는 회원입니다."),
     USER_ALREADY_ACTIVE(HttpStatus.CONFLICT, "USER_002", "이미 활성화된 회원입니다."),
     USER_ALREADY_INACTIVE(HttpStatus.CONFLICT, "USER_003", "이미 비활성화된 회원입니다."),
+    // 사용자
+    DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST,"USER_004","중복된 닉네임입니다."),
+
     // 파일 관련
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
     FILE_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_002", "파일 업로드 중 오류가 발생했습니다."),

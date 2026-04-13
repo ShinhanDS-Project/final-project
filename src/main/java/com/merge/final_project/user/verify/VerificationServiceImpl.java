@@ -83,26 +83,34 @@ public class VerificationServiceImpl implements VerificationService {
 
         String code = createVerificationCode();
         LocalDateTime now = LocalDateTime.now();
-
+        LocalDateTime expiredAt = now.plusMinutes(5); // 새로운 만료 시간 (5분 후)
         if (verification != null) {
             // 만료 여부와 상관없이 너무 빈번한 요청 제한 (예: 1분 이내 재요청 금지)
             // 'updatedAt' 필드가 엔티티에 있다고 가정할 때 훨씬 깔끔함
-            if (verification.getExpiredAt().isAfter(now.minusMinutes(1))) {
-                throw new IllegalStateException("1분 후에 다시 시도해주세요.");
+            int currentCount = verification.getRequestCount();
+
+            //시간 확인 -> 만료시간 + 4분보다 크다면 요청한 지 1분이 채 안 됐다는 의미
+            if (verification.getExpiredAt().isAfter(now.plusMinutes(4))) {
+                throw new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다.");
             }
 
-            if (verification.getRequestCount() >= 5) {
-                // 5회 초과 시 특정 시간이 지나야 초기화되도록 로직 보완 필요
-                throw new IllegalStateException("요청 횟수 초과");
-            }
 
-            verification.updateVerification(code, now.plusMinutes(5));
+            //요청 횟수 5건 이상 불가
+            if (currentCount >= 5) {
+                throw new IllegalStateException("인증번호 요청 횟수(5회)를 초과했습니다. 나중에 다시 시도해주세요.");
+            }
+            int newCount = currentCount + 1;
+
+            // 엔티티 업데이트 (카운트도 함께 갱신)
+            verification.updateVerification(code, expiredAt);
+            verification.setRequestCount(newCount);
         } else {
+            // 최초 요청 시
             verification = EmailVerification.builder()
                     .email(email)
                     .verificationCode(code)
-                    .expiredAt(now.plusMinutes(5))
-                    .requestCount(1)
+                    .expiredAt(expiredAt)
+                    .requestCount(1) // 최초 1회 세팅
                     .build();
         }
 
