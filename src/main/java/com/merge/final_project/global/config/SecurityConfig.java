@@ -27,23 +27,19 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
-    /**
-     * 비밀번호 인코더 빈.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * 스프링 시큐리티 AuthenticationManager 주입용 빈.
-     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    //관리자
+    /**
+     * 1. 관리자 전용 필터 체인 (/admin/**)
+     */
     @Order(1)
     @Bean
     public SecurityFilterChain adminFilterChain(HttpSecurity http, AdminJwtFilter adminJwtFilter) throws Exception {
@@ -66,21 +62,23 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 수혜자
+    /**
+     * 2. 수혜자 및 리액트 전용 API 필터 체인
+     */
     @Order(2)
     @Bean
     public SecurityFilterChain beneficiaryFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
-                .securityMatcher("/api/beneficiary/**", "/finalReport/**") // 수혜자 전용 경로 지정
+                .securityMatcher("/api/beneficiary/**", "/finalReport/**", "/api/v1/**")
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 수혜자 로그인/회원가입은 인증 없이 접근 가능
+                        // 수혜자 로그인/회원가입은 공개 (v1 포함)
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
-
-                        // 그 외 보고서 작성 등은 모두 인증 필요
+                        .requestMatchers("/api/v1/beneficiary/signup", "/api/v1/beneficiary/signin").permitAll()
+                        // 그 외 수혜자/보고서 관련은 인증 필요
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
@@ -98,7 +96,9 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 기부단체
+    /**
+     * 3. 기부단체 전용 필터 체인 (/api/foundation/**)
+     */
     @Order(3)
     @Bean
     public SecurityFilterChain foundationFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
@@ -119,7 +119,6 @@ public class SecurityConfig {
                                 "/api/foundation/campaigns",   // 캠페인
                                 "/api/foundation/campaigns/*/detail"   // 캠페인
                         ).permitAll()
-                        // 그 외 단체 전용 기능은 ROLE_FOUNDATION 필요
                         .anyRequest().hasAuthority("ROLE_FOUNDATION")
                 )
                 .exceptionHandling(ex -> ex
@@ -131,51 +130,32 @@ public class SecurityConfig {
         return http.build();
     }
 
-    //일반 사용자
+    /**
+     * 4. 일반 사용자 및 공통 필터 체인 (Default)
+     */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
+    public SecurityFilterChain defaultFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
                 .authorizeHttpRequests(auth -> auth
-                        // 1. [공개 경로] 누구나 접근 가능
                         .requestMatchers(
-                                "/",
-                                "/error",
-                                "/favicon.ico",
-                                "/uploads/**",
-                                "/api/auth/**",
-                                "/api/signup/**",
-                                // 블록체인 대시보드/조회 API는 프론트 대시보드 초기 연동을 위해 우선 공개.
-                                // 추후 인증 정책 확정 시 role 기반 접근 제어로 전환 가능.
-                                "/api/blockchain/**",
-                                "/oauth2/**",
-                                "/login/**",
-                                "/social-info",
-                                "/users/support/**"
+                                "/", "/error", "/favicon.ico", "/uploads/**",
+                                "/api/auth/**", "/api/signup/**", "/api/blockchain/**",
+                                "/oauth2/**", "/login/**", "/social-info", "/users/support/**"
                         ).permitAll()
-
-                        // 2. [인증 경로] 로그인한 사용자만 가능
-                        .requestMatchers("/finalReport/**").authenticated()
-
-                        // 3. 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
-
-                // OAuth2 로그인 설정
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
                 )
-
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 )
-
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
