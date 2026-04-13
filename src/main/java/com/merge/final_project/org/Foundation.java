@@ -20,7 +20,7 @@ public class Foundation extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long foundationNo;
 
-    @Column(name = "foundation_email")
+    @Column(name = "foundation_email", unique = true)
     private String foundationEmail;
 
     @Column(name = "foundation_password")
@@ -91,8 +91,8 @@ public class Foundation extends BaseEntity {
 
     public void reject(String rejectReason) {
         this.reviewStatus = ReviewStatus.REJECTED;
-        this.accountStatus = AccountStatus.INACTIVE;
         this.rejectReason = rejectReason;
+        this.accountStatus = AccountStatus.INACTIVE;
     }
 
     public void updatePassword(String encodedPassword) {
@@ -109,6 +109,12 @@ public class Foundation extends BaseEntity {
 
     public void updateProfilePath(String profilePath) {
         this.profilePath = profilePath;
+    }
+
+    // 활동 보고서 작성 안 한 수혜자들이 있을 경우 (일단은) 기부단체가 비활성화됨. => 관리 이유.
+    // 수혜 단체 쪽에 active 컬럼이 없었기에 이런 방식을 구현헀으나 추후 얘기 나눠볼 것.
+    public void deactivate() {
+        this.accountStatus = AccountStatus.INACTIVE;
     }
 
 }

@@ -114,7 +114,9 @@ public class SecurityConfig {
                                 "/api/foundation/check-brn", // 사업자등록번호 중복 체크
                                 "/api/foundation/all",       // 단체 목록 조회 (공개)
                                 "/api/foundation/login",     // 로그인
-                                "/api/foundation/logout"     // 로그아웃 (토큰 만료 후에도 호출 가능해야 함)
+                                "/api/foundation/logout",     // 로그아웃 (토큰 만료 후에도 호출 가능해야 함),
+                                "/api/foundation/campaigns/*",   // 캠페인
+                                "/api/foundation/campaigns"   // 캠페인
                         ).permitAll()
                         // 그 외 단체 전용 기능은 ROLE_FOUNDATION 필요
                         .anyRequest().hasAuthority("ROLE_FOUNDATION")
