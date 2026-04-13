@@ -3,6 +3,7 @@ package com.merge.final_project.admin.dashboard;
 import com.merge.final_project.admin.dashboard.dto.CategoryRatioDTO;
 import com.merge.final_project.admin.dashboard.dto.DashboardSummaryDTO;
 import com.merge.final_project.admin.dashboard.dto.DonationTrendDTO;
+import com.merge.final_project.admin.dashboard.dto.UserRegistrationTrendDTO;
 import com.merge.final_project.admin.adminlog.AdminLogResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,4 +19,6 @@ public interface AdminDashboardService {
     List<CategoryRatioDTO> getCategoryRatio();
 
     Page<AdminLogResponseDTO> getRecentLogs(Pageable pageable);
+
+    List<UserRegistrationTrendDTO> getUserRegistrationTrend(int days);
 }
