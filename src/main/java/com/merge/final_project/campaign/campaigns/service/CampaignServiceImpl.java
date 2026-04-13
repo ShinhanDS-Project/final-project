@@ -34,6 +34,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -139,7 +141,7 @@ public class CampaignServiceImpl implements CampaignService {
 
         if ("participation".equalsIgnoreCase(sort)) {
             comparator = Comparator
-                    .comparing((Campaign campaign) -> campaign.getCurrentAmount() == null ? 0L : campaign.getCurrentAmount())
+                    .comparing((Campaign campaign) -> campaign.getCurrentAmount() == null ? BigDecimal.ZERO : campaign.getCurrentAmount())
                     .reversed()
                     .thenComparing(Campaign::getCampaignNo, Comparator.reverseOrder());
         } else {
@@ -167,7 +169,7 @@ public class CampaignServiceImpl implements CampaignService {
         Foundation foundation = foundationRepository.findByFoundationNo(campaign.getFoundationNo())
                 .orElseThrow(() -> new IllegalArgumentException("기부 단체 정보를 찾을 수 없습니다."));
 
-        long currentAmount = campaign.getCurrentAmount() == null ? 0L : campaign.getCurrentAmount();
+        BigDecimal currentAmount = campaign.getCurrentAmount() == null ? BigDecimal.ZERO : campaign.getCurrentAmount();
         long targetAmount = campaign.getTargetAmount() == null ? 0L : campaign.getTargetAmount();
         CampaignStatus campaignStatus = campaign.getCampaignStatus() == null ? CampaignStatus.PENDING : campaign.getCampaignStatus();
         String walletAddress = campaign.getWalletNo() == null ? null : walletRepository.findById(campaign.getWalletNo())
@@ -377,8 +379,8 @@ public class CampaignServiceImpl implements CampaignService {
         }
 
         try {
-            String storedName = fileUtil.saveFile(imageFile);
-            String filePath = fileUtil.getFilePath(storedName);
+            String storedName = fileService.saveFile(imageFile);
+            String filePath = fileService.getFilePath(storedName);
 
             imageRepository.save(Image.builder()
                     .imgPath(filePath)
@@ -405,7 +407,8 @@ public class CampaignServiceImpl implements CampaignService {
         }
 
         Optional<Wallet> wallet = walletRepository.findByWalletAddress(walletAddress);
-        String status = wallet.map(value -> value.getStatus() == null ? "상태불명" : value.getStatus().name()).orElse("찾을수없음");
+        String status = wallet.map(
+                value -> value.getStatus() == null ? "상태불명" : value.getStatus().name()).orElse("찾을수없음");
         boolean available = wallet.map(value -> WalletStatus.INACTIVE.equals(value.getStatus())).orElse(false);
 
         return CampaignFoundationCheckResponseDTO.WalletStatusItem.builder()
@@ -416,19 +419,24 @@ public class CampaignServiceImpl implements CampaignService {
                 .build();
     }
 
-    private int calculateProgressPercent(Long currentAmount, Long targetAmount) {
+    private int calculateProgressPercent(BigDecimal currentAmount, Long targetAmount) {
         if (targetAmount == null || targetAmount <= 0) {
             return 0;
         }
 
-        long safeCurrentAmount = currentAmount == null ? 0L : currentAmount;
-        return (int) Math.min(100, (safeCurrentAmount * 100) / targetAmount);
+        BigDecimal safeCurrentAmount = currentAmount == null ? BigDecimal.ZERO : currentAmount;
+        //BigDecimal은 *,/연산자 사용 불가라서 수정함.
+        return safeCurrentAmount
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(targetAmount), RoundingMode.DOWN)
+                .min(BigDecimal.valueOf(100))
+                .intValue();
     }
 
-    private long calculateRemainingAmount(Long targetAmount, Long currentAmount) {
+    private long calculateRemainingAmount(Long targetAmount, BigDecimal currentAmount) {
         long safeTargetAmount = targetAmount == null ? 0L : targetAmount;
-        long safeCurrentAmount = currentAmount == null ? 0L : currentAmount;
-        return Math.max(0L, safeTargetAmount - safeCurrentAmount);
+        BigDecimal safeCurrentAmount = currentAmount == null ? BigDecimal.ZERO : currentAmount;
+        return Math.max(0L, safeTargetAmount - safeCurrentAmount.longValue());
     }
 
     private long calculateDaysLeft(LocalDateTime endAt) {
