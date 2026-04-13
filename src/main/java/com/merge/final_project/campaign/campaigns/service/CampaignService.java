@@ -4,13 +4,14 @@ import com.merge.final_project.campaign.campaigns.dto.CampaignBeneficiaryCheckRe
 import com.merge.final_project.campaign.campaigns.dto.CampaignDetailResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignFoundationCheckResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.dto.CampaignRegisterResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 public interface CampaignService {
-    void registerCampaign(
+    CampaignRegisterResponseDTO registerCampaign(
             CampaignRequestDTO requestDto,
             MultipartFile imageFile,
             List<MultipartFile> detailImageFiles,
