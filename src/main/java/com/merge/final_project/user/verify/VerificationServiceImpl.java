@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -52,13 +54,25 @@ public class VerificationServiceImpl implements VerificationService {
         if (verification.isVerified()) {
             throw new IllegalStateException("이미 인증이 완료된 이메일입니다.");
         }
-
+//      1. 만료 시간 검사
         if (verification.getExpiredAt() == null || verification.getExpiredAt().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("인증시간이 만료되었습니다. 다시 시도해주세요.");
         }
-
+        // 2. 인증 시도 횟수 초과 원천 차단
+        if (verification.getAttemptCount() >= 5) {
+            throw new IllegalArgumentException("인증 실패 횟수(5회)를 초과하여 무효 처리되었습니다. 인증번호를 다시 발급받아 주세요.");
+        }
+        // 3. 인증번호 일치 여부 확인
         if (!verification.getVerificationCode().equals(code)) {
-            throw new IllegalArgumentException("인증번호가 일치하지 않습니다.");
+            int currentAttempt = verification.getAttemptCount() + 1;
+            verification.setAttemptCount(currentAttempt);
+            // 방금 실패로 인해 5회에 도달했다면 해당 인증 무효화(만료 처리)
+            if (currentAttempt >= 5) {
+                verification.setExpiredAt(LocalDateTime.now());
+                throw new IllegalArgumentException("인증번호가 5회 틀려 해당 인증번호는 무효 처리되었습니다. 인증번호를 다시 발급받아 주세요.");
+            }
+            throw new IllegalArgumentException("인증번호가 일치하지 않습니다. (남은 횟수: " + (5 - currentAttempt) + "회)");
+
         }
 
         verification.setVerified(true);
@@ -77,6 +91,8 @@ public class VerificationServiceImpl implements VerificationService {
         emailVerificationRepository.deleteByEmail(email);
     }
 
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     private void issueVerificationCode(String email, String subject) {
         EmailVerification verification = emailVerificationRepository.findByEmail(email)
                 .orElse(null);
@@ -112,6 +128,7 @@ public class VerificationServiceImpl implements VerificationService {
                     .verificationCode(code)
                     .expiredAt(expiredAt)
                     .requestCount(1) // 최초 1회 세팅
+                    .attemptCount(0) //실패 시도 0회 세팅
                     .build();
         }
 
