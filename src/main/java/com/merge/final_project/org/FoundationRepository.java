@@ -26,4 +26,7 @@ public interface FoundationRepository extends JpaRepository<Foundation, Long> {
      * 대시보드 검색어 해석 시 단체 지갑 탐색의 시작점으로 사용한다.
      */
     Optional<Foundation> findFirstByFoundationNameIgnoreCase(String foundationName);
+
+    // [가빈] 대시보드용 - 신규 신청 건수 (APPROVED, REJECTED 제외)
+    long countByReviewStatusNotIn(List<ReviewStatus> reviewStatuses);
 }

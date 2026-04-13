@@ -27,6 +27,12 @@ public enum ErrorCode {
     CANNOT_APPROVE_ILLEGAL_FOUNDATION(HttpStatus.CONFLICT, "FOUNDATION_003", "불성실기부단체에 포함되는 단체는 가입이 안됩니다."),
     FOUNDATION_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "FOUNDATION_004", "이메일 또는 비밀번호가 올바르지 않습니다."),
     FOUNDATION_NOT_ACTIVATED(HttpStatus.FORBIDDEN, "FOUNDATION_005", "승인되지 않은 단체입니다. 관리자 승인 후 로그인 가능합니다."),
+    FOUNDATION_ALREADY_ACTIVE(HttpStatus.CONFLICT, "FOUNDATION_006", "이미 활성화된 기부단체입니다."),
+    FOUNDATION_ALREADY_INACTIVE(HttpStatus.CONFLICT, "FOUNDATION_007", "이미 비활성화된 기부단체입니다."),
+    // 회원
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "존재하지 않는 회원입니다."),
+    USER_ALREADY_ACTIVE(HttpStatus.CONFLICT, "USER_002", "이미 활성화된 회원입니다."),
+    USER_ALREADY_INACTIVE(HttpStatus.CONFLICT, "USER_003", "이미 비활성화된 회원입니다."),
     // 파일 관련
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
     FILE_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_002", "파일 업로드 중 오류가 발생했습니다."),

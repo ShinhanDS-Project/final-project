@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>계정 비활성화 안내</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #ddd; border-radius: 8px;">
+    <h2 style="color: #c0392b;">계정 비활성화 안내</h2>
+
+    <p>
+        안녕하세요,
+        <strong th:text="${foundationName}">단체명</strong> 담당자님.
+    </p>
+
+    <p>
+        관리자의 검토 결과 귀 단체 계정이 <strong style="color: #c0392b;">비활성화</strong>되었습니다.
+    </p>
+
+    <p>
+        계정 복구 또는 이의 신청은 플랫폼 고객센터로 연락해 주세요.
+    </p>
+
+    <hr style="margin: 24px 0;">
+
+    <p style="font-size: 12px; color: #888;">
+        본 메일은 발신 전용입니다.
+    </p>
+</div>
+</body>
+</html>
