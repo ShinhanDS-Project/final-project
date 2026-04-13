@@ -3,12 +3,13 @@ package com.merge.final_project.campaign.campaigns.service;
 import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
-import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.CampaignCategory;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignBeneficiaryCheckResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignDetailResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignFoundationCheckResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.dto.CampaignRegisterResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
@@ -69,13 +70,13 @@ public class CampaignServiceImpl implements CampaignService {
 
     @Override
     @Transactional
-    public void registerCampaign(CampaignRequestDTO dto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo) {
+    public CampaignRegisterResponseDTO registerCampaign(CampaignRequestDTO dto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo) {
         if (imageFile == null || imageFile.isEmpty()) {
             throw new IllegalArgumentException("대표 이미지는 필수입니다.");
         }
 
         Foundation foundation = foundationRepository.findById(foundationNo)
-            .orElseThrow(() -> new IllegalArgumentException("?? ??? ?? ? ????."));
+            .orElseThrow(() -> new IllegalArgumentException("해당 재단 정보를 찾을 수 없습니다."));
 
         Beneficiary beneficiary = beneficiaryRepository.findByEntryCode(dto.getEntryCode())
             .orElseThrow(() -> new IllegalArgumentException("Invalid beneficiary entry code."));
@@ -88,7 +89,7 @@ public class CampaignServiceImpl implements CampaignService {
 
         Wallet availableWallet = walletRepository
             .findFirstByWalletAddressInAndStatus(walletAddresses, WalletStatus.INACTIVE)
-            .orElseThrow(() -> new IllegalStateException("?? ??? ??? ????."));
+            .orElseThrow(() -> new IllegalStateException("사용 가능한 지갑이 없습니다."));
 
         Campaign campaign = dto.toEntity();
         campaign.setFoundationNo(foundationNo);
@@ -119,6 +120,14 @@ public class CampaignServiceImpl implements CampaignService {
                 TargetType.CAMPAIGN,
                 savedCampaign.getCampaignNo(),
                 savedCampaign.getTitle() + " 캠페인 승인 요청"));
+
+        return CampaignRegisterResponseDTO.builder()
+            .campaignNo(savedCampaign.getCampaignNo())
+            .foundationNo(savedCampaign.getFoundationNo())
+            .approvalStatus(savedCampaign.getApprovalStatus() == null ? null : savedCampaign.getApprovalStatus().name())
+            .campaignStatus(savedCampaign.getCampaignStatus() == null ? null : savedCampaign.getCampaignStatus().name())
+            .message("캠페인 등록 요청 완료")
+            .build();
     }
 
     @Override
