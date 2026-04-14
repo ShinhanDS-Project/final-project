@@ -1,16 +1,19 @@
 package com.merge.final_project.campaign.settlement;
 
-import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="settlement")
+@Table(name = "settlement")
 @Getter
 @NoArgsConstructor
 @Builder
@@ -70,14 +73,19 @@ public class Settlement {
         this.beneficiaryAmount = beneficiaryAmount;
         this.status = SettlementStatus.PENDING;
     }
-    // 정산 실패 처리 (→ FAILED)
+
+    // 정산 실패 처리
     public void failed() {
         this.status = SettlementStatus.FAILED;
     }
-    // 처리 시작 (PENDING → PROCESSING)
+
+    // 처리 시작 (PENDING -> PROCESSING)
     public void markProcessing() {
         this.status = SettlementStatus.PROCESSING;
     }
 
-
+    // 온체인 정산은 성공했지만 로컬 후처리가 아직 남아 있는 상태
+    public void markOnChainConfirmed() {
+        this.status = SettlementStatus.ONCHAIN_CONFIRMED;
+    }
 }

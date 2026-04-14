@@ -1,6 +1,8 @@
 package com.merge.final_project.org.dto;
 
 import com.merge.final_project.org.FoundationType;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -38,6 +40,9 @@ public class FoundationApplyRequestDTO {
 
     private String bankName;
 
+    @NotNull(message = "수수료율을 입력해 주세요.")
+    @DecimalMin("0.00")
+    @DecimalMax("1.00")
     private BigDecimal feeRate;
 
 

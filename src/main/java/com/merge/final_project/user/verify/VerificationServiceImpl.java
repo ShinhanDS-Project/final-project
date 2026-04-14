@@ -92,6 +92,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
 
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     private void issueVerificationCode(String email, String subject) {
         EmailVerification verification = emailVerificationRepository.findByEmail(email)
                 .orElse(null);

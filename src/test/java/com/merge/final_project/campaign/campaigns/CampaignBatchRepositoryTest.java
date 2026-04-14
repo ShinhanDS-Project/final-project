@@ -12,10 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,7 +44,7 @@ class CampaignBatchRepositoryTest {
                 .approvalStatus(ApprovalStatus.APPROVED)
                 .campaignStatus(CampaignStatus.SETTLED)
                 .targetAmount(1000000L)
-                .currentAmount(new BigDecimal("1000000"))
+                .currentAmount(BigDecimal.valueOf(1000000L))
                 .usageEndAt(usageEndAt)
                 .build();
     }

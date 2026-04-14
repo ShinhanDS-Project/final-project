@@ -54,7 +54,7 @@ public class GasStationService {
      */
     @Transactional
     public void fundInitialPol(Wallet wallet) {
-        topUpPolFromHot(wallet, initialPolWei, "ALLOCATION");
+        topUpPolFromHot(wallet, initialPolWei, "POL_AUTO_TOPUP");
     }
 
     /**
@@ -82,7 +82,7 @@ public class GasStationService {
         if (currentBalance.compareTo(minPolWei) >= 0) {
             return;
         }
-        topUpPolFromHot(signerWallet, initialPolWei, "ALLOCATION");
+        topUpPolFromHot(signerWallet, initialPolWei, "POL_AUTO_TOPUP");
     }
 
     /**
@@ -111,7 +111,7 @@ public class GasStationService {
         transferTransactionService.saveTransfer(
                 hotWallet,
                 wallet,
-                amountWei.longValue(),
+                toRecordedAmount(amountWei),
                 transferResult.txHash(),
                 transferResult.blockNumber(),
                 transferResult.status(),
@@ -154,6 +154,14 @@ public class GasStationService {
         } catch (RuntimeException e) {
             log.warn("keyNo={} is not decryptable payload. fallback to raw key string.", key.getKeyNo());
             return storedPrivateKey;
+        }
+    }
+
+    private Long toRecordedAmount(BigInteger amountWei) {
+        try {
+            return amountWei.longValueExact();
+        } catch (ArithmeticException e) {
+            throw new IllegalStateException("POL top-up amount exceeds token_transaction.amount range: " + amountWei, e);
         }
     }
 }

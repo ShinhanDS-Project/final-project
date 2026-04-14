@@ -43,27 +43,39 @@ public class SettlementCommandService {
 
         return settlementRepository.save(settlement);
     }
-    // 처리 시작 (PENDING → PROCESSING)
+
+    // 처리 시작 (PENDING -> PROCESSING)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markProcessing(Long settlementNo) {
         Settlement settlement = settlementRepository.findById(settlementNo)
-                .orElseThrow(() -> new IllegalArgumentException("정산 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("settlement not found"));
 
         settlement.markProcessing();
     }
-    // 정산 완료 처리 (→ COMPLETED)
+
+    // 온체인 정산 성공 직후 상태 전환 (PROCESSING -> ONCHAIN_CONFIRMED)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markOnChainConfirmed(Long settlementNo) {
+        Settlement settlement = settlementRepository.findById(settlementNo)
+                .orElseThrow(() -> new IllegalArgumentException("settlement not found"));
+
+        settlement.markOnChainConfirmed();
+    }
+
+    // 정산 최종 완료 처리 (-> COMPLETED)
     @Transactional
     public void markCompleted(Long settlementNo) {
         Settlement settlement = settlementRepository.findById(settlementNo)
-                .orElseThrow(() -> new IllegalArgumentException("정산 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("settlement not found"));
         settlement.setStatus(SettlementStatus.COMPLETED);
         settlement.setSettledAt(LocalDateTime.now());
     }
-    // 정산 실패 처리 (→ FAILED)
+
+    // 온체인 자체 실패 처리 (-> FAILED)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markFailed(Long settlementNo) {
         Settlement settlement = settlementRepository.findById(settlementNo)
-                .orElseThrow(() -> new IllegalArgumentException("정산 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("settlement not found"));
 
         settlement.failed();
     }

@@ -56,7 +56,7 @@ public class Beneficiary {
 
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_no", nullable = false)
+    @JoinColumn(name = "wallet_no", nullable = true)
     private Wallet wallet;
 
     /**

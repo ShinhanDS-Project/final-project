@@ -22,5 +22,5 @@ public interface FinalReportRepository extends JpaRepository<FinalReport, Long>,
 
     //[채원] 캠페인 아이디 기준으로 FinalReport 조회
     @Query("SELECT f FROM FinalReport f WHERE f.campaign_no = :campaignNo")
-    Optional<FinalReport> findByCampaign_no(Long campaignNo);
+    Optional<FinalReport> findByCampaign_no(@Param("campaignNo") Long campaignNo);
 }
