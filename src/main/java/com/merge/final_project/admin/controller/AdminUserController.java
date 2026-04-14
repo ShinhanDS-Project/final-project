@@ -61,7 +61,7 @@ public class AdminUserController {
             @Parameter(description = "회원 상태 필터 (ACTIVE, INACTIVE)", example = "ACTIVE")
             @RequestParam(required = false) UserStatus status,
             @Parameter(description = "이름 또는 이메일 키워드 검색", example = "홍길동")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             Pageable pageable) {
         return ResponseEntity.ok(adminUserService.getUsers(status, keyword, pageable));
     }

@@ -6,8 +6,6 @@ import com.merge.final_project.blockchain.entity.TransactionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.domain.Page; // [가빈] 핫월렛 거래내역 페이징용
-import org.springframework.data.domain.Pageable; // [가빈]
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -149,6 +147,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     // [가빈] 특정 지갑 주소가 from/to로 참여한 거래들의 상태와 상관없이, 전체 내역 페이징 조회 (관리자 핫월렛 내역용)
     // 구현된 코드 로직 수정하지 않고 별도 메서드로 구현 -> 관리자 쪽에서 이 메서드만 사용할게요
+    @EntityGraph(attributePaths = {"fromWallet", "toWallet"})
     @Query("""
             SELECT t
             FROM Transaction t

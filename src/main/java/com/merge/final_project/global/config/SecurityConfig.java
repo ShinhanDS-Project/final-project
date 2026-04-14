@@ -17,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -79,7 +80,7 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/auth/login").permitAll()
+                        .requestMatchers("/admin/auth/login", "/admin/auth/logout").permitAll()
                         .anyRequest().hasAuthority("ROLE_ADMIN")
                 )
                 .exceptionHandling(ex -> ex
@@ -141,11 +142,12 @@ public class SecurityConfig {
                                 "/api/foundation/check-brn", // 사업자등록번호 중복 체크
                                 "/api/foundation/all",       // 단체 목록 조회 (공개)
                                 "/api/foundation/login",     // 로그인
-                                "/api/foundation/logout",     // 로그아웃 (토큰 만료 후에도 호출 가능해야 함),
-                                "/api/foundation/campaigns/*",   // 캠페인
-                                "/api/foundation/campaigns",   // 캠페인
-                                "/api/foundation/campaigns/*/detail"   // 캠페인
+                                "/api/foundation/logout",    // 로그아웃 (토큰 만료 후에도 호출 가능해야 함)
+                                "/api/foundation/campaigns"  // 캠페인 목록 조회 (공개)
                         ).permitAll()
+                        // GET 한정 공개 — POST /register는 ROLE_FOUNDATION 필요
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/*/detail").permitAll()
                         // 그 외 단체 전용 기능은 ROLE_FOUNDATION 필요
                         .anyRequest().hasAuthority("ROLE_FOUNDATION")
                 )

@@ -36,7 +36,7 @@ public class AdminFoundationController {
             @Parameter(description = "심사 상태 필터 (CLEAN, SIMILAR, ILLEGAL)", example = "CLEAN")
             @RequestParam(required = false) ReviewStatus reviewStatus,
             @Parameter(description = "단체명 또는 대표자명 키워드 검색", example = "초록")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getFoundationApplicationListWithFilter(reviewStatus, keyword, pageable));
     }
@@ -50,7 +50,7 @@ public class AdminFoundationController {
     @GetMapping("/rejected")
     public ResponseEntity<Page<FoundationListResponseDTO>> getRejectedList(
             @Parameter(description = "단체명 또는 대표자명 키워드 검색", example = "초록")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getRejectedFoundationListWithFilter(keyword, pageable));
     }
@@ -64,9 +64,10 @@ public class AdminFoundationController {
     @GetMapping("/approved")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
             @Parameter(description = "단체명 또는 대표자명 키워드 검색", example = "초록")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) AccountStatus accountStatus,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(foundationService.getApprovedFoundationListForAdmin(keyword, pageable));
+        return ResponseEntity.ok(foundationService.getApprovedFoundationListForAdmin(accountStatus, keyword, pageable));
     }
 
     @Operation(summary = "기부단체 승인", description = "가입 신청한 기부단체를 승인합니다. 임시 비밀번호가 발급되어 이메일로 발송됩니다.")

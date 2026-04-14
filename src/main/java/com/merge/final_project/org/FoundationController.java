@@ -64,7 +64,7 @@ public class FoundationController {
     @GetMapping("/all")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
             @Parameter(description = "단체명 키워드 검색", example = "초록")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getPublicFoundationList(keyword, pageable));
     }
@@ -166,7 +166,7 @@ public class FoundationController {
             @Parameter(description = "캠페인 상태 필터 (PENDING, RECRUITING, ACTIVE, ENDED, SETTLED, COMPLETED, CANCELLED)", example = "ACTIVE")
             @RequestParam(required = false) CampaignStatus campaignStatus,
             @Parameter(description = "캠페인 제목 키워드 검색", example = "어린이")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyCampaignsWithFilter(foundationNo, campaignStatus, keyword, pageable));

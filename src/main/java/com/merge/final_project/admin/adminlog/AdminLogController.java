@@ -42,7 +42,7 @@ public class AdminLogController {
             @Parameter(description = "조회 종료 일시 (ISO 8601 형식, 예: 2024-12-31T23:59:59)", example = "2024-12-31T23:59:59")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @Parameter(description = "설명 키워드 검색 (대소문자 무관)", example = "승인")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             Pageable pageable) {
         return ResponseEntity.ok(
                 adminLogService.getLogsWithFilter(actionType, targetType, startDate, endDate, keyword, pageable)

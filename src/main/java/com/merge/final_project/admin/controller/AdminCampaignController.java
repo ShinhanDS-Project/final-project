@@ -32,7 +32,7 @@ public class AdminCampaignController {
     @GetMapping("/pending")
     public ResponseEntity<Page<CampaignListResponseDTO>> getPendingCampaigns(
             @Parameter(description = "캠페인 제목 키워드 검색", example = "어린이")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(adminCampaignService.getPendingCampaigns(keyword, pageable));
     }
@@ -46,7 +46,7 @@ public class AdminCampaignController {
     @GetMapping("/rejected")
     public ResponseEntity<Page<CampaignListResponseDTO>> getRejectedCampaigns(
             @Parameter(description = "캠페인 제목 키워드 검색", example = "어린이")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(adminCampaignService.getRejectedCampaigns(keyword, pageable));
     }
@@ -60,7 +60,7 @@ public class AdminCampaignController {
     @GetMapping("/approved")
     public ResponseEntity<Page<CampaignListResponseDTO>> getApprovedCampaigns(
             @Parameter(description = "캠페인 제목 키워드 검색", example = "어린이")
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(adminCampaignService.getApprovedCampaigns(keyword, pageable));
     }
