@@ -1,11 +1,14 @@
 package com.merge.final_project.user.users;
 
+import com.merge.final_project.blockchain.entity.Transaction;
+import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
 import com.merge.final_project.campaign.settlement.dto.SelectSettlementResponseDTO;
+import com.merge.final_project.donation.donations.Donation;
 import com.merge.final_project.donation.donations.DonationRepository;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
@@ -16,9 +19,13 @@ import com.merge.final_project.report.finalreport.dto.FinalReportMicroTrackingRe
 import com.merge.final_project.report.finalreport.entitiy.FinalReport;
 import com.merge.final_project.report.finalreport.repository.FinalReportRepository;
 import com.merge.final_project.user.users.dto.MicroTrackingDTO;
+import com.merge.final_project.user.users.dto.UserTransactionResponseDTO;
+import com.merge.final_project.user.users.dto.UserWalletResponseDTO;
 import com.merge.final_project.user.users.dto.login.UserLoginRequestDTO;
 import com.merge.final_project.user.users.dto.support.*;
 import com.merge.final_project.user.verify.VerificationService;
+import com.merge.final_project.wallet.entity.Wallet;
+import com.merge.final_project.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -41,6 +49,9 @@ public class UserServiceImpl implements UserService {
     private final SettlementRepository settlementRepository;
     private final CampaignRepository campaignRepository;
     private final FinalReportRepository finalReportRepository;
+    private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
+
     @Override
     @Transactional
     public String login(UserLoginRequestDTO dto) {
@@ -288,7 +299,63 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Override
+    public UserWalletResponseDTO showUserWalletInfo(Long userNo) {
 
+        //1. 지갑 조회해오기
+        Wallet wallet= walletRepository.findByUserNo(userNo)
+                .orElseThrow(()->new BusinessException(ErrorCode.USER_WALLET_NOT_FOUND));
+
+
+
+        return UserWalletResponseDTO.builder()
+                .walletNo(wallet.getWalletNo())
+                .walletAddress(wallet.getWalletAddress())
+                .walletStatus(wallet.getStatus())
+                .walletType(wallet.getWalletType())
+                .ownerNo(wallet.getOwnerNo())
+                .balance(wallet.getBalance())
+                .walletHash(wallet.getWalletHash())
+                .build();
+    }
+
+    @Override
+    public List<UserTransactionResponseDTO> showWalletTokenTrans(Long userNo) {
+
+        // 1. 해당 유저의 모든 기부 내역을 가져옵니다. (시작점)
+        List<Donation> donationList = donationRepository.findByUserNo(userNo);
+
+        if (donationList.isEmpty()) {
+            return List.of();
+        }
+
+        // 2. 각 기부 내역을 DTO로 변환합니다.
+        return donationList.stream()
+                .map(donation -> {
+                    // 기부 내역에 기록된 번호들로 상세 정보 조회
+                    // (엔티티 연관관계가 없으므로 직접 조회해야 합니다)
+                    Campaign campaign = campaignRepository.findById(donation.getCampaignNo())
+                            .orElse(null);
+
+                    Transaction transaction = null;
+                    if (donation.getTransactionNo() != null) {
+                        transaction = transactionRepository.findByTransactionNo(donation.getTransactionNo())
+                                .orElse(null);
+                    }
+
+                    // 3. DTO 빌드
+                    return UserTransactionResponseDTO.builder()
+                            .transaction(transaction) // 찾은 Transaction 엔티티 주입
+                            .campaignNo(donation.getCampaignNo())
+                            .userNo(donation.getUserNo())
+                            .title(campaign != null ? campaign.getTitle() : "정보 없음")
+                            .approvalStatus(campaign != null ? campaign.getApprovalStatus() : null)
+                            .build();
+                })
+                .toList();
+
+
+    }
 
 
 }

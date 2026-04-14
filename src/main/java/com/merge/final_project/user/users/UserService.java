@@ -1,8 +1,12 @@
 package com.merge.final_project.user.users;
 
 import com.merge.final_project.user.users.dto.MicroTrackingDTO;
+import com.merge.final_project.user.users.dto.UserTransactionResponseDTO;
+import com.merge.final_project.user.users.dto.UserWalletResponseDTO;
 import com.merge.final_project.user.users.dto.login.UserLoginRequestDTO;
 import com.merge.final_project.user.users.dto.support.*;
+
+import java.util.List;
 
 public interface UserService {
 
@@ -29,11 +33,8 @@ public interface UserService {
   //  List<MyDonationResponseDTO> getMyDonations(Long userNo);
 
     MicroTrackingDTO showMicroTracking(Long campaignNo);
-    //4. 마이페이지 -1. 개인정보 불러오기 :
-    //5. 마이페이지 -1. 계정별 기부 결과 불러오기:
-    //6. 기부내역 -1. 기부 증서 조회하기
-    //7. 마이페이지 -2. 찜 등록
-    //8. 마이페이지 -3. 찜 해제
-    //9. 마이페이지 4- 찜 조회
+    //4. 마이페이지 -1. 개인정보 불러오기 : 지갑
+    UserWalletResponseDTO showUserWalletInfo(Long userNo);
+    List<UserTransactionResponseDTO> showWalletTokenTrans(Long userNo);
 
 }

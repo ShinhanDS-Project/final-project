@@ -17,4 +17,7 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
 
     // 지갑 주소로 단일 지갑 조회
     Optional<Wallet> findByWalletAddress(String walletAddress);
+
+    Optional<Wallet> findByUserNo(Long userNo);
+
 }

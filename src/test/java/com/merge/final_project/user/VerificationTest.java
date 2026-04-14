@@ -50,7 +50,7 @@ class VerificationTest {
         assertTrue(response.getBody().isAvailable());
         assertEquals("인증번호가 발송되었습니다. 이메일을 확인해주세요", response.getBody().getMessage());
 
-        verify(verificationService, times(1)).sendVerificationCode("test@gmail.com");
+        verify(verificationService, times(1)).sendVerificationCode(any(UserVerifyRequestDTO.class));
     }
 
     @Test
@@ -70,7 +70,7 @@ class VerificationTest {
         assertEquals("이메일 형식이 올바르지 않습니다.", response.getBody().getMessage());
 
         verify(userSignUpRepository, never()).existsByEmailAndLoginType(anyString(), eq(LoginType.LOCAL));
-        verify(verificationService, never()).sendVerificationCode(anyString());
+        verify(verificationService, never()).sendVerificationCode(any(UserVerifyRequestDTO.class));
     }
 
     @Test
@@ -92,7 +92,7 @@ class VerificationTest {
         assertFalse(response.getBody().isAvailable());
         assertEquals("이미 가입된 이메일입니다.", response.getBody().getMessage());
 
-        verify(verificationService, never()).sendVerificationCode(anyString());
+        verify(verificationService, never()).sendVerificationCode(any(UserVerifyRequestDTO.class));
     }
 
     @Test
@@ -105,7 +105,7 @@ class VerificationTest {
                 .thenReturn(false);
 
         doThrow(new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다."))
-                .when(verificationService).sendVerificationCode("retry@gmail.com");
+                .when(verificationService).sendVerificationCode(any(UserVerifyRequestDTO.class));
 
         // when
         ResponseEntity<UserVerifyResponseDTO> response = verificationController.send(request);
@@ -117,7 +117,7 @@ class VerificationTest {
         assertTrue(response.getBody().isAvailable());
         assertEquals("인증번호는 1분마다 재요청할 수 있습니다.", response.getBody().getMessage());
 
-        verify(verificationService, times(1)).sendVerificationCode("retry@gmail.com");
+        verify(verificationService, times(1)).sendVerificationCode(any(UserVerifyRequestDTO.class));
     }
 
     @Test
@@ -130,7 +130,7 @@ class VerificationTest {
                 .thenReturn(false);
 
         doThrow(new IllegalStateException("인증번호 요청 횟수 (5회)를 초과했습니다. 나중에 다시 시도해주세요."))
-                .when(verificationService).sendVerificationCode("limit@gmail.com");
+                .when(verificationService).sendVerificationCode(any(UserVerifyRequestDTO.class));
 
         // when
         ResponseEntity<UserVerifyResponseDTO> response = verificationController.send(request);
@@ -159,7 +159,7 @@ class VerificationTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isSuccess());
-        verify(verificationService, times(1)).sendVerificationCode("same@gmail.com");
+        verify(verificationService, times(1)).sendVerificationCode(any(UserVerifyRequestDTO.class));
     }
 
 //    @Test

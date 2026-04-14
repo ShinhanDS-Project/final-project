@@ -113,10 +113,10 @@ class AdminDashboardServiceTest {
     @DisplayName("카테고리별_비중_정상조회")
     void 카테고리별_비중_정상조회() {
         when(campaignRepository.countCampaignByCategory(ApprovalStatus.APPROVED))
-                .thenReturn((List<Object[]>) Arrays.asList(new Object[]{"CHILD_YOUTH", 10L}));
+                .thenReturn(java.util.Collections.singletonList(new Object[]{"CHILD_YOUTH", 10L}));
 
         when(paymentRepository.findDonationAmountByCategory())
-                .thenReturn((List<Object[]>) Arrays.asList(new Object[]{"CHILD_YOUTH", new BigDecimal("200000")}));
+                .thenReturn(java.util.Collections.singletonList(new Object[]{"CHILD_YOUTH", new BigDecimal("200000")}));
 
         List<CategoryRatioDTO> result = adminDashboardService.getCategoryRatio();
 

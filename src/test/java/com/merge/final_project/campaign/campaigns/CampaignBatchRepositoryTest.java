@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,7 +44,7 @@ class CampaignBatchRepositoryTest {
                 .approvalStatus(ApprovalStatus.APPROVED)
                 .campaignStatus(CampaignStatus.SETTLED)
                 .targetAmount(1000000L)
-                .currentAmount(1000000L)
+                .currentAmount(new BigDecimal("1000000"))
                 .usageEndAt(usageEndAt)
                 .build();
     }
@@ -133,7 +134,7 @@ class CampaignBatchRepositoryTest {
                 .approvalStatus(ApprovalStatus.APPROVED)
                 .campaignStatus(CampaignStatus.ACTIVE)  // ACTIVE
                 .targetAmount(1000000L)
-                .currentAmount(0L)
+                .currentAmount(BigDecimal.ZERO)
                 .usageEndAt(LocalDate.now().minusDays(10).atStartOfDay())
                 .build();
         campaignRepository.save(active);

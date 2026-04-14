@@ -66,7 +66,7 @@ class CampaignListServiceTest {
             .title("긴급 구호 캠페인")
             .targetAmount(1_000_000L)
             .currentAmount(BigDecimal.valueOf(300_000L))
-            .category("재난")
+            .category(com.merge.final_project.campaign.campaigns.CampaignCategory.ETC)
             .endAt(LocalDateTime.of(2026, 4, 10, 0, 0))
             .foundationNo(1L)
             .campaignStatus(CampaignStatus.RECRUITING)
@@ -78,7 +78,7 @@ class CampaignListServiceTest {
             .title("유기견 보호 캠페인")
             .targetAmount(2_000_000L)
             .currentAmount(BigDecimal.valueOf(700_000L))
-            .category("동물")
+            .category(com.merge.final_project.campaign.campaigns.CampaignCategory.ANIMAL)
             .endAt(LocalDateTime.of(2026, 4, 12, 0, 0))
             .foundationNo(1L)
             .campaignStatus(CampaignStatus.RECRUITING)
@@ -128,7 +128,7 @@ class CampaignListServiceTest {
             ));
 
         // 3. When: 실제 서비스의 목록 조회 기능 실행
-        List<CampaignListResponseDTO> result = campaignService.getCampaignList("deadline");
+        List<CampaignListResponseDTO> result = campaignService.getCampaignList("deadline", null, null, null);
 
         // 4. Then: 결과 검증 (Assertion)
         assertThat(result).hasSize(2); // 두 개의 캠페인이 반환되었는가
@@ -156,7 +156,7 @@ class CampaignListServiceTest {
             .title("숲 조성 사업")
             .targetAmount(3_000_000L)
             .currentAmount(BigDecimal.valueOf(2_500_000L))
-            .category("환경")
+            .category(com.merge.final_project.campaign.campaigns.CampaignCategory.ENVIRONMENT)
             .endAt(LocalDateTime.of(2026, 4, 20, 0, 0))
             .foundationNo(2L)
             .campaignStatus(CampaignStatus.RECRUITING)
@@ -181,7 +181,7 @@ class CampaignListServiceTest {
             ));
 
         // 3. When: 참여도순 정렬 파라미터를 넣어 기능 실행
-        List<CampaignListResponseDTO> result = campaignService.getCampaignList("participation");
+        List<CampaignListResponseDTO> result = campaignService.getCampaignList("participation", null, null, null);
 
         // 4. Then: 결과 검증
         assertThat(result).hasSize(1);

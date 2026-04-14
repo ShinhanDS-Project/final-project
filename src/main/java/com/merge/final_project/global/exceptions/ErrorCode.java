@@ -76,6 +76,9 @@ public enum ErrorCode {
     // 알림
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001", "존재하지 않는 알림입니다."),
     NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근 권한이 없습니다."),
+
+    //월렛
+    USER_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND,"WALLET_001","해당 유저의 지갑을 찾을 수 없습니다."),
     //정산
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"SETTLEMENT_001","존재하지않는 정산입니다.");
 

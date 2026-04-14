@@ -85,7 +85,7 @@ class CampaignServiceImplTest {
         dto.setTitle(campaignTitle);
         dto.setEntryCode(BENEFICIARY_ENTRY_CODE);
         dto.setDescription("올드페리도넛 먹은날");
-        dto.setCategory("테스트");
+        dto.setCategory(com.merge.final_project.campaign.campaigns.CampaignCategory.ETC);
         dto.setTargetAmount(3_000_000L);
         dto.setStartAt(LocalDateTime.of(2026, 4, 10, 10, 0));
         dto.setEndAt(LocalDateTime.of(2026, 5, 10, 18, 0));
