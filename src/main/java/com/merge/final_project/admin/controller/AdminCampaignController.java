@@ -5,6 +5,8 @@ import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,22 +17,28 @@ public class AdminCampaignController {
 
     private final AdminCampaignService adminCampaignService;
 
-    // 승인 대기 캠페인 목록
+    // 승인 대기 캠페인 목록 — 키워드(제목) 검색 + 페이징 (기본: 최신순)
     @GetMapping("/pending")
-    public ResponseEntity<Page<CampaignListResponseDTO>> getPendingCampaigns(Pageable pageable) {
-        return ResponseEntity.ok(adminCampaignService.getPendingCampaigns(pageable));
+    public ResponseEntity<Page<CampaignListResponseDTO>> getPendingCampaigns(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(adminCampaignService.getPendingCampaigns(keyword, pageable));
     }
 
-    // 반려된 캠페인 목록
+    // 반려된 캠페인 목록 — 키워드(제목) 검색 + 페이징 (기본: 최신순)
     @GetMapping("/rejected")
-    public ResponseEntity<Page<CampaignListResponseDTO>> getRejectedCampaigns(Pageable pageable) {
-        return ResponseEntity.ok(adminCampaignService.getRejectedCampaigns(pageable));
+    public ResponseEntity<Page<CampaignListResponseDTO>> getRejectedCampaigns(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(adminCampaignService.getRejectedCampaigns(keyword, pageable));
     }
 
-    // 승인된 캠페인 목록 => 승인 됐으니까 진행 중인 애들을 찾아옴.
+    // 승인된 캠페인 목록 — 키워드(제목) 검색 + 페이징 (기본: 최신순)
     @GetMapping("/approved")
-    public ResponseEntity<Page<CampaignListResponseDTO>> getApprovedCampaigns(Pageable pageable) {
-        return ResponseEntity.ok(adminCampaignService.getApprovedCampaigns(pageable));
+    public ResponseEntity<Page<CampaignListResponseDTO>> getApprovedCampaigns(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(adminCampaignService.getApprovedCampaigns(keyword, pageable));
     }
 
     // 캠페인 승인

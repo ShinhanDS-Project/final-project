@@ -281,7 +281,7 @@ public class  FoundationServiceImpl implements FoundationService {
     @Override
     @Transactional(readOnly = true)
     public Page<FoundationListResponseDTO> getFoundationApplicationListWithFilter(String keyword, Pageable pageable) {
-        return foundationRepository.findApplicationsWithFilter(keyword, pageable)
+        return foundationRepository.findApplicationsWithFilter(keyword != null ? keyword : "", pageable)
                 .map(FoundationListResponseDTO::from);
     }
 
@@ -289,7 +289,7 @@ public class  FoundationServiceImpl implements FoundationService {
     @Override
     @Transactional(readOnly = true)
     public Page<FoundationListResponseDTO> getRejectedFoundationListWithFilter(String keyword, Pageable pageable) {
-        return foundationRepository.findRejectedWithFilter(ReviewStatus.REJECTED, keyword, pageable)
+        return foundationRepository.findRejectedWithFilter(ReviewStatus.REJECTED, keyword != null ? keyword : "", pageable)
                 .map(FoundationListResponseDTO::from);
     }
 
@@ -297,7 +297,7 @@ public class  FoundationServiceImpl implements FoundationService {
     @Override
     @Transactional(readOnly = true)
     public Page<FoundationListResponseDTO> getPublicFoundationList(String keyword, Pageable pageable) {
-        return foundationRepository.findApprovedWithFilter(AccountStatus.ACTIVE, keyword, pageable)
+        return foundationRepository.findApprovedWithFilter(AccountStatus.ACTIVE, keyword != null ? keyword : "", pageable)
                 .map(FoundationListResponseDTO::from);
     }
 
@@ -305,7 +305,7 @@ public class  FoundationServiceImpl implements FoundationService {
     @Override
     @Transactional(readOnly = true)
     public Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(AccountStatus accountStatus, String keyword, Pageable pageable) {
-        return foundationRepository.findApprovedWithFilter(accountStatus, keyword, pageable)
+        return foundationRepository.findApprovedWithFilter(accountStatus, keyword != null ? keyword : "", pageable)
                 .map(FoundationListResponseDTO::from);
     }
 

@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -36,11 +38,11 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.apply(requestDTO, profileImage));
     }
 
-    // 승인 완료된 기부단체 리스트 조회 (사용자용 — 키워드 검색, 페이징, 정렬)
+    // 승인 완료된 기부단체 리스트 조회 (사용자용 — 키워드 검색, 페이징, 기본: 최신순)
     @GetMapping("/all")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
             @RequestParam(required = false) String keyword,
-            Pageable pageable) {
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getPublicFoundationList(keyword, pageable));
     }
 
@@ -83,22 +85,22 @@ public class FoundationController {
         return ResponseEntity.ok().build();
     }
 
-    //기부단체가 본인 캠페인 리스트 조회
+    //기부단체가 본인 캠페인 리스트 조회 (기본: 최신순)
     @GetMapping("/me/campaigns")
     public ResponseEntity<Page<CampaignListResponseDTO>> getMyCampaigns(
             Authentication authentication,
-            Pageable pageable) {
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyCampaigns(foundationNo, pageable));
     }
 
-    // 기부단체 마이페이지 — 상태 필터 + 키워드 검색 캠페인 목록
+    // 기부단체 마이페이지 — 상태 필터 + 키워드 검색 캠페인 목록 (기본: 최신순)
     @GetMapping("/me/campaigns/filter")
     public ResponseEntity<Page<FoundationMyCampaignDTO>> getMyCampaignsWithFilter(
             Authentication authentication,
             @RequestParam(required = false) CampaignStatus campaignStatus,
             @RequestParam(required = false) String keyword,
-            Pageable pageable) {
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyCampaignsWithFilter(foundationNo, campaignStatus, keyword, pageable));
     }
@@ -117,20 +119,20 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.getMyWalletInfo(foundationNo));
     }
 
-    // 기부단체 마이페이지 — 정산 내역
+    // 기부단체 마이페이지 — 정산 내역 (기본: 최신순)
     @GetMapping("/me/settlements")
     public ResponseEntity<Page<FoundationSettlementDTO>> getMySettlements(
             Authentication authentication,
-            Pageable pageable) {
+            @PageableDefault(sort = "settledAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMySettlements(foundationNo, pageable));
     }
 
-    // 기부단체 마이페이지 — 환금(현금화) 내역
+    // 기부단체 마이페이지 — 환금(현금화) 내역 (기본: 최신순)
     @GetMapping("/me/redemptions")
     public ResponseEntity<Page<FoundationRedemptionDTO>> getMyRedemptions(
             Authentication authentication,
-            Pageable pageable) {
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyRedemptions(foundationNo, pageable));
     }

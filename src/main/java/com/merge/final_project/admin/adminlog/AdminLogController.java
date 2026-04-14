@@ -19,16 +19,17 @@ public class AdminLogController {
 
     private final AdminLogService adminLogService;
 
-    // 관리자 활동 로그 조회 (actionType, targetType, 날짜 범위 필터링)
+    // 관리자 활동 로그 조회 (actionType, targetType, 날짜 범위, 키워드(설명) 필터링)
     @GetMapping
     public ResponseEntity<Page<AdminLogResponseDTO>> getLogs(
             @RequestParam(required = false) ActionType actionType,
             @RequestParam(required = false) TargetType targetType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) String keyword,
             Pageable pageable) {
         return ResponseEntity.ok(
-                adminLogService.getLogsWithFilter(actionType, targetType, startDate, endDate, pageable)
+                adminLogService.getLogsWithFilter(actionType, targetType, startDate, endDate, keyword, pageable)
         );
     }
 }

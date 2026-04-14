@@ -6,6 +6,7 @@ import com.merge.final_project.notification.email.GmailService;
 import com.merge.final_project.notification.email.event.*;
 import com.merge.final_project.notification.email.history.EmailSendList;
 import com.merge.final_project.notification.email.history.EmailSendListRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +29,14 @@ class FoundationEventListenerTest {
 
     @Mock
     private EmailSendListRepository emailSendListRepository;
+
+    @BeforeEach
+    void setUp() {
+        // save()가 전달받은 객체를 그대로 반환하도록 stubbing
+        // → record가 null이 되지 않아 markSent()/markFailed() 호출 가능
+        when(emailSendListRepository.save(any(EmailSendList.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+    }
 
     @Test
     @DisplayName("승인 이벤트 발생 시 메일이 발송되고 ACCOUNT_APPROVED 내역이 저장된다")
@@ -91,15 +100,18 @@ class FoundationEventListenerTest {
     }
 
     @Test
-    @DisplayName("메일 발송 실패 시 내역이 저장되지 않는다")
-    void 메일_발송_실패_내역미저장() {
+    @DisplayName("메일 발송 실패 시 내역은 저장되고 상태가 FAILED로 기록된다")
+    void 메일_발송_실패시_FAILED로_저장() {
         FoundationApprovedEvent event = new FoundationApprovedEvent(1L, "test@test.com", "테스트단체", "tempPw");
         doThrow(new RuntimeException("메일 서버 오류")).when(gmailService)
                 .sendSignupMail(anyString(), anyString(), anyString());
 
-        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
-                () -> foundationEventListener.handleApproved(event));
+        // 예외는 trySend() 내부에서 catch되므로 외부로 전파되지 않음
+        foundationEventListener.handleApproved(event);
 
-        verify(emailSendListRepository, never()).save(any());
+        // 발송 전 PENDING으로 save → 실패 후 markFailed()로 FAILED 상태로 변경
+        ArgumentCaptor<EmailSendList> captor = ArgumentCaptor.forClass(EmailSendList.class);
+        verify(emailSendListRepository).save(captor.capture());
+        assertThat(captor.getValue().getEmailStatus()).isEqualTo(EmailStatus.FAILED);
     }
 }

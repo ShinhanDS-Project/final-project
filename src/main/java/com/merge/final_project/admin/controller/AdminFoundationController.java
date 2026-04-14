@@ -6,6 +6,8 @@ import com.merge.final_project.org.dto.FoundationListResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,24 +23,24 @@ public class AdminFoundationController {
     @GetMapping("/applications")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApplicationList(
             @RequestParam(required = false) String keyword,
-            Pageable pageable) {
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getFoundationApplicationListWithFilter(keyword, pageable));
     }
 
-    // 반려된 기부단체 리스트 조회 — 키워드 검색 + 페이징 + 정렬
+    // 반려된 기부단체 리스트 조회 — 키워드 검색 + 페이징 (기본: 최신순)
     @GetMapping("/rejected")
     public ResponseEntity<Page<FoundationListResponseDTO>> getRejectedList(
             @RequestParam(required = false) String keyword,
-            Pageable pageable) {
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getRejectedFoundationListWithFilter(keyword, pageable));
     }
 
-    // [가빈] 승인된 기부단체 목록 조회 — 상태 필터 + 키워드 검색 + 페이징
+    // [가빈] 승인된 기부단체 목록 조회 — 상태 필터 + 키워드 검색 + 페이징 (기본: 최신순)
     @GetMapping("/approved")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
             @RequestParam(required = false) AccountStatus accountStatus,
             @RequestParam(required = false) String keyword,
-            Pageable pageable) {
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getApprovedFoundationListForAdmin(accountStatus, keyword, pageable));
     }
 
