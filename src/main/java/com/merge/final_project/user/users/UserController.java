@@ -1,14 +1,22 @@
 package com.merge.final_project.user.users;
 
+import com.merge.final_project.blockchain.entity.Transaction;
+
+import com.merge.final_project.blockchain.service.TransactionService;
 import com.merge.final_project.donation.donations.DonationService;
 import com.merge.final_project.user.users.dto.MicroTrackingDTO;
+import com.merge.final_project.user.users.dto.UserTransactionResponseDTO;
+import com.merge.final_project.user.users.dto.UserWalletResponseDTO;
 import com.merge.final_project.user.users.dto.support.*;
+import com.merge.final_project.wallet.service.WalletService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @io.swagger.v3.oas.annotations.tags.Tag(name = "일반 사용자 마이페이지", description = "사용자 마이페이지 부가기능 API")
 @RestController
@@ -19,6 +27,7 @@ public class UserController {
     private UserService userService;
     @Autowired
     private DonationService donationService;
+
 
     // 이메일 찾기
     @PostMapping("/email")
@@ -79,17 +88,21 @@ public class UserController {
         return ResponseEntity.ok(microTracking);
 
     }
+    // 나의 지갑 조회하기
+    @GetMapping("/user/wallet")
+    public ResponseEntity<UserWalletResponseDTO> showUserWallet(Authentication authentication){
+        Long userNo = (Long) authentication.getDetails();
+        UserWalletResponseDTO dto=userService.showUserWalletInfo(userNo);
+        return ResponseEntity.ok(dto);
+    }
 
+    //나의 지갑 기준으로 토큰 거래 내역 조회해오기
+    @GetMapping("/user/wallet/token/transactions")
+    public ResponseEntity<List<UserTransactionResponseDTO>> showUserTransactional(Authentication authentication, Long walletNo){
+       Long userNo = (Long) authentication.getDetails();
+       List<UserTransactionResponseDTO> transactionDTO=userService.showWalletTokenTrans(userNo);
+        return ResponseEntity.ok(transactionDTO);
+    }
 
-//    // 증서
-//    @GetMapping("/certificates/{donationNo}")
-//    public ResponseEntity<DonationCertificateResponseDTO> getDonationCertificate(
-//            Authentication authentication,
-//            @PathVariable Long donationNo
-//    ) {
-//        Long userNo = (Long) authentication.getDetails();
-//        DonationCertificateResponseDTO response = userService.getDonationCertificate(userNo, donationNo);
-//        return ResponseEntity.ok(response);
-//    }
 
 }

@@ -1,5 +1,6 @@
 package com.merge.final_project.admin.controller;
 
+import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.FoundationService;
 import com.merge.final_project.org.ReviewStatus;
 import com.merge.final_project.org.dto.FoundationListResponseDTO;

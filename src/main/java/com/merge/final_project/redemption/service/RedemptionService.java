@@ -4,9 +4,9 @@ import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
-import com.merge.final_project.blockchain.security.WalletCryptoService;
 import com.merge.final_project.blockchain.service.BlockchainService;
 import com.merge.final_project.blockchain.service.TokenAmountConverter;
+import com.merge.final_project.blockchain.security.WalletPrivateKeyResolver;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
@@ -44,7 +44,7 @@ public class RedemptionService {
     private final RedemptionCommandService redemptionCommandService;
     private final BlockchainService blockchainService;
     private final TransactionRepository transactionRepository;
-    private final WalletCryptoService walletCryptoService;
+    private final WalletPrivateKeyResolver walletPrivateKeyResolver;
     private final TokenAmountConverter tokenAmountConverter;
 
     @Value("${blockchain.wallet.hot-address}")
@@ -100,7 +100,7 @@ public class RedemptionService {
         try {
             // 요청자 지갑 개인키로 환급 컨트랙트를 호출한다.
             receipt = blockchainService.redeemOnChain(
-                    resolveWalletPrivateKey(requesterWallet),
+                    walletPrivateKeyResolver.resolveForWallet(requesterWallet),
                     tokenAmountConverter.toOnChainAmount(request.getAmount()),
                     BigInteger.valueOf(redemption.getRedemptionNo())
             );
@@ -265,7 +265,7 @@ public class RedemptionService {
 
     // 환급 요청 전에 최소한의 로컬 지갑 조건을 검증한다.
     private void validateWalletForRedemption(Wallet wallet, Long amount) {
-        if (wallet.getKey() == null || wallet.getKey().getPrivateKey() == null || wallet.getKey().getPrivateKey().isBlank()) {
+        if (wallet.getKey() == null || wallet.getKey().getKeyNo() == null) {
             throw new IllegalArgumentException("requester private key not found");
         }
         if (wallet.getBalance() == null) {
@@ -336,23 +336,6 @@ public class RedemptionService {
         }
         if (onChainBalance.compareTo(BigDecimal.valueOf(amount)) < 0) {
             throw new IllegalArgumentException("insufficient on-chain token balance");
-        }
-    }
-
-    /**
-     * 요청자 지갑의 private key를 복호화한다.
-     * 과거 평문 데이터와의 호환을 위해 복호화 실패 시 raw 문자열을 그대로 사용한다.
-     */
-    private String resolveWalletPrivateKey(Wallet wallet) {
-        String storedPrivateKey = wallet.getKey().getPrivateKey();
-        if (storedPrivateKey == null || storedPrivateKey.isBlank()) {
-            throw new IllegalArgumentException("requester private key not found");
-        }
-
-        try {
-            return walletCryptoService.decryptPrivateKey(storedPrivateKey);
-        } catch (RuntimeException e) {
-            return storedPrivateKey;
         }
     }
 

@@ -1,12 +1,10 @@
 package com.merge.final_project.blockchain.service;
 
-import com.merge.final_project.blockchain.entity.Key;
 import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
-import com.merge.final_project.blockchain.repository.KeyRepository;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
-import com.merge.final_project.blockchain.security.WalletCryptoService;
+import com.merge.final_project.blockchain.security.WalletPrivateKeyResolver;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
@@ -42,13 +40,12 @@ public class SettlementTransactionService {
     private final WalletRepository walletRepository;
     private final FoundationRepository foundationRepository;
     private final BeneficiaryRepository beneficiaryRepository;
-    private final KeyRepository keyRepository;
     private final BlockchainService blockchainService;
     private final TransactionRepository transactionRepository;
     private final SettlementCommandService settlementCommandService;
     private final SettlementRepository settlementRepository;
     private final CampaignRepository campaignRepository;
-    private final WalletCryptoService walletCryptoService;
+    private final WalletPrivateKeyResolver walletPrivateKeyResolver;
     private final TokenAmountConverter tokenAmountConverter;
 
     /**
@@ -141,11 +138,9 @@ public class SettlementTransactionService {
         }
 
         // 캠페인 지갑과 연결된 개인키가 있어야 한다.
-        if (campaignWallet.getKey() == null) {
+        if (campaignWallet.getKey() == null || campaignWallet.getKey().getKeyNo() == null) {
             throw new IllegalArgumentException("campaign wallet key not found");
         }
-        Key key = keyRepository.findById(campaignWallet.getKey().getKeyNo())
-                .orElseThrow(() -> new IllegalArgumentException("campaign private key not found"));
         // 정산 총액은 현재 캠페인 지갑 잔액이다.
         BigDecimal total = campaignWallet.getBalance();
 
@@ -191,7 +186,7 @@ public class SettlementTransactionService {
             // 캠페인 지갑에서 기부단체/수혜자에게 토큰을 분배하는
             // 실제 온체인 정산 트랜잭션 실행
             receipt = blockchainService.settleCampaignOnChain(
-                    resolvePrivateKey(key),
+                    walletPrivateKeyResolver.resolveForWallet(campaignWallet),
                     foundationWallet.getWalletAddress(),
                     beneficiaryWallet.getWalletAddress(),
                     tokenAmountConverter.toOnChainAmount(total),
@@ -278,27 +273,6 @@ public class SettlementTransactionService {
             settlementCommandService.markCompleted(settlement.getSettlementNo());
         } catch (Exception e) {
             throw new RuntimeException("failed to finalize settlement", e);
-        }
-    }
-
-    /**
-     * key 테이블의 private key를 읽어 복호화한다.
-     * 과거 평문 데이터와의 호환을 위해 복호화 실패 시 raw 문자열을 그대로 사용한다.
-     */
-    private String resolvePrivateKey(Key key) {
-        String storedPrivateKey = key.getPrivateKey();
-        // 개인키가 없으면 온체인 서명이 불가능하다.
-        if (storedPrivateKey == null || storedPrivateKey.isBlank()) {
-            throw new IllegalStateException("private key is empty. keyNo=" + key.getKeyNo());
-        }
-
-        try {
-            // 암호화된 값이면 복호화해서 사용
-            return walletCryptoService.decryptPrivateKey(storedPrivateKey);
-        } catch (RuntimeException e) {
-            // 과거 평문 저장 데이터 호환을 위해 원본 문자열 그대로 사용
-            log.warn("keyNo={} is not decryptable payload. fallback to raw key string.", key.getKeyNo());
-            return storedPrivateKey;
         }
     }
 
