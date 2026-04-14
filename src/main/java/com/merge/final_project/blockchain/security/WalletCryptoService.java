@@ -41,10 +41,17 @@ public class WalletCryptoService {
             ECKeyPair keyPair = ECKeyPair.create(privateKeyBytes);
             String address = "0x" + Keys.getAddress(keyPair.getPublicKey());
 
-            return new WalletCredentials(address, encryptToBase64(privateKeyHex));
+            return new WalletCredentials(address, encryptPrivateKey(privateKeyHex));
         } catch (Exception e) {
             throw new IllegalStateException("wallet key generation failed", e);
         }
+    }
+
+    public String encryptPrivateKey(String plainPrivateKey) {
+        if (plainPrivateKey == null || plainPrivateKey.isBlank()) {
+            throw new IllegalStateException("wallet private key is empty");
+        }
+        return encryptToBase64(plainPrivateKey);
     }
 
     /**

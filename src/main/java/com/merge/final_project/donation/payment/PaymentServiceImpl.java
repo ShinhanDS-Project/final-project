@@ -1,10 +1,12 @@
 package com.merge.final_project.donation.payment;
 
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.blockchain.payment.event.PaymentConfirmedEvent;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.donation.donations.Donation;
 import com.merge.final_project.donation.donations.DonationRepository;
+import com.merge.final_project.donation.donations.DonationTokenStatus;
 import com.merge.final_project.donation.payment.dto.*;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
@@ -16,6 +18,7 @@ import com.merge.final_project.user.users.UserRepository;
 import com.merge.final_project.wallet.repository.WalletRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,6 +28,13 @@ import java.util.UUID;
 
 @Transactional
 @Service
+/**
+ * 결제 도메인 서비스 구현체.
+ *
+ * 선우 작성 메모:
+ * 이 클래스는 결제 확정/검증과 donation 생성까지만 책임지고,
+ * 블록체인 전송(토큰 충전/기부)은 이벤트 발행으로 분리한다.
+ */
 public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
@@ -42,6 +52,8 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private WalletRepository walletRepository;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     public PaymentReadyResponse paymentReady(Long userNo, PaymentReadyRequest dto) {
@@ -201,6 +213,9 @@ public class PaymentServiceImpl implements PaymentService {
 
 
             //5. 기부 생성
+            // 선우 작성:
+            // 결제 성공 직후 donation row를 PENDING으로 만들고,
+            // 실제 온체인 처리(충전/기부 전송)는 AFTER_COMMIT 이벤트로 비동기 위임한다.
             Donation donation = Donation.builder()
                     .paymentNo(payment.getPaymentNo())
                     .userNo(userNo)
@@ -208,6 +223,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .donationAmount(paymentBody.getTotalAmount())
                     .donatedAt(LocalDateTime.now())
                     .isAnonymous(payment.getIsAnonymous())
+                    .tokenStatus(DonationTokenStatus.PENDING.name())
                     // .donorWalletNo(user.getWallet().getWalletNo())
                     // .campaignWalletNo(campaign.getWalletNo())
                     //.keyNo()
@@ -216,6 +232,10 @@ public class PaymentServiceImpl implements PaymentService {
             donationRepository.save(donation);
             //6. 캠페인 현재 모금액 합산
             campaign.addCurrentAmount(paymentBody.getTotalAmount());
+            // 선우 작성:
+            // 이벤트는 트랜잭션 커밋 이후에 수신되므로
+            // 결제/기부 DB 상태가 확정된 데이터만 블록체인 후속 처리로 전달된다.
+            eventPublisher.publishEvent(new PaymentConfirmedEvent(donation.getDonationNo()));
 
             return PaymentConfirmResponse.builder()
                     .paymentNo(payment.getPaymentNo())
