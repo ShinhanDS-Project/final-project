@@ -60,9 +60,9 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         //4. 이상한 금액이 나오는 경우  (음수, 0원 막기 )
-         if (dto.getAmount() == null || dto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-             throw new BusinessException(ErrorCode.INVALID_DONATION_AMOUNT);
-         }
+        if (dto.getAmount() == null || dto.getAmount().compareTo(new BigDecimal("100")) < 0) {
+            throw new BusinessException(ErrorCode.INVALID_DONATION_AMOUNT);
+        }
 
         String orderId = "DONATION-" +  UUID.randomUUID() ;
         //2. 결제 대기 (READY) 데이터 생성
