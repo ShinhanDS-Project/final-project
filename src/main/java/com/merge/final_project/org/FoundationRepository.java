@@ -36,10 +36,10 @@ public interface FoundationRepository extends JpaRepository<Foundation, Long> {
     @Query("SELECT f FROM Foundation f WHERE f.reviewStatus = 'APPROVED' AND (:accountStatus IS NULL OR f.accountStatus = :accountStatus) AND (:keyword = '' OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Foundation> findApprovedWithFilter(@Param("accountStatus") AccountStatus accountStatus, @Param("keyword") String keyword, Pageable pageable);
 
-    // [가빈] 관리자 신청 목록 — accountStatus = PRE_REGISTERED + 키워드 검색 (단체명, 대표자명)
+    // [가빈] 관리자 신청 목록 — accountStatus = PRE_REGISTERED + reviewStatus 필터 + 키워드 검색 (단체명, 대표자명)
     // keyword null → "" 변환 후 호출 (IS NULL 대신 = '' 사용: PostgreSQL lower(bytea) 오류 방지)
-    @Query("SELECT f FROM Foundation f WHERE f.accountStatus = 'PRE_REGISTERED' AND (:keyword = '' OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Foundation> findApplicationsWithFilter(@Param("keyword") String keyword, Pageable pageable);
+    @Query("SELECT f FROM Foundation f WHERE f.accountStatus = 'PRE_REGISTERED' AND (:reviewStatus IS NULL OR f.reviewStatus = :reviewStatus) AND (:keyword = '' OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Foundation> findApplicationsWithFilter(@Param("reviewStatus") ReviewStatus reviewStatus, @Param("keyword") String keyword, Pageable pageable);
 
     // [가빈] 관리자 반려 목록 — 키워드 검색 (단체명, 대표자명)
     // keyword null → "" 변환 후 호출 (IS NULL 대신 = '' 사용: PostgreSQL lower(bytea) 오류 방지)

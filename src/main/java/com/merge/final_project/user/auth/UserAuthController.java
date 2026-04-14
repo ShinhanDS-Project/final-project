@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "일반 사용자 인증", description = "일반 사용자 로그인·로그아웃·소셜 정보 조회 API")
 @RestController
 @RequestMapping("/api/auth")
 public class UserAuthController {

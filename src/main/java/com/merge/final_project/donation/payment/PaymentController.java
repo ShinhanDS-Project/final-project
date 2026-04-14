@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "결제", description = "기부 결제(카카오페이 등) 준비·확인 API")
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {

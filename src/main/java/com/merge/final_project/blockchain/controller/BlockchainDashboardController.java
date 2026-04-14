@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "블록체인 대시보드", description = "블록체인 거래 내역·지갑·요약 조회 API (공개)")
 @RestController
 @RequestMapping("/api/blockchain")
 @RequiredArgsConstructor

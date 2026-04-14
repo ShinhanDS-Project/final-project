@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "정산 테스트", description = "정산 배치 수동 실행 API (개발·테스트용)")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/test/settlement")

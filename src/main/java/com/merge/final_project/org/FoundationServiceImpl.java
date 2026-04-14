@@ -277,11 +277,11 @@ public class  FoundationServiceImpl implements FoundationService {
         // 추후 시간 남으면 블랙리스트 구현해서 체크하는 서비스로 확장 예정
     }
 
-    // [가빈] 관리자 신청 목록 — accountStatus = PRE_REGISTERED + 키워드 검색
+    // [가빈] 관리자 신청 목록 — accountStatus = PRE_REGISTERED + reviewStatus 필터 + 키워드 검색
     @Override
     @Transactional(readOnly = true)
-    public Page<FoundationListResponseDTO> getFoundationApplicationListWithFilter(String keyword, Pageable pageable) {
-        return foundationRepository.findApplicationsWithFilter(keyword != null ? keyword : "", pageable)
+    public Page<FoundationListResponseDTO> getFoundationApplicationListWithFilter(ReviewStatus reviewStatus, String keyword, Pageable pageable) {
+        return foundationRepository.findApplicationsWithFilter(reviewStatus, keyword != null ? keyword : "", pageable)
                 .map(FoundationListResponseDTO::from);
     }
 
@@ -301,11 +301,11 @@ public class  FoundationServiceImpl implements FoundationService {
                 .map(FoundationListResponseDTO::from);
     }
 
-    // [가빈] 관리자 승인 단체 목록 — 상태 필터 + 키워드 검색 + 페이징
+    // [가빈] 관리자 승인 단체 목록 — 키워드 검색 + 페이징 (accountStatus 필터 제거)
     @Override
     @Transactional(readOnly = true)
-    public Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(AccountStatus accountStatus, String keyword, Pageable pageable) {
-        return foundationRepository.findApprovedWithFilter(accountStatus, keyword != null ? keyword : "", pageable)
+    public Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(String keyword, Pageable pageable) {
+        return foundationRepository.findApprovedWithFilter(null, keyword != null ? keyword : "", pageable)
                 .map(FoundationListResponseDTO::from);
     }
 

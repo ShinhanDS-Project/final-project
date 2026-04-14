@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "관리자 환금 관리", description = "관리자 토큰 환금(현금화) 처리 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/redemptions")

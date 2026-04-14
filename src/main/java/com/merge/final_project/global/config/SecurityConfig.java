@@ -183,7 +183,10 @@ public class SecurityConfig {
                                 "/oauth2/**",
                                 "/login/**",
                                 "/social-info",
-                                "/users/support/**"
+                                "/users/support/**",
+                                "/swagger-ui/**", //스웨거 접속용
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
                         ).permitAll()
 
                         // 2. [인증 경로] 로그인한 사용자만 가능

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "이메일 인증", description = "회원가입 이메일 인증 코드 발송·확인 API")
 @RequestMapping("/api/auth")
 @RestController
 @RequiredArgsConstructor

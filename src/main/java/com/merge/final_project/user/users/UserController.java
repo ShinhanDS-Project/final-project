@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "일반 사용자 마이페이지", description = "사용자 마이페이지 부가기능 API")
 @RestController
 @RequestMapping("/users/support")
 public class UserController {

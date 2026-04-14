@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "환금(현금화)", description = "기부단체 토큰 환금(현금화) 신청 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/redemptions")

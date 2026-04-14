@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+@io.swagger.v3.oas.annotations.tags.Tag(name = "기부 내역", description = "사용자 기부 내역 조회 API")
 @RestController
 @RequestMapping("/api/donation")
 @RequiredArgsConstructor

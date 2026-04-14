@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 
+@io.swagger.v3.oas.annotations.tags.Tag(name = "일반 사용자 회원가입", description = "로컬·소셜(Google) 회원가입 API")
 @RestController
 @RequestMapping("/api/signup")
 public class UserSignUpController {
