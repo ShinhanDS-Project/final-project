@@ -25,7 +25,7 @@ public interface FoundationService {
     void updateFoundationPassword(Long foundationNo, FoundationPasswordUpdateRequestDTO requestDTO);
 
     // 관리자 신청/반려 목록 — 키워드 검색 추가
-    Page<FoundationListResponseDTO> getFoundationApplicationListWithFilter(String keyword, Pageable pageable);
+    Page<FoundationListResponseDTO> getFoundationApplicationListWithFilter(ReviewStatus reviewStatus,String keyword, Pageable pageable);
     Page<FoundationListResponseDTO> getRejectedFoundationListWithFilter(String keyword, Pageable pageable);
 
     //공개 단체 목록 — 키워드 검색 추가 (여기는 상태가 승인된 애들만 공개 됨)

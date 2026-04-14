@@ -31,20 +31,20 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<PaymentByUserResponse> findByUserNo(Long userNo);
 
     // [가빈] 오늘 완료된 기부액 합계
-    @Query(value = "SELECT COALESCE(SUM(p.amount), 0) FROM payment p WHERE p.payment_status = 'COMPLETED' AND DATE(p.paid_at) = CURRENT_DATE", nativeQuery = true)
+    @Query(value = "SELECT COALESCE(SUM(p.amount), 0) FROM payment p WHERE p.payment_status = 'DONE' AND DATE(p.paid_at) = CURRENT_DATE", nativeQuery = true)
     BigDecimal sumTodayCompletedAmount();
 
     // [가빈] 누적 완료된 기부액 합계
-    @Query(value = "SELECT COALESCE(SUM(p.amount), 0) FROM payment p WHERE p.payment_status = 'COMPLETED'", nativeQuery = true)
+    @Query(value = "SELECT COALESCE(SUM(p.amount), 0) FROM payment p WHERE p.payment_status = 'DONE'", nativeQuery = true)
     BigDecimal sumTotalCompletedAmount();
 
-    // [가빈] 일별 기부액 추이 (since 이후, COMPLETED만)
+    // [가빈] 일별 기부액 추이 (since 이후, DONE만)
     // Object[] = [date(String), amount(BigDecimal)]
     @Query(value = """
         SELECT TO_CHAR(DATE(p.paid_at), 'YYYY-MM-DD') AS trend_date,
                COALESCE(SUM(p.amount), 0) AS total_amount
         FROM payment p
-        WHERE p.payment_status = 'COMPLETED'
+        WHERE p.payment_status = 'DONE'
           AND p.paid_at >= :since
         GROUP BY DATE(p.paid_at)
         ORDER BY DATE(p.paid_at)
@@ -56,7 +56,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         SELECT COALESCE(SUM(p.amount), 0)
         FROM payment p
         JOIN campaign c ON p.campaign_no = c.campaign_no
-        WHERE p.payment_status = 'COMPLETED'
+        WHERE p.payment_status = 'DONE'
           AND c.foundation_no = :foundationNo
           AND DATE_TRUNC('month', p.paid_at) = DATE_TRUNC('month', CURRENT_DATE)
         """, nativeQuery = true)
@@ -68,7 +68,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
         SELECT c.category, COALESCE(SUM(p.amount), 0) AS total_amount
         FROM payment p
         JOIN campaign c ON p.campaign_no = c.campaign_no
-        WHERE p.payment_status = 'COMPLETED'
+        WHERE p.payment_status = 'DONE'
         GROUP BY c.category
         """, nativeQuery = true)
     List<Object[]> findDonationAmountByCategory();

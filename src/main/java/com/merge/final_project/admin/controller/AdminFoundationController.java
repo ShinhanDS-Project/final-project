@@ -2,6 +2,7 @@ package com.merge.final_project.admin.controller;
 
 import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.FoundationService;
+import com.merge.final_project.org.ReviewStatus;
 import com.merge.final_project.org.dto.FoundationListResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,9 +23,10 @@ public class AdminFoundationController {
     // 승인 전 기부단체 리스트 조회 — 키워드 검색 + 페이징 + 정렬
     @GetMapping("/applications")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApplicationList(
+            @RequestParam(required = false) ReviewStatus reviewStatus,
             @RequestParam(required = false) String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(foundationService.getFoundationApplicationListWithFilter(keyword, pageable));
+        return ResponseEntity.ok(foundationService.getFoundationApplicationListWithFilter(reviewStatus, keyword, pageable));
     }
 
     // 반려된 기부단체 리스트 조회 — 키워드 검색 + 페이징 (기본: 최신순)
