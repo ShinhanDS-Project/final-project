@@ -38,9 +38,13 @@ public class EmailVerification {
     @Builder.Default // Builder 패턴 사용 시 기본값 지정에 필요함
     private int requestCount=0;
 
+    @Column(name="attempt_count",nullable = false)
+    @Builder.Default // Builder 패턴 사용 시 기본값 지정에 필요함
+    private int attemptCount=0;
     public void updateVerification(String code, LocalDateTime expiredAt) {
         this.verificationCode = code;
         this.expiredAt = expiredAt;
         this.verified = false; // 재발송 시 다시 미인증 상태로
+        this.attemptCount = 0; // [필수 추가] 재발송 시 실패 횟수를 0으로 초기화
     }
 }

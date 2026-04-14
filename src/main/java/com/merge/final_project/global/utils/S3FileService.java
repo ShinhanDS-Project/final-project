@@ -29,23 +29,32 @@ public class S3FileService implements FileService {
 
     @Override
     public String saveFile(MultipartFile file) throws IOException {
-        if (file.isEmpty()) return null;
+        if (file == null || file.isEmpty()) return null;
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
+        }
 
         String originalName = file.getOriginalFilename();
-        String storedName = UUID.randomUUID().toString() + "_" + originalName;
+        if (originalName == null || originalName.isBlank()) {
+            originalName = "unknown";
+        }
 
-        // S3 업로드 요청 생성
+        String storedName = UUID.randomUUID() + "_" + originalName;
+
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(storedName)
-                .contentType(file.getContentType())
+                .contentType(contentType)
                 .build();
 
-        // 실제 S3 서버로 파일 전송
-        s3Client.putObject(putObjectRequest, 
-                RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        s3Client.putObject(
+                putObjectRequest,
+                RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+        );
 
-        return storedName; //
+        return storedName;
     }
 
     @Override

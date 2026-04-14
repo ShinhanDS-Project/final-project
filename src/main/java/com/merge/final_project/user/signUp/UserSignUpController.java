@@ -29,6 +29,11 @@ public class UserSignUpController {
         userSignUpService.register(dto,profileImage);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+    @GetMapping("/nickname")
+    public boolean existNickName(String nameHash){
+        //중복여부 체크 api
+        return userSignUpService.findNickName(nameHash);
+    }
 
     @PostMapping(value="/google", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity <Void> registerGoogle(@RequestHeader("Authorization") String bearerToken, @Valid @RequestPart("dto") UserSignUpRequestDTO dto,@RequestPart(value = "profileImage", required = false) MultipartFile profileImage) throws IOException {

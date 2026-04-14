@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Transactional
@@ -74,6 +75,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentStatus(PaymentStatus.READY)
                 .privateKeyNo(1L)// -> 월렛팀 이거 해결해주세요.. 왜필요한지 모르겠어요
                 .isAnonymous(dto.getIsAnonymous())
+
                 .build();
         paymentRepository.save(payment);
         //3.프론트에 전송할 정보
@@ -114,10 +116,12 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new BusinessException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
             }
 
+
             // 4) 결제 메서드가 동일한지
             if (!dto.getMethod().equals(payment.getMethod())) {
                 throw new BusinessException(ErrorCode.PAYMENT_METHOD_MISMATCH);
             }
+
 
 
         //3. 캠페인
@@ -183,8 +187,14 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new BusinessException(ErrorCode.DUPLICATE_PAYMENT_KEY);
             }
 
+            // 3) 결제 수단 위변조 최종 확인 (이 부분이 현재 빠져있습니다!)
+            String expectedMethodName = payment.getMethod().getTossMethodName(); // "카드"
+            if (!expectedMethodName.equals(paymentBody.getMethod())) {
+                throw new BusinessException(ErrorCode.PAYMENT_METHOD_MISMATCH);
+            }
 
-            // 3) 기존 Payment 엔티티 업데이트
+
+            // 4) 기존 Payment 엔티티 업데이트
             payment.setPaymentStatus(PaymentStatus.DONE);
             payment.setPaymentKey(paymentBody.getPaymentKey());
             payment.setPaidAt(paymentBody.getApprovedAt().toLocalDateTime());
@@ -217,7 +227,15 @@ public class PaymentServiceImpl implements PaymentService {
                     .message("기부가 완료되었습니다. 감사합니다!")
                     .build();
 
-        }catch(Exception e){
+        }catch(BusinessException be){
+            // 우리가 의도해서 터뜨린 에러(위변조 등)는 에러 코드를 유지한 채로 환불
+            tossPaymentClient.cancelPayment(paymentBody.getPaymentKey(), "검증 실패로 인한 자동 취소");
+            payment.setPaymentStatus(PaymentStatus.FAILED);
+            throw be; // 원래 에러(예: PAYMENT_AMOUNT_MISMATCH)를 프론트로 그대로 던짐
+
+        }
+
+        catch(Exception e){
             tossPaymentClient.cancelPayment(paymentBody.getPaymentKey(), "서버 내부 오류로 인한 자동 취소");
 
             // 결제 상태를 실패로 변경
@@ -229,6 +247,12 @@ public class PaymentServiceImpl implements PaymentService {
 
 
 
+    }
+
+    @Override
+    public List<PaymentByUserResponse> getPaymentHistoryByUser(Long userNo) {
+        List<PaymentByUserResponse> listPayment= paymentRepository.findByUserNo(userNo);
+        return listPayment;
     }
 
     @Transactional

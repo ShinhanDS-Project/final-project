@@ -24,4 +24,6 @@ public class PaymentReadyRequest {
 
     @NotNull(message = "결제수단은 필수입니다.")
     private PaymentMethod method;
+
+
 }
