@@ -66,20 +66,21 @@ public class GasStationService {
 
     @Transactional
     public void fundInitialPol(Wallet wallet) {
-        // 초기 가스 지급도 동일한 동적 기준을 적용해, 가스비 급등 구간에서 과소 충전을 방지한다.
+        // 초기 가스 지급도 동적 기준을 적용해 가스 급등 시 과소 충전을 방지한다.
         BigInteger amountWei = resolveDynamicTopUpAmount(BigInteger.ZERO);
         topUpPolFromHot(wallet, amountWei, "POL_AUTO_TOPUP");
     }
 
     @Transactional
     public void ensureSufficientPol(Wallet signerWallet) {
-        // HOT 지갑 자체와 비정상 입력은 제외하고, 실제 서명 지갑에만 가스를 보충한다.
+        // HOT 지갑 자체와 비정상 입력은 제외하고, 실제 서명 지갑만 점검한다.
         if (signerWallet == null || signerWallet.getWalletAddress() == null || signerWallet.getWalletAddress().isBlank()) {
             return;
         }
         if (isHotWallet(signerWallet)) {
             return;
         }
+
         BigInteger currentBalance;
         try {
             currentBalance = web3j.ethGetBalance(signerWallet.getWalletAddress(), DefaultBlockParameterName.LATEST)
@@ -94,10 +95,14 @@ public class GasStationService {
             );
             return;
         }
-        if (currentBalance.compareTo(minPolWei) >= 0) {
+
+        // 조기 반환 기준도 고정 minPol가 아니라 동적 필요 예비금 기준으로 판정한다.
+        BigInteger requiredReserveWei = resolveRequiredGasReserveWei();
+        if (currentBalance.compareTo(requiredReserveWei) >= 0) {
             return;
         }
-        // 현재 잔액과 동적 목표치 차이(부족분)만 충전한다.
+
+        // 동적 목표치 대비 부족분만 계산해서 충전한다.
         BigInteger amountWei = resolveDynamicTopUpAmount(currentBalance);
         topUpPolFromHot(signerWallet, amountWei, "POL_AUTO_TOPUP");
     }
@@ -158,7 +163,7 @@ public class GasStationService {
     }
 
     private BigInteger resolveDynamicTopUpAmount(BigInteger currentBalanceWei) {
-        // targetWei = max(초기 충전 기준값, 동적 필요 예비금)
+        // targetWei = max(초기 기준값, 동적 필요 예비금)
         BigInteger safeCurrentBalance = currentBalanceWei == null ? BigInteger.ZERO : currentBalanceWei;
         BigInteger requiredWei = resolveRequiredGasReserveWei();
         BigInteger targetWei = initialPolWei.max(requiredWei);
@@ -182,7 +187,7 @@ public class GasStationService {
 
     private BigInteger resolveRequiredGasReserveWei() {
         // requiredReserve = max(minPol, gasPrice * gasLimit * buffer + headroom)
-        // gasPrice를 실시간 조회해 현재 네트워크 상황을 반영한다.
+        // gasPrice를 실시간으로 조회해 현재 네트워크 상황을 반영한다.
         BigInteger gasPriceWei = fetchGasPriceOrFallback();
         BigInteger baseRequiredWei = gasPriceWei.multiply(txGasLimit);
         BigInteger numerator = baseRequiredWei.multiply(BigInteger.valueOf(topUpBufferBps));
@@ -192,7 +197,7 @@ public class GasStationService {
     }
 
     private BigInteger resolveDynamicTopUpCapWei() {
-        // 상한도 동적으로 증가시켜, 가스 급등 시 고정 상한으로 인한 오탐 차단을 줄인다.
+        // 상한도 동적으로 확장해 가스 급등 시 고정 상한 오탐을 줄인다.
         BigInteger requiredWei = resolveRequiredGasReserveWei();
         BigInteger dynamicWei = requiredWei.multiply(BigInteger.valueOf(dynamicCapMultiplier));
         return maxTopUpPolWei.max(dynamicWei);
@@ -216,9 +221,7 @@ public class GasStationService {
             throw new IllegalStateException("configured hot wallet address is empty");
         }
         Wallet hotWallet = walletLookupRepository.findByWalletAddressIgnoreCase(hotWalletAddress)
-                .orElseThrow(() -> new IllegalStateException(
-                        "HOT wallet not found by configured address: " + hotWalletAddress
-                ));
+                .orElseThrow(() -> new IllegalStateException("HOT wallet not found by configured address: " + hotWalletAddress));
         if (hotWallet.getWalletType() != WalletType.HOT) {
             throw new IllegalStateException("configured hot wallet address is not HOT type: " + hotWalletAddress);
         }
