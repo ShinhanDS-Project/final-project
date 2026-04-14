@@ -1,11 +1,14 @@
 package com.merge.final_project.user.users;
 
+import com.merge.final_project.blockchain.entity.Transaction;
+import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
 import com.merge.final_project.campaign.settlement.dto.SelectSettlementResponseDTO;
+import com.merge.final_project.donation.donations.Donation;
 import com.merge.final_project.donation.donations.DonationRepository;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
@@ -16,17 +19,24 @@ import com.merge.final_project.report.finalreport.dto.FinalReportMicroTrackingRe
 import com.merge.final_project.report.finalreport.entitiy.FinalReport;
 import com.merge.final_project.report.finalreport.repository.FinalReportRepository;
 import com.merge.final_project.user.users.dto.MicroTrackingDTO;
+import com.merge.final_project.user.users.dto.UserTransactionResponseDTO;
+import com.merge.final_project.user.users.dto.UserWalletResponseDTO;
 import com.merge.final_project.user.users.dto.login.UserLoginRequestDTO;
 import com.merge.final_project.user.users.dto.support.*;
 import com.merge.final_project.user.verify.VerificationService;
+import com.merge.final_project.wallet.entity.Wallet;
+import com.merge.final_project.wallet.entity.WalletType;
+import com.merge.final_project.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -41,6 +51,9 @@ public class UserServiceImpl implements UserService {
     private final SettlementRepository settlementRepository;
     private final CampaignRepository campaignRepository;
     private final FinalReportRepository finalReportRepository;
+    private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
+
     @Override
     @Transactional
     public String login(UserLoginRequestDTO dto) {
@@ -288,7 +301,71 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Override
+    public UserWalletResponseDTO showUserWalletInfo(Long userNo) {
 
+        //1. 지갑 조회해오기(하드코딩한 이유- > 어차피 user 마이페이지에서만 조회함.
+        Wallet wallet= walletRepository.findByOwnerNoAndWalletType(userNo, WalletType.USER)
+                .orElseThrow(()->new BusinessException(ErrorCode.USER_WALLET_NOT_FOUND));
+
+
+
+        return UserWalletResponseDTO.builder()
+                .walletNo(wallet.getWalletNo())
+                .walletAddress(wallet.getWalletAddress())
+                .walletStatus(wallet.getStatus())
+                .walletType(wallet.getWalletType())
+                .ownerNo(wallet.getOwnerNo())
+                .balance(wallet.getBalance())
+                .walletHash(wallet.getWalletHash())
+                .build();
+    }
+
+    @Override
+    public List<UserTransactionResponseDTO> showWalletTokenTrans(Long userNo) {
+
+        // 1. 해당 유저의 모든 기부 내역을 가져옵니다. (시작점)
+        List<Donation> donationList = donationRepository.findByUserNo(userNo);
+
+        Long transactionNum = donationRepository.countByUserNo(userNo);
+        BigDecimal totalAmountWon = donationRepository.sumDonationAmountByUserNo(userNo);
+
+        if (donationList.isEmpty()) {
+            return List.of();
+        }
+
+        // 2. 각 기부 내역을 DTO로 변환합니다.
+        List<Long> campaignNos = donationList.stream()
+                .map(Donation::getCampaignNo)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        List<Long> transactionNos = donationList.stream()
+                .map(Donation::getTransactionNo)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        java.util.Map<Long, Campaign> campaignMap = campaignRepository.findAllByCampaignNoIn(campaignNos).stream()
+                                .collect(java.util.stream.Collectors.toMap(Campaign::getCampaignNo, c -> c));
+                java.util.Map<Long, Transaction> transactionMap = transactionRepository.findAllByTransactionNoIn(transactionNos).stream()
+                                .collect(java.util.stream.Collectors.toMap(Transaction::getTransactionNo, t -> t));
+        return donationList.stream()
+                                .map(donation -> {
+                                Campaign campaign = campaignMap.get(donation.getCampaignNo());
+                                Transaction transaction = transactionMap.get(donation.getTransactionNo());
+            return UserTransactionResponseDTO.builder()
+                    .transaction(transaction)
+                    .campaignNo(donation.getCampaignNo())
+                    .userNo(donation.getUserNo())
+                    .title(campaign != null ? campaign.getTitle() : "정보 없음")
+                    .approvalStatus(campaign != null ? campaign.getApprovalStatus() : null)
+                    .total_amount(totalAmountWon)
+                    .transactionNum(transactionNum)
+                    .build();
+        })
+                .toList();
+
+    }
 
 
 }

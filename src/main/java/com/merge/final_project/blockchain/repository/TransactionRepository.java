@@ -173,4 +173,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("status") TransactionStatus status,
             @Param("eventTypes") List<TransactionEventType> eventTypes
     );
+
+    //[채원]
+    Optional<Transaction>  findByTransactionNo(Long transactionNo);
+    List<Transaction> findAllByTransactionNoIn(List<Long> transactionNos);
 }

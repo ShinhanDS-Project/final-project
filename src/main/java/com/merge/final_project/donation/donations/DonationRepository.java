@@ -5,24 +5,28 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
  * 선우 작성:
  * 결제-블록체인 비동기 연계를 위한 donation 상태 전이 전용 repository.
- *
- * 핵심 목표:
- * 1. 상태 전이를 SQL 단에서 조건부(update ... where currentStatus)로 처리해 경합을 줄인다.
- * 2. 재시도 스케줄러가 빠르게 대상 건을 조회할 수 있도록 상태/정렬 조회 메서드를 제공한다.
  */
 public interface DonationRepository extends JpaRepository<Donation, Long> {
     boolean existsByPaymentNo(Long paymentNo);
 
     List<Donation> findByUserNo(Long userNo);
 
+    // 기부 건수 조회
+    long countByUserNo(Long userNo);
+
+    // 총 기부금액 조회
+    @Query("select coalesce(sum(d.donationAmount), 0) from Donation d where d.userNo = :userNo")
+    BigDecimal sumDonationAmountByUserNo(@Param("userNo") Long userNo);
+
     /**
      * 현재 상태가 expected일 때만 다음 상태로 전이한다.
-     * 반환값(영향 row 수)으로 상태 전이 성공 여부를 판단한다.
+     * 반환값(영향 row 수)로 전이 성공 여부를 판정한다.
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
@@ -38,7 +42,7 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
     );
 
     /**
-     * 최종 성공 시 상태와 온체인 transactionNo를 함께 반영한다.
+     * 최종 성공 시 상태와 체인 transactionNo를 함께 반영한다.
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
