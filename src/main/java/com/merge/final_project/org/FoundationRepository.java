@@ -19,8 +19,7 @@ public interface FoundationRepository extends JpaRepository<Foundation, Long> {
     Page<Foundation> findByReviewStatus(ReviewStatus reviewStatus, Pageable pageable);
     //신청 목록 용. approved와 rejected는 제외.
     Page<Foundation> findByReviewStatusNotIn(List<ReviewStatus> reviewStatuses, Pageable pageable);
-    //승인 이후 목록 용. 활성화와 비활성화 상태는 필터링으로 조회)
-    Page<Foundation> findByReviewStatusAndAccountStatus(ReviewStatus reviewStatus, AccountStatus accountStatus, Pageable pageable);
+
     //기부단체 상세조회 - PK 값으로
     Optional<Foundation> findByFoundationNo(Long foundationNo);
     /**
@@ -36,9 +35,9 @@ public interface FoundationRepository extends JpaRepository<Foundation, Long> {
     @Query("SELECT f FROM Foundation f WHERE f.reviewStatus = 'APPROVED' AND (:accountStatus IS NULL OR f.accountStatus = :accountStatus) AND (:keyword IS NULL OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Foundation> findApprovedWithFilter(@Param("accountStatus") AccountStatus accountStatus, @Param("keyword") String keyword, Pageable pageable);
 
-    // [가빈] 관리자 신청 목록 — 키워드 검색 (단체명, 대표자명)
-    @Query("SELECT f FROM Foundation f WHERE f.reviewStatus NOT IN :statuses AND (:keyword IS NULL OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Foundation> findApplicationsWithFilter(@Param("statuses") List<ReviewStatus> statuses, @Param("keyword") String keyword, Pageable pageable);
+    // [가빈] 관리자 신청 목록 — accountStatus = PRE_REGISTERED + 키워드 검색 (단체명, 대표자명)
+    @Query("SELECT f FROM Foundation f WHERE f.accountStatus = 'PRE_REGISTERED' AND (:keyword IS NULL OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Foundation> findApplicationsWithFilter(@Param("keyword") String keyword, Pageable pageable);
 
     // [가빈] 관리자 반려 목록 — 키워드 검색 (단체명, 대표자명)
     @Query("SELECT f FROM Foundation f WHERE f.reviewStatus = :reviewStatus AND (:keyword IS NULL OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")

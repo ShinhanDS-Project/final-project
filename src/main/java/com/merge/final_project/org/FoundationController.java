@@ -109,4 +109,29 @@ public class FoundationController {
         Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyPageStats(foundationNo));
     }
+
+    // 기부단체 마이페이지 — 지갑 주소 + 잔액
+    @GetMapping("/me/wallet")
+    public ResponseEntity<FoundationWalletDTO> getMyWalletInfo(Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMyWalletInfo(foundationNo));
+    }
+
+    // 기부단체 마이페이지 — 정산 내역
+    @GetMapping("/me/settlements")
+    public ResponseEntity<Page<FoundationSettlementDTO>> getMySettlements(
+            Authentication authentication,
+            Pageable pageable) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMySettlements(foundationNo, pageable));
+    }
+
+    // 기부단체 마이페이지 — 환금(현금화) 내역
+    @GetMapping("/me/redemptions")
+    public ResponseEntity<Page<FoundationRedemptionDTO>> getMyRedemptions(
+            Authentication authentication,
+            Pageable pageable) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMyRedemptions(foundationNo, pageable));
+    }
 }
