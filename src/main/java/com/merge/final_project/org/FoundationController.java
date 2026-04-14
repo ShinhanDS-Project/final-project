@@ -41,7 +41,7 @@ public class FoundationController {
     // 승인 완료된 기부단체 리스트 조회 (사용자용 — 키워드 검색, 페이징, 기본: 최신순)
     @GetMapping("/all")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getPublicFoundationList(keyword, pageable));
     }
@@ -99,7 +99,7 @@ public class FoundationController {
     public ResponseEntity<Page<FoundationMyCampaignDTO>> getMyCampaignsWithFilter(
             Authentication authentication,
             @RequestParam(required = false) CampaignStatus campaignStatus,
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyCampaignsWithFilter(foundationNo, campaignStatus, keyword, pageable));

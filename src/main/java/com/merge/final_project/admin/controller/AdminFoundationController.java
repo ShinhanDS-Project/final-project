@@ -24,7 +24,7 @@ public class AdminFoundationController {
     @GetMapping("/applications")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApplicationList(
             @RequestParam(required = false) ReviewStatus reviewStatus,
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getFoundationApplicationListWithFilter(reviewStatus, keyword, pageable));
     }
@@ -32,7 +32,7 @@ public class AdminFoundationController {
     // 반려된 기부단체 리스트 조회 — 키워드 검색 + 페이징 (기본: 최신순)
     @GetMapping("/rejected")
     public ResponseEntity<Page<FoundationListResponseDTO>> getRejectedList(
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getRejectedFoundationListWithFilter(keyword, pageable));
     }
@@ -41,7 +41,7 @@ public class AdminFoundationController {
     @GetMapping("/approved")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
             @RequestParam(required = false) AccountStatus accountStatus,
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getApprovedFoundationListForAdmin(accountStatus, keyword, pageable));
     }

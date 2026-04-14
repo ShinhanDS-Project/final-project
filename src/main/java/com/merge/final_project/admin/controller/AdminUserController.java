@@ -36,7 +36,7 @@ public class AdminUserController {
     @GetMapping
     public ResponseEntity<Page<AdminUserResponseDTO>> getUsers(
             @RequestParam(required = false) UserStatus status,
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             Pageable pageable) {
         return ResponseEntity.ok(adminUserService.getUsers(status, keyword, pageable));
     }

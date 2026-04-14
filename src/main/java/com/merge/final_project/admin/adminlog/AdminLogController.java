@@ -26,7 +26,7 @@ public class AdminLogController {
             @RequestParam(required = false) TargetType targetType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             Pageable pageable) {
         return ResponseEntity.ok(
                 adminLogService.getLogsWithFilter(actionType, targetType, startDate, endDate, keyword, pageable)
