@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,11 +74,11 @@ class CampaignServiceImplTest {
         Foundation foundation = foundationRepository.findByFoundationNo(FOUNDATION_NO)
                 .orElseThrow(() -> new IllegalArgumentException("foundation 484가 존재하지 않습니다."));
 
-        List<String> campaignWalletAddresses = List.of(
+        List<String> campaignWalletAddresses = Stream.of(
                 foundation.getCampaignWallet1(),
                 foundation.getCampaignWallet2(),
                 foundation.getCampaignWallet3()
-        ).stream().filter(Objects::nonNull).toList();
+        ).filter(Objects::nonNull).toList();
 
         String campaignTitle = "올드페리도넛" + System.currentTimeMillis();
 
@@ -140,7 +141,7 @@ class CampaignServiceImplTest {
                             FOUNDATION_NO
                     )
             ).isInstanceOf(IllegalStateException.class)
-             .hasMessageContaining("No inactive wallet available");
+                    .hasMessageContaining("사용 가능한 지갑이 없습니다.");;
             return;
         }
 

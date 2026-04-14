@@ -1,6 +1,7 @@
 package com.merge.final_project.user.users;
 
 import com.merge.final_project.blockchain.entity.Transaction;
+
 import com.merge.final_project.blockchain.service.TransactionService;
 import com.merge.final_project.donation.donations.DonationService;
 import com.merge.final_project.user.users.dto.MicroTrackingDTO;
@@ -25,8 +26,7 @@ public class UserController {
     private UserService userService;
     @Autowired
     private DonationService donationService;
-    @Autowired
-    private TransactionService transactionService;
+
 
     // 이메일 찾기
     @PostMapping("/email")
@@ -96,7 +96,7 @@ public class UserController {
     }
 
     //나의 지갑 기준으로 토큰 거래 내역 조회해오기
-    @GetMapping("/user/wallet/token/transcational")
+    @GetMapping("/user/wallet/token/transactions")
     public ResponseEntity<List<UserTransactionResponseDTO>> showUserTransactional(Authentication authentication, Long walletNo){
        Long userNo = (Long) authentication.getDetails();
        List<UserTransactionResponseDTO> transactionDTO=userService.showWalletTokenTrans(userNo);

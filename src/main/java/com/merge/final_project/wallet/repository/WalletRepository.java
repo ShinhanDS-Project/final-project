@@ -2,6 +2,7 @@ package com.merge.final_project.wallet.repository;
 
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletStatus;
+import com.merge.final_project.wallet.entity.WalletType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -18,6 +19,6 @@ public interface WalletRepository extends JpaRepository<Wallet, Long> {
     // 지갑 주소로 단일 지갑 조회
     Optional<Wallet> findByWalletAddress(String walletAddress);
 
-    Optional<Wallet> findByUserNo(Long userNo);
+    Optional<Wallet> findByOwnerNoAndWalletType(Long ownerNo, WalletType walletType);
 
 }

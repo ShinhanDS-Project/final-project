@@ -176,4 +176,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     //[채원]
     Optional<Transaction>  findByTransactionNo(Long transactionNo);
+    List<Transaction> findAllByTransactionNoIn(List<Long> transactionNos);
 }
