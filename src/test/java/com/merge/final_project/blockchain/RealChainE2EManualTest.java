@@ -46,6 +46,7 @@ import com.merge.final_project.wallet.entity.WalletType;
 import com.merge.final_project.wallet.repository.WalletLookupRepository;
 import com.merge.final_project.wallet.repository.WalletRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -65,6 +66,7 @@ import java.util.regex.Pattern;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@EnabledIfSystemProperty(named = "realchain.e2e", matches = "true")
 class RealChainE2EManualTest {
 
     private static final BigInteger USER_GAS_TOPUP_WEI = new BigInteger("10000000000000000");
@@ -432,14 +434,8 @@ class RealChainE2EManualTest {
         BigInteger txCostWei = gasPriceWei.multiply(gasLimit);
         BigInteger bufferedCostWei = txCostWei.multiply(GAS_BUFFER_NUMERATOR).divide(GAS_BUFFER_DENOMINATOR);
         BigInteger neededWei = bufferedCostWei.add(TX_HEADROOM_WEI);
-        assertTrue(
-                configuredTopupWei.compareTo(neededWei) >= 0,
-                label + " wallet needs more than configured top-up. configuredTopupWei=" + configuredTopupWei
-                        + ", requiredWei=" + neededWei
-                        + ", gasPriceWei=" + gasPriceWei
-                        + ", gasLimit=" + gasLimit
-        );
-        return configuredTopupWei;
+        // 수동 실체인 테스트에서는 가스 급등 시점도 실행 가능하도록 필요량까지 자동 상향한다.
+        return configuredTopupWei.max(neededWei);
     }
 
     private BigInteger fetchNativeBalanceWei(String walletAddress) throws Exception {
