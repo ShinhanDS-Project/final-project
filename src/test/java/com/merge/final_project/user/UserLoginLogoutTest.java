@@ -52,14 +52,14 @@ public class UserLoginLogoutTest {
     void userLoginSuccess() throws Exception {
         UserLoginRequestDTO request = new UserLoginRequestDTO();
         request.setEmail("test@gmail.com");
-        request.setPassword("1234");
+        request.setPassword("12345678z!");
 
         given(userService.login(any(UserLoginRequestDTO.class)))
                 .willReturn("mock-access-token");
 
         mockMvc.perform(post("/api/auth/login/user/local")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"test@gmail.com\",\"password\":\"1234\"}")
+                        .content("{\"email\":\"test@gmail.com\",\"password\":\"12345678z!\"}")
                 .with(csrf())) // <--- 이 한 줄이 핵심!
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("mock-access-token"))

@@ -25,7 +25,6 @@ public class VerificationServiceImpl implements VerificationService {
         if (userSignUpRepository.existsByEmailAndLoginType(dto.getEmail(), dto.getLoginType())) {
             throw new IllegalStateException("이미 가입된 이메일입니다.");
         }
-
         // createCode -> createVerificationCode로 이름 매칭
         verificationIssuer.issue(dto.getEmail(), "[giveNtoken] 회원가입 인증 번호입니다.", createVerificationCode());
 
