@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface EmailVerificationRepository extends JpaRepository<EmailVerification,Long> {
-    @Lock(LockModeType.PESSIMISTIC_WRITE) // SELECT ... FOR UPDATE 쿼리 발생
+
     Optional<EmailVerification> findByEmail(String email);
     void deleteByEmail(String email);
     void deleteAllByExpiredAtBefore(LocalDateTime now);

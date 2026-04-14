@@ -142,7 +142,7 @@ class CampaignServiceImplTest {
                             FOUNDATION_NO
                     )
             ).isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("사용 가능한 지갑이 없습니다.");;
+                    .hasMessageContaining("사용 가능한 지갑이 없습니다.");
             return;
         }
 

@@ -45,7 +45,7 @@ public class VerificationServiceImpl implements VerificationService {
     @Transactional(noRollbackFor = IllegalArgumentException.class)
     @Override
     public boolean verifyCode(String email, String code) {
-        EmailVerification verification = emailVerificationRepository.findByEmail(email)
+        EmailVerification verification = emailVerificationRepository.findByEmailForUpdate(email)
                 .orElseThrow(() -> new IllegalArgumentException("인증 요청 이력이 없는 이메일입니다."));
 
         if (verification.isVerified()) {
