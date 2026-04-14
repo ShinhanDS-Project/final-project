@@ -342,10 +342,10 @@ public class  FoundationServiceImpl implements FoundationService {
         String tempPassword = passwordEncoder.encode(sendTempPassword);
 
         foundation.updatePassword(tempPassword);
-        if (!alreadyApproved) {
-            // 최초 승인 시점에만 단체 지갑/캠페인 지갑 세트를 생성한다.
-            signupWalletHookService.onFoundationSignupCompleted(foundationNo);
-        }
+//        if (!alreadyApproved) {
+//            // 최초 승인 시점에만 단체 지갑/캠페인 지갑 세트를 생성한다.
+//            signupWalletHookService.onFoundationSignupCompleted(foundationNo);
+//        }
 
         //트랜잭션 커밋 성공한 이후에만 메일 발송 -> 이벤트 기반으로 구현.
         eventPublisher.publishEvent(new FoundationApprovedEvent(foundationNo,foundation.getFoundationEmail(), foundation.getFoundationName(), sendTempPassword));
