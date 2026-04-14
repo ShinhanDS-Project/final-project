@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,12 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
     //5. 마이페이지 -1. 계정별 기부 결과 불러오기:
    List<Donation> findByUserNo(Long userNo);
 
+   //기부건 조회
+    long countByUserNo(Long userNo);
+
+    //총 기부금액 조회
+    @Query("select coalesce(sum(d.donationAmount), 0) from Donation d where d.userNo = :userNo")
+    BigDecimal sumDonationAmountByUserNo(@Param("userNo") Long userNo);
 
 
 }

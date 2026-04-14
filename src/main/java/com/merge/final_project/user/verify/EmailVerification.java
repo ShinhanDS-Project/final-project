@@ -7,7 +7,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="email_verification")
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = "email") // DB 수준에서 중복 방지
+})
 @Getter
 @Setter
 @Builder

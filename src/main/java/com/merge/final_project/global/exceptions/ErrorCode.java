@@ -54,6 +54,8 @@ public enum ErrorCode {
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "COMMON_001", "입력값이 올바르지 않습니다."),
     // 메일
     MAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "MAIL_001", "메일 발송에 실패했습니다."),
+    EXCEEDED_ATTEMPT_COUNT(HttpStatus.BAD_REQUEST,"MAIL_002", "인증 시도 횟수를 초과했습니다."),
+    EXPIRED_CODE(HttpStatus.FORBIDDEN,"MAIL_003", "만료된 인증 번호입니다."),
     // 캠페인
     CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_001", "존재하지 않는 캠페인입니다."),
     CAMPAIGN_ALREADY_PROCESSED(HttpStatus.CONFLICT, "CAMPAIGN_002", "이미 처리된 캠페인입니다."),
@@ -76,6 +78,9 @@ public enum ErrorCode {
     // 알림
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001", "존재하지 않는 알림입니다."),
     NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근 권한이 없습니다."),
+
+    //월렛
+    USER_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND,"WALLET_001","해당 유저의 지갑을 찾을 수 없습니다."),
     //정산
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"SETTLEMENT_001","존재하지않는 정산입니다.");
 
