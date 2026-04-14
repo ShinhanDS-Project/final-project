@@ -31,7 +31,7 @@ public class PaymentController {
     }
     @PostMapping("/confirm")
     public ResponseEntity<PaymentConfirmResponse> confirm(Authentication authentication, @Valid @RequestBody PaymentConfirmRequest dto) {
-       //jwt 필터에서 저장한 값을 불러옴
+        //jwt 필터에서 저장한 값을 불러옴
         /*
         * getPrincipal() 하면 이메일 기반 User
           getDetails() 하면 Long pk

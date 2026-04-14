@@ -1,5 +1,6 @@
 package com.merge.final_project.donation.payment;
 
+import com.merge.final_project.donation.payment.dto.PaymentByUserResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -8,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -24,6 +26,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     boolean existsByPaymentKey(String paymentKey);
     // orderkey와 userno로 payment 찾기
     Optional<Payment> findByOrderKeyAndUserNo(String orderKey, Long userNo);
+
+
+    List<PaymentByUserResponse> findByUserNo(Long userNo);
 
     // [가빈] 오늘 완료된 기부액 합계
     @Query(value = "SELECT COALESCE(SUM(p.amount), 0) FROM payment p WHERE p.payment_status = 'COMPLETED' AND DATE(p.paid_at) = CURRENT_DATE", nativeQuery = true)

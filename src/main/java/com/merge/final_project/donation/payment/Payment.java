@@ -58,4 +58,5 @@ public class Payment {
     @Column(name = "is_anonymous", nullable = false)
     private Boolean isAnonymous;
 
+
 }
