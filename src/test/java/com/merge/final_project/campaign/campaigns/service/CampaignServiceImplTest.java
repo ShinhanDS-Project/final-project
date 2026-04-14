@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -167,7 +168,7 @@ class CampaignServiceImplTest {
         assertThat(savedCampaign.getTitle()).isEqualTo(campaignTitle);
         assertThat(savedCampaign.getApprovalStatus()).isEqualTo(ApprovalStatus.PENDING);
         assertThat(savedCampaign.getCampaignStatus()).isEqualTo(CampaignStatus.PENDING);
-        assertThat(savedCampaign.getCurrentAmount()).isEqualTo(0L);
+        assertThat(savedCampaign.getCurrentAmount()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(savedCampaign.getTargetAmount()).isEqualTo(3_000_000L);
 
         Wallet matchedWallet = walletRepository.findById(savedCampaign.getWalletNo())

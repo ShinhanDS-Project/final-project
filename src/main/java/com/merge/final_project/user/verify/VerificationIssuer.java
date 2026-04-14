@@ -1,6 +1,7 @@
 package com.merge.final_project.user.verify;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
@@ -13,29 +14,36 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class VerificationIssuer {
     private final EmailVerificationRepository emailVerificationRepository;
-    private final JavaMailSender mailSender;
+    private final ApplicationEventPublisher eventPublisher; // 이벤트 발행기 추가
 
-    // 수정 포인트 1: 별도 클래스의 public 메서드로 분리하여 프록시가 작동하게 함
-    // 수정 포인트 2: REQUIRES_NEW를 사용하여 메인 로직이 실패해도 발급 기록은 남도록 함
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void issue(String email, String subject, String code) {
-        EmailVerification verification = emailVerificationRepository.findByEmail(email)
+        // 1. 비관적 락으로 조회 (정책 검사와 수정을 원자적으로 처리)
+        EmailVerification verification = emailVerificationRepository.findByEmailForUpdate(email)
                 .orElse(null);
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiredAt = now.plusMinutes(5);
 
         if (verification != null) {
-            // 수정 포인트 3: 재발급 시 기존의 실패 횟수(attemptCount)를 0으로 초기화
-            verification.updateVerification(code, expiredAt);
+            // 2. 정책 검증 (락 안에서 수행하므로 동시 요청에 안전함)
+            if (verification.getExpiredAt() != null && verification.getExpiredAt().isAfter(now.plusMinutes(4))) {
+                throw new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다.");
+            }
+            if (verification.getRequestCount() >= 5) {
+                throw new IllegalStateException("인증번호 요청 횟수(5회)를 초과했습니다.");
+            }
+
+            // 3. 상태 업데이트
+            verification.updateVerification(code, now.plusMinutes(5));
             verification.setRequestCount(verification.getRequestCount() + 1);
             verification.setAttemptCount(0);
             verification.setVerified(false);
         } else {
+            // 신규 생성
             verification = EmailVerification.builder()
                     .email(email)
                     .verificationCode(code)
-                    .expiredAt(expiredAt)
+                    .expiredAt(now.plusMinutes(5))
                     .requestCount(1)
                     .attemptCount(0)
                     .verified(false)
@@ -43,14 +51,8 @@ public class VerificationIssuer {
         }
 
         emailVerificationRepository.save(verification);
-        sendEmail(email, code, subject);
-    }
 
-    private void sendEmail(String to, String code, String subject) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText("인증 번호: " + code + "\n5분 이내에 입력해주세요.");
-        mailSender.send(message);
+        // 4. 트랜잭션 커밋 성공 시에만 메일이 발송되도록 이벤트 발행
+        eventPublisher.publishEvent(new VerificationEvent(email, subject, code));
     }
 }
