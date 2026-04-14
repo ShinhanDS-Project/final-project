@@ -100,4 +100,7 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     @Query("SELECT c.category, COUNT(c) FROM Campaign c WHERE c.approvalStatus = :approvalStatus GROUP BY c.category")
     List<Object[]> countCampaignByCategory(@Param("approvalStatus") ApprovalStatus approvalStatus);
 
+    //[채원]
+    List<Campaign> findAllByCampaignNoIn(List<Long> campaignNos);
+
 }

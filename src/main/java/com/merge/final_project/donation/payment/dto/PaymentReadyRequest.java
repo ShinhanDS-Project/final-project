@@ -3,6 +3,8 @@ package com.merge.final_project.donation.payment.dto;
 import com.merge.final_project.donation.payment.PaymentMethod;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -10,6 +12,8 @@ import java.math.BigDecimal;
 
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PaymentReadyRequest {
 
     @NotNull(message = "오류 발생하였습니다.")
