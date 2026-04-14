@@ -480,7 +480,7 @@ public class  FoundationServiceImpl implements FoundationService {
     @Override
     @Transactional(readOnly = true)
     public Page<FoundationSettlementDTO> getMySettlements(Long foundationNo, Pageable pageable) {
-        return settlementRepository.findByFoundationNo(foundationNo, pageable)
+        return settlementRepository.findByFoundation_FoundationNo(foundationNo, pageable)
                 .map(FoundationSettlementDTO::from);
     }
 

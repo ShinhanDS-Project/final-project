@@ -480,13 +480,13 @@ class FoundationServiceTest {
     @Test
     @DisplayName("정산 내역 페이징 조회 — settlementRepository를 foundationNo로 조회한다")
     void 정산내역_정상조회() {
-        when(settlementRepository.findByFoundationNo(eq(1L), any(Pageable.class)))
+        when(settlementRepository.findByFoundation_FoundationNo(eq(1L), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
         Page<FoundationSettlementDTO> result = foundationService.getMySettlements(1L, PageRequest.of(0, 10));
 
         assertThat(result).isNotNull();
-        verify(settlementRepository).findByFoundationNo(eq(1L), any(Pageable.class));
+        verify(settlementRepository).findByFoundation_FoundationNo(eq(1L), any(Pageable.class));
     }
 
     @Test
