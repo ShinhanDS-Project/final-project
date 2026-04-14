@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -172,6 +173,69 @@ public class SettlementRepositoryTests {
 
         Campaign savedCampaign = campaignRepository.findById(campaign.getCampaignNo()).orElseThrow();
         assertThat(savedCampaign.getCampaignStatus()).isEqualTo(CampaignStatus.ENDED);
+    }
+
+    @Test
+    @DisplayName("음수 수수료율이면 정산을 중단한다")
+    void processSettlement_rejectsNegativeFeeRate() throws Exception {
+        Wallet campaignWallet = saveWallet("campaign-private-key", "0xCampaignWallet_", new BigDecimal("1000"));
+        Wallet foundationWallet = saveWallet("foundation-private-key", "0xFoundationWallet_", BigDecimal.ZERO);
+        Wallet beneficiaryWallet = saveWallet("beneficiary-private-key", "0xBeneficiaryWallet_", BigDecimal.ZERO);
+
+        Foundation foundation = saveFoundation(foundationWallet, new BigDecimal("-0.01"));
+        Beneficiary beneficiary = saveBeneficiary(beneficiaryWallet);
+        Campaign campaign = saveEndedCampaign(campaignWallet, foundation, beneficiary);
+
+        when(blockchainService.getTokenBalance(campaignWallet.getWalletAddress()))
+                .thenReturn(rawToken(1000L));
+
+        assertThatThrownBy(() -> settlementTransactionService.processSettlement(campaign))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("invalid foundation fee rate");
+
+        assertThat(settlementRepository.findByCampaign(campaign)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("100%를 초과한 수수료율이면 정산을 중단한다")
+    void processSettlement_rejectsFeeRateOverHundredPercent() throws Exception {
+        Wallet campaignWallet = saveWallet("campaign-private-key", "0xCampaignWallet_", new BigDecimal("1000"));
+        Wallet foundationWallet = saveWallet("foundation-private-key", "0xFoundationWallet_", BigDecimal.ZERO);
+        Wallet beneficiaryWallet = saveWallet("beneficiary-private-key", "0xBeneficiaryWallet_", BigDecimal.ZERO);
+
+        Foundation foundation = saveFoundation(foundationWallet, new BigDecimal("101"));
+        Beneficiary beneficiary = saveBeneficiary(beneficiaryWallet);
+        Campaign campaign = saveEndedCampaign(campaignWallet, foundation, beneficiary);
+
+        when(blockchainService.getTokenBalance(campaignWallet.getWalletAddress()))
+                .thenReturn(rawToken(1000L));
+
+        assertThatThrownBy(() -> settlementTransactionService.processSettlement(campaign))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("invalid foundation fee rate");
+
+        assertThat(settlementRepository.findByCampaign(campaign)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("bps로 정확히 표현할 수 없는 수수료율이면 정산을 중단한다")
+    void processSettlement_rejectsHighPrecisionFeeRate() throws Exception {
+        Wallet campaignWallet = saveWallet("campaign-private-key", "0xCampaignWallet_", new BigDecimal("1000"));
+        Wallet foundationWallet = saveWallet("foundation-private-key", "0xFoundationWallet_", BigDecimal.ZERO);
+        Wallet beneficiaryWallet = saveWallet("beneficiary-private-key", "0xBeneficiaryWallet_", BigDecimal.ZERO);
+
+        Foundation foundation = saveFoundation(foundationWallet, new BigDecimal("0.12345"));
+        Beneficiary beneficiary = saveBeneficiary(beneficiaryWallet);
+        Campaign campaign = saveEndedCampaign(campaignWallet, foundation, beneficiary);
+
+        when(blockchainService.getTokenBalance(campaignWallet.getWalletAddress()))
+                .thenReturn(rawToken(1000L));
+
+        assertThatThrownBy(() -> settlementTransactionService.processSettlement(campaign))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("invalid foundation fee rate precision");
+
+        assertThat(settlementRepository.findByCampaign(campaign)).isEmpty();
     }
 
     private Wallet saveWallet(String privateKey, String addressPrefix, BigDecimal balance) {

@@ -150,14 +150,7 @@ public class SettlementTransactionService {
         BigDecimal total = campaignWallet.getBalance();
 
         // 수수료율이 없으면 정산 금액 계산이 불가능
-        if (foundation.getFeeRate() == null) {
-            throw new IllegalArgumentException("foundation fee rate not found");
-        }
-
-        // feeRate가 0.xx 형태면 % 기준으로 통일해서 계산한다.
-        BigDecimal feeRatePercent = foundation.getFeeRate().compareTo(BigDecimal.ONE) < 0
-                ? foundation.getFeeRate().multiply(BigDecimal.valueOf(100))
-                : foundation.getFeeRate();
+        BigDecimal feeRatePercent = normalizeFeeRatePercent(foundation.getFeeRate());
 
         // 기부단체 수수료 금액 계산
         // 소수점은 버림 처리하여 정수 단위 토큰으로 맞춘다.
@@ -193,7 +186,7 @@ public class SettlementTransactionService {
         TransactionReceipt receipt;
         try {
             // 스마트컨트랙트는 수수료율을 bps(1%=100bp) 단위로 사용하므로 변환한다.
-            BigInteger feeBps = feeRatePercent.multiply(BigDecimal.valueOf(100)).toBigIntegerExact();
+            BigInteger feeBps = feeRatePercent.movePointRight(2).toBigIntegerExact();
 
             // 캠페인 지갑에서 기부단체/수혜자에게 토큰을 분배하는
             // 실제 온체인 정산 트랜잭션 실행
@@ -316,5 +309,23 @@ public class SettlementTransactionService {
         } catch (ArithmeticException e) {
             throw new IllegalArgumentException(fieldName + " must fit in long and be an integer", e);
         }
+    }
+
+    private BigDecimal normalizeFeeRatePercent(BigDecimal feeRate) {
+        if (feeRate == null) {
+            throw new IllegalArgumentException("foundation fee rate not found");
+        }
+
+        BigDecimal feeRatePercent = feeRate.compareTo(BigDecimal.ONE) <= 0
+                ? feeRate.movePointRight(2)
+                : feeRate;
+
+        if (feeRatePercent.compareTo(BigDecimal.ZERO) < 0 || feeRatePercent.compareTo(BigDecimal.valueOf(100)) > 0) {
+            throw new IllegalArgumentException("invalid foundation fee rate: " + feeRate);
+        }
+        if (feeRatePercent.scale() > 2) {
+            throw new IllegalArgumentException("invalid foundation fee rate precision: " + feeRate);
+        }
+        return feeRatePercent.stripTrailingZeros();
     }
 }

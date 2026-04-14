@@ -22,7 +22,7 @@ public class BlockchainService {
     @Value("${blockchain.contract.donation-token-address}")
     private String contractAddress;
 
-    @Value("${blockchain.chain-id:137}")
+    @Value("${blockchain.chain-id:0}")
     private long chainId;
 
     public TransactionReceipt settleCampaignOnChain(

@@ -48,12 +48,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             WHERE t.status = :status
               AND (
                     :keyword = ''
-                 OR LOWER(COALESCE(t.tx_hash, '')) LIKE :keyword
-                 OR LOWER(COALESCE(t.transaction_code, '')) LIKE :keyword
-                 OR LOWER(fw.wallet_address) LIKE :keyword
-                 OR LOWER(tw.wallet_address) LIKE :keyword
-                 OR LOWER(COALESCE(cfw.title, ctw.title, '')) LIKE :keyword
-                 OR LOWER(COALESCE(ffw.foundation_name, ftw.foundation_name, fcfw.foundation_name, fctw.foundation_name, '')) LIKE :keyword
+                 OR LOWER(COALESCE(t.tx_hash, '')) LIKE :keyword ESCAPE '\\'
+                 OR LOWER(COALESCE(t.transaction_code, '')) LIKE :keyword ESCAPE '\\'
+                 OR LOWER(fw.wallet_address) LIKE :keyword ESCAPE '\\'
+                 OR LOWER(tw.wallet_address) LIKE :keyword ESCAPE '\\'
+                 OR LOWER(COALESCE(cfw.title, ctw.title, '')) LIKE :keyword ESCAPE '\\'
+                 OR LOWER(COALESCE(ffw.foundation_name, ftw.foundation_name, fcfw.foundation_name, fctw.foundation_name, '')) LIKE :keyword ESCAPE '\\'
               )
             ORDER BY t.sent_at DESC NULLS LAST, t.transaction_no DESC
             """,
@@ -75,12 +75,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                     WHERE t.status = :status
                       AND (
                             :keyword = ''
-                         OR LOWER(COALESCE(t.tx_hash, '')) LIKE :keyword
-                         OR LOWER(COALESCE(t.transaction_code, '')) LIKE :keyword
-                         OR LOWER(fw.wallet_address) LIKE :keyword
-                         OR LOWER(tw.wallet_address) LIKE :keyword
-                         OR LOWER(COALESCE(cfw.title, ctw.title, '')) LIKE :keyword
-                         OR LOWER(COALESCE(ffw.foundation_name, ftw.foundation_name, fcfw.foundation_name, fctw.foundation_name, '')) LIKE :keyword
+                         OR LOWER(COALESCE(t.tx_hash, '')) LIKE :keyword ESCAPE '\\'
+                         OR LOWER(COALESCE(t.transaction_code, '')) LIKE :keyword ESCAPE '\\'
+                         OR LOWER(fw.wallet_address) LIKE :keyword ESCAPE '\\'
+                         OR LOWER(tw.wallet_address) LIKE :keyword ESCAPE '\\'
+                         OR LOWER(COALESCE(cfw.title, ctw.title, '')) LIKE :keyword ESCAPE '\\'
+                         OR LOWER(COALESCE(ffw.foundation_name, ftw.foundation_name, fcfw.foundation_name, fctw.foundation_name, '')) LIKE :keyword ESCAPE '\\'
                       )
                     """,
             nativeQuery = true)

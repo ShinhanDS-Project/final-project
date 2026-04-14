@@ -444,7 +444,12 @@ public class BlockchainDashboardQueryService {
         if (keyword == null || keyword.isBlank()) {
             return "";
         }
-        return "%" + keyword.trim().toLowerCase(Locale.ROOT) + "%";
+        String escapedKeyword = keyword.trim()
+                .toLowerCase(Locale.ROOT)
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        return "%" + escapedKeyword + "%";
     }
 
     private BlockchainPageInfoResponse toPageInfo(Page<?> page) {

@@ -10,6 +10,7 @@ import java.math.BigInteger;
 @Component
 public class ConfigurableContractGasProvider implements ContractGasProvider {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ConfigurableContractGasProvider.class);
     private final Web3j web3j;
     private final BigInteger minGasPrice;
     private final BigInteger gasLimit;
@@ -37,7 +38,8 @@ public class ConfigurableContractGasProvider implements ContractGasProvider {
                 return minGasPrice;
             }
             return networkGasPrice.max(minGasPrice);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.warn("Failed to fetch network gas price, falling back to minGasPrice", e);
             return minGasPrice;
         }
     }
