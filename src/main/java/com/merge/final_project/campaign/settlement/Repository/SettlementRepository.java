@@ -14,6 +14,9 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
     List<Settlement> findByCampaign(Campaign campaign);
 
+    //findBy => [가빈] 채원 코드 순서만 변경
+    List<Settlement> findByCampaign_CampaignNo(Long campaignNo);
+
     // [가빈] 기부단체 마이페이지 — 본인 정산 내역 조회
-    Page<Settlement> findByFoundation_FoundationNo(Long foundationNo, Pageable pageable);
+    Page<Settlement> findByFoundationNo(Long foundationNo, Pageable pageable);
 }
