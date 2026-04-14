@@ -24,12 +24,12 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "blockchain.stub.enabled", havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(name = "blockchain.stub.enabled", havingValue = "false")
 public class Web3jBlockchainTransferClient implements BlockchainTransferClient {
 
     private final Web3j web3j;
 
-    @Value("${blockchain.chain-id:137}")
+    @Value("${blockchain.chain-id:0}")
     private long chainId;
 
     @Value("${blockchain.contract.address:${blockchain.contract.donation-token-address}}")
