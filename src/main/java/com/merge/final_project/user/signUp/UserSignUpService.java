@@ -8,6 +8,6 @@ import java.io.IOException;
 
 public interface UserSignUpService {
     void register(UserSignUpRequestDTO requestDto, MultipartFile file) throws IOException;
-
+    boolean findNickName(String nickName);
 
 }

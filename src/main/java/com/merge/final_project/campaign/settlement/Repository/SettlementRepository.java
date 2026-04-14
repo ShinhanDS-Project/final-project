@@ -11,4 +11,9 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     boolean existsByCampaignAndStatusIn(Campaign campaign, List<SettlementStatus> statuses);
 
     List<Settlement> findByCampaign(Campaign campaign);
+
+    List<Settlement> findAllByStatusOrderBySettlementNoAsc(SettlementStatus status);
+
+    //findBy
+    List<Settlement> findByCampaign_CampaignNo(Long campaignNo);
 }

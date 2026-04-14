@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class CampaignSettlementScheduler {
 
     private final CampaignSettlementService campaignSettlementService;
-
+    // 매 시간 정각마다 전체 캠페인 정산 실행
     @Scheduled(cron = "0 0 * * * *")
     public void runSettlement() {
         campaignSettlementService.settleAll();

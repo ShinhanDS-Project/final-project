@@ -17,7 +17,7 @@ import java.util.Map;
 @Component
 public class TossPaymentClient {
 
-    @Value("${TOSS_SECRET_KEY}")
+    @Value("${TOSS_SECRET_KEY:}")
     private String secretKey;
     //restTemplate 코드 -> 토스 외부 api 호출
     private final RestTemplate restTemplate = new RestTemplate();

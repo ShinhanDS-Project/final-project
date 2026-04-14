@@ -43,7 +43,10 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         if (userSignUpRepository.existsByPhone(requestDto.getPhone())) {
             throw new IllegalArgumentException("이미 가입된 전화번호입니다.");
         }
-
+        //닉네임 중복 여부
+        if (userSignUpRepository.existsByNameHash((requestDto.getNameHash()))){
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        }
         // 로그인 타입에 따른 특화 검증 로직 호출
         if (requestDto.getLoginType() == LoginType.LOCAL) {
             validateLocalUser(requestDto);
@@ -81,6 +84,16 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         }
     }
 
+    @Override
+    public boolean findNickName(String nickName) {
+        //닉네임 중복 여부
+        if (userSignUpRepository.existsByNameHash(nickName)){
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+
+        }
+        return true;
+    }
+
 
     private void registerLocal(UserSignUpRequestDTO dto) {
         User user = User.builder()
@@ -89,14 +102,15 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .name(dto.getName())
                 .phone(dto.getPhone())
                 .birth(dto.getBirth())
-                .nameHash(generateUniqueHash()) // 중복 체크가 포함된 메서드 호출
+//                .nameHash(generateUniqueHash()) // 중복 체크가 포함된 메서드 호출
+                .nameHash(dto.getNameHash())//닉네임으로 변경
                 .profilePath(dto.getProfilePath()) // DTO에 있는 경로 반영
                 .status(UserStatus.ACTIVE)
                 .loginType(LoginType.LOCAL)
                 .loginCount(0)
                 .build();
+        userSignUpRepository.save(user);
 
-        saveWithRetry(user);
         // 회원 저장이 끝난 직후 지갑 생성 훅을 호출해 users.wallet_no까지 연결한다.
         signupWalletHookService.onUserSignupCompleted(user.getUserNo());
     }
@@ -111,14 +125,15 @@ public class UserSignUpServiceImpl implements UserSignUpService{
                 .name(dto.getName())
                 .phone(dto.getPhone())
                 .birth(dto.getBirth())
-                .nameHash(generateUniqueHash()) // 중복 체크가 포함된 메서드 호출
+                .nameHash(dto.getNameHash()) //닉네임 용도로 변경
                 .profilePath(dto.getProfilePath())
                 .status(UserStatus.ACTIVE)
                 .loginType(LoginType.GOOGLE)
                 .loginCount(0)
                 .build();
 
-        saveWithRetry(user);
+        userSignUpRepository.save(user);
+
         // 소셜 가입 사용자도 동일한 지갑 생성 흐름을 사용한다.
         signupWalletHookService.onUserSignupCompleted(user.getUserNo());
     }
@@ -156,41 +171,4 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         // 구글은 이미 인증된 이메일을 사용하므로 verificationService를 생략.
     }
 
-    // 중복되지 않는 해시가 나올 때까지 반복 생성
-    private String generateUniqueHash() {
-        String hash;
-        do {
-            hash = UserHashGenerater.generateUserHash();
-        } while (userSignUpRepository.existsByNameHash(hash));
-        return hash;
-    }
-
-    private static final int MAX_HASH_RETRY = 10;
-
-    //바로 저장하지 않고 namehash 중복 체크 다시하고 저장하는 코드(중복 마지막 확인)
-    private void saveWithRetry(User user) {
-        for (int i = 0; i < MAX_HASH_RETRY; i++) {
-            try {
-                userSignUpRepository.save(user);
-                userSignUpRepository.flush();
-                return;
-            } catch (DataIntegrityViolationException e) {
-                if (isNameHashDuplicateException(e)) {
-                    user.updateNameHash(generateUniqueHash());
-                    continue;
-                }
-                throw e;
-            }
-        }
-        throw new IllegalStateException("nameHash 중복이 계속 발생해서 회원가입에 실패했습니다.");
-
-    }
-
-    //예외처리 ->db 저장 실패시 실패 원인이 nameHash 중복인지 판별하는 용도
-    private boolean isNameHashDuplicateException(DataIntegrityViolationException e) {
-        Throwable cause = e.getMostSpecificCause();
-        return (cause != null
-                && cause.getMessage() != null
-                && cause.getMessage().contains("name_hash"));
-    }
 }
