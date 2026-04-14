@@ -8,26 +8,46 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import java.util.List;
 import java.util.Optional;
 
+/**
+ * 결제 도메인 조회/집계 repository.
+ *
+ * 선우 작성 메모:
+ * 아래 메서드 중 결제-블록체인 연계에서 직접 참조되는 핵심 메서드는
+ * findByOrderKeyAndUserNo / existsByPaymentKey / findByUserNo 이다.
+ * 나머지 통계 쿼리는 관리자 대시보드 집계 용도로 유지한다.
+ */
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    //db 저장/조회
-    //order 키 기준으로 찾기
+
+    /**
+     * 주문번호 단건 조회.
+     */
     Optional<Payment> findByOrderKey(String orderKey);
 
-    // payment 키 기준으로 찾기
+    /**
+     * 외부 결제사 결제키 단건 조회.
+     */
     Optional<Payment> findByPaymentKey(String paymentKey);
 
-    // payment no 기준으로 존재 찾기
+    /**
+     * 내부 paymentNo 존재 여부 확인.
+     */
     boolean existsByPaymentNo(Long paymentNo);
 
+    /**
+     * 외부 paymentKey 중복 방지 체크.
+     */
     boolean existsByPaymentKey(String paymentKey);
-    // orderkey와 userno로 payment 찾기
+
+    /**
+     * 사용자 본인 결제건 검증용 조회.
+     */
     Optional<Payment> findByOrderKeyAndUserNo(String orderKey, Long userNo);
 
-
+    /**
+     * 마이페이지 결제 이력 조회.
+     */
     List<PaymentByUserResponse> findByUserNo(Long userNo);
 
     // [가빈] 오늘 완료된 기부액 합계
