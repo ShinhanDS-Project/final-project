@@ -31,6 +31,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 수행 대상 별로 본인 알림 읽어오기
     @Override
+    @Transactional(readOnly = true)
     public Page<NotificationResponseDTO> getNotifications(RecipientType recipientType, Long receiverNo, Pageable pageable) {
         return notificationRepository
                 .findByReceiverNoAndRecipientType(receiverNo, recipientType, pageable)
@@ -39,6 +40,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 수행 대상 별로 안 읽은 알림 개수 조회하기
     @Override
+    @Transactional(readOnly = true)
     public long getUnreadCount(RecipientType recipientType, Long receiverNo) {
         return notificationRepository
                 .countByReceiverNoAndRecipientTypeAndIsRead(receiverNo, recipientType, false);

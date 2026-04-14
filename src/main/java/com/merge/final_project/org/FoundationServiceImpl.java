@@ -7,8 +7,13 @@ import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.auth.useraccount.SignupWalletHookService;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
+import com.merge.final_project.campaign.settlement.Repository.SettlementRepository; // [가빈] 추가
+import com.merge.final_project.donation.payment.PaymentRepository;
+import com.merge.final_project.redemption.RequesterType; // [가빈] 추가
+import com.merge.final_project.redemption.repository.RedemptionRepository; // [가빈] 추가
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
@@ -33,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,9 +58,13 @@ public class  FoundationServiceImpl implements FoundationService {
     private final AdminRepository adminRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final CampaignRepository campaignRepository;
+    private final PaymentRepository paymentRepository;
+    private final SettlementRepository settlementRepository; // [가빈] 추가
+    private final RedemptionRepository redemptionRepository; // [가빈] 추가
 
 
     @Override
+    @Transactional(readOnly = true)
     public IllegalFoundationResponseDTO checkIllegalFoundation(FoundationApplyRequestDTO requestDTO) {
         //정확하게 일치하는 단체가 있는지,
         Optional<IllegalFoundation> exactMatch = illegalFoundationRepository.findByNameAndRepresentative(
@@ -79,6 +89,7 @@ public class  FoundationServiceImpl implements FoundationService {
 
     //사업자 등록번호로 중복 체크
     @Override
+    @Transactional(readOnly = true)
     public boolean existByBusinessRegistrationNumber(String businessRegistrationNumber) {
         return foundationRepository.existsByBusinessRegistrationNumber(businessRegistrationNumber);
     }
@@ -155,9 +166,11 @@ public class  FoundationServiceImpl implements FoundationService {
                 foundation.getFoundationName() + " 기부단체 가입 신청"));
 
         return FoundationApplyResponseDTO.builder()
+                .foundationNo(foundation.getFoundationNo())
                 .foundationEmail(foundation.getFoundationEmail())
                 .foundationName(foundation.getFoundationName())
                 .representativeName(foundation.getRepresentativeName())
+                .reviewStatus(foundation.getReviewStatus())
                 .build();
     }
 
@@ -264,39 +277,44 @@ public class  FoundationServiceImpl implements FoundationService {
         // 추후 시간 남으면 블랙리스트 구현해서 체크하는 서비스로 확장 예정
     }
 
-
+    // [가빈] 관리자 신청 목록 — accountStatus = PRE_REGISTERED + reviewStatus 필터(선택) + 키워드 검색
+    // reviewStatus null → PostgreSQL 타입 추론 오류 방지를 위해 쿼리 메서드 분기
     @Override
-    public Page<FoundationListResponseDTO> getFoundationApplicationList(Pageable pageable) {
-        // 신청 해놓고 승인되지 않은 기부단체들을 볼 수 있는 목록 (승인인지 반려인지를 제외)
-        List<ReviewStatus> reviewStatuses = new ArrayList<>();
-        reviewStatuses.add(ReviewStatus.APPROVED);
-        reviewStatuses.add(ReviewStatus.REJECTED);
+    @Transactional(readOnly = true)
+    public Page<FoundationListResponseDTO> getFoundationApplicationListWithFilter(ReviewStatus reviewStatus, String keyword, Pageable pageable) {
+        String kw = keyword != null ? keyword : "";
+        Page<Foundation> result = reviewStatus != null
+                ? foundationRepository.findApplicationsByReviewStatusWithFilter(reviewStatus, kw, pageable)
+                : foundationRepository.findApplicationsWithFilter(kw, pageable);
+        return result.map(FoundationListResponseDTO::from);
+    }
 
-        Page<Foundation> foundations = foundationRepository.findByReviewStatusNotIn(reviewStatuses, pageable);
-        return foundations.map(FoundationListResponseDTO::from);
+    // [가빈] 관리자 반려 목록 — 키워드 검색
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationListResponseDTO> getRejectedFoundationListWithFilter(String keyword, Pageable pageable) {
+        return foundationRepository.findRejectedWithFilter(ReviewStatus.REJECTED, keyword != null ? keyword : "", pageable)
+                .map(FoundationListResponseDTO::from);
+    }
+
+    // [가빈] 공개 단체 목록 — reviewStatus = APPROVED + accountStatus = ACTIVE + 키워드 검색
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationListResponseDTO> getPublicFoundationList(String keyword, Pageable pageable) {
+        return foundationRepository.findApprovedWithFilter(AccountStatus.ACTIVE, keyword != null ? keyword : "", pageable)
+                .map(FoundationListResponseDTO::from);
+    }
+
+    // [가빈] 관리자 승인 단체 목록 — 상태 필터 + 키워드 검색 + 페이징
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(AccountStatus accountStatus, String keyword, Pageable pageable) {
+        return foundationRepository.findApprovedWithFilter(accountStatus, keyword != null ? keyword : "", pageable)
+                .map(FoundationListResponseDTO::from);
     }
 
     @Override
-    public Page<FoundationListResponseDTO> getRejectedFoundationList(Pageable pageable) {
-        //반려된 기부단체들 보기
-        ReviewStatus reviewStatus = ReviewStatus.REJECTED;
-        Page<Foundation> foundations = foundationRepository.findByReviewStatus(reviewStatus, pageable);
-        return foundations.map(FoundationListResponseDTO::from);
-    }
-
-    @Override
-    public Page<FoundationListResponseDTO> getApprovedFoundationList(AccountStatus accountStatus, Pageable pageable) {
-        //승인된 기부단체들 보기 (비활성화, 활성화 필터링)
-        Page<Foundation> foundations;
-        if (accountStatus == null) {
-            foundations = foundationRepository.findByReviewStatus(ReviewStatus.APPROVED, pageable);
-        } else {
-            foundations = foundationRepository.findByReviewStatusAndAccountStatus(ReviewStatus.APPROVED, accountStatus, pageable);
-        }
-        return foundations.map(FoundationListResponseDTO::from);
-    }
-
-    @Override
+    @Transactional(readOnly = true)
     public FoundationDetailResponseDTO getFoundationDetail(Long foundationNo) {
         //기부 단체 상세보기 페이지
         Foundation foundation = foundationRepository.findById(foundationNo)
@@ -324,10 +342,10 @@ public class  FoundationServiceImpl implements FoundationService {
         String tempPassword = passwordEncoder.encode(sendTempPassword);
 
         foundation.updatePassword(tempPassword);
-        if (!alreadyApproved) {
-            // 최초 승인 시점에만 단체 지갑/캠페인 지갑 세트를 생성한다.
-            signupWalletHookService.onFoundationSignupCompleted(foundationNo);
-        }
+//        if (!alreadyApproved) {
+//            // 최초 승인 시점에만 단체 지갑/캠페인 지갑 세트를 생성한다.
+//            signupWalletHookService.onFoundationSignupCompleted(foundationNo);
+//        }
 
         //트랜잭션 커밋 성공한 이후에만 메일 발송 -> 이벤트 기반으로 구현.
         eventPublisher.publishEvent(new FoundationApprovedEvent(foundationNo,foundation.getFoundationEmail(), foundation.getFoundationName(), sendTempPassword));
@@ -369,7 +387,7 @@ public class  FoundationServiceImpl implements FoundationService {
         return foundation.getFoundationNo();
     }
 
-    // [가빈] 관리자 기부단체 활성화 — 비활성화된 APPROVED 단체를 다시 ACTIVE로 전환 + 임시 비밀번호 재발급 + 메일 발송
+    // 관리자 기부단체 활성화 — 비활성화된 APPROVED 단체를 다시 ACTIVE로 전환 + 임시 비밀번호 재발급 + 메일 발송
     @Transactional
     @Override
     public void activateFoundation(Long foundationNo) {
@@ -403,7 +421,7 @@ public class  FoundationServiceImpl implements FoundationService {
                 foundation.getFoundationName() + " 기부단체 활성화 + 임시 비밀번호 메일 전송", admin);
     }
 
-    // [가빈] 관리자 기부단체 비활성화 — ACTIVE 단체를 INACTIVE로 전환 + 비활성화 메일 발송
+    // 관리자 기부단체 비활성화 — ACTIVE 단체를 INACTIVE로 전환 + 비활성화 메일 발송
     @Transactional
     @Override
     public void deactivateFoundation(Long foundationNo) {
@@ -429,8 +447,67 @@ public class  FoundationServiceImpl implements FoundationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<CampaignListResponseDTO> getMyCampaigns(Long foundationNo, Pageable pageable) {
         return campaignRepository.findByFoundationNo(foundationNo, pageable).map(CampaignListResponseDTO::from);
+    }
+
+    // 기부단체 별 본인 캠페인 리스트 확인하는 ㄴ것 별도로 분리함.
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationMyCampaignDTO> getMyCampaignsWithFilter(Long foundationNo, CampaignStatus campaignStatus, String keyword, Pageable pageable) {
+        return campaignRepository.findByFoundationNoWithFilter(foundationNo, campaignStatus, keyword, pageable)
+                .map(FoundationMyCampaignDTO::from);
+    }
+
+    //지갑 주소 + 잔액 기부단체 조회
+    @Override
+    @Transactional(readOnly = true)
+    public FoundationWalletDTO getMyWalletInfo(Long foundationNo) {
+        Foundation foundation = foundationRepository.findById(foundationNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+
+        if (foundation.getWallet() == null) {
+            return FoundationWalletDTO.builder()
+                    .walletAddress(null)
+                    .balance(null)
+                    .build();
+        }
+
+        return FoundationWalletDTO.builder()
+                .walletAddress(foundation.getWallet().getWalletAddress())
+                .balance(foundation.getWallet().getBalance())
+                .build();
+    }
+
+    // 정산 내역
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationSettlementDTO> getMySettlements(Long foundationNo, Pageable pageable) {
+        return settlementRepository.findByFoundation_FoundationNo(foundationNo, pageable)
+                .map(FoundationSettlementDTO::from);
+    }
+
+    // 환금(현금화) 내역
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FoundationRedemptionDTO> getMyRedemptions(Long foundationNo, Pageable pageable) {
+        return redemptionRepository.findByRequesterTypeAndRequesterNo(RequesterType.FOUNDATION, foundationNo, pageable)
+                .map(FoundationRedemptionDTO::from);
+    }
+
+    // 본인 캠페인 중에 진행 중인 캠페인 개수와 월 별 모금액 조회하는 메서드 -> 모금액이 없는 경우는 기본값으로 0
+    @Override
+    @Transactional(readOnly = true)
+    public FoundationMyPageStatsDTO getMyPageStats(Long foundationNo) {
+        long activeCampaignCount = campaignRepository.countByFoundationNoAndCampaignStatus(
+                foundationNo, CampaignStatus.ACTIVE);
+        BigDecimal thisMonthDonation = paymentRepository.sumThisMonthAmountByFoundationNo(foundationNo);
+
+        return FoundationMyPageStatsDTO.builder()
+                .activeCampaignCount(activeCampaignCount)
+                .thisMonthDonationAmount(thisMonthDonation != null ? thisMonthDonation : BigDecimal.ZERO)
+                .build();
     }
 
 }

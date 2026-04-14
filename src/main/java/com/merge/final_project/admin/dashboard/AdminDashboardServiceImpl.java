@@ -6,6 +6,7 @@ import com.merge.final_project.admin.adminlog.AdminLogResponseDTO;
 import com.merge.final_project.admin.dashboard.dto.CategoryRatioDTO;
 import com.merge.final_project.admin.dashboard.dto.DashboardSummaryDTO;
 import com.merge.final_project.admin.dashboard.dto.DonationTrendDTO;
+import com.merge.final_project.admin.dashboard.dto.UserRegistrationTrendDTO;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignCategory;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
@@ -113,6 +114,20 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                         .categoryLabel(cat.getLabel())
                         .campaignCount(campaignCountMap.getOrDefault(cat.name(), 0L))
                         .donationAmount(donationAmountMap.getOrDefault(cat.name(), BigDecimal.ZERO))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserRegistrationTrendDTO> getUserRegistrationTrend(int days) {
+        LocalDateTime since = LocalDate.now().minusDays(days - 1).atStartOfDay();
+        List<Object[]> rows = userRepository.findDailyUserRegistrations(since);
+
+        return rows.stream()
+                .map(row -> UserRegistrationTrendDTO.builder()
+                        .date((String) row[0])
+                        .count(((Number) row[1]).longValue())
                         .build())
                 .collect(Collectors.toList());
     }

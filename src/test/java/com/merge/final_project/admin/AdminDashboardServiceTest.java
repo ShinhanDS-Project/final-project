@@ -6,6 +6,7 @@ import com.merge.final_project.admin.dashboard.AdminDashboardServiceImpl;
 import com.merge.final_project.admin.dashboard.dto.CategoryRatioDTO;
 import com.merge.final_project.admin.dashboard.dto.DashboardSummaryDTO;
 import com.merge.final_project.admin.dashboard.dto.DonationTrendDTO;
+import com.merge.final_project.admin.dashboard.dto.UserRegistrationTrendDTO;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
@@ -158,5 +159,31 @@ class AdminDashboardServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("일별_가입자수_정상조회")
+    void 일별_가입자수_정상조회() {
+        Object[] row1 = new Object[]{"2026-04-13", 5L};
+        Object[] row2 = new Object[]{"2026-04-14", 12L};
+        when(userRepository.findDailyUserRegistrations(any())).thenReturn(List.of(row1, row2));
+
+        List<UserRegistrationTrendDTO> result = adminDashboardService.getUserRegistrationTrend(14);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getDate()).isEqualTo("2026-04-13");
+        assertThat(result.get(0).getCount()).isEqualTo(5L);
+        assertThat(result.get(1).getDate()).isEqualTo("2026-04-14");
+        assertThat(result.get(1).getCount()).isEqualTo(12L);
+    }
+
+    @Test
+    @DisplayName("일별_가입자수_데이터없으면_빈리스트반환")
+    void 일별_가입자수_데이터없으면_빈리스트반환() {
+        when(userRepository.findDailyUserRegistrations(any())).thenReturn(List.of());
+
+        List<UserRegistrationTrendDTO> result = adminDashboardService.getUserRegistrationTrend(7);
+
+        assertThat(result).isEmpty();
     }
 }

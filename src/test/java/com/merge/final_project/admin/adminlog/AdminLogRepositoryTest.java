@@ -53,7 +53,7 @@ class AdminLogRepositoryTest {
         adminLogRepository.save(log(ActionType.APPROVE, TargetType.FOUNDATION, 1L));
         adminLogRepository.save(log(ActionType.REJECT, TargetType.CAMPAIGN, 2L));
 
-        Page<AdminLog> result = adminLogRepository.findByFilter(null, null, null, null, PageRequest.of(0, 10));
+        Page<AdminLog> result = adminLogRepository.findByFilter(null, null, null, null, "", PageRequest.of(0, 10));
 
         assertThat(result.getContent()).hasSizeGreaterThanOrEqualTo(2);
     }
@@ -64,7 +64,7 @@ class AdminLogRepositoryTest {
         adminLogRepository.save(log(ActionType.APPROVE, TargetType.FOUNDATION, 1L));
         adminLogRepository.save(log(ActionType.REJECT, TargetType.FOUNDATION, 2L));
 
-        Page<AdminLog> result = adminLogRepository.findByFilter("APPROVE", null, null, null, PageRequest.of(0, 10));
+        Page<AdminLog> result = adminLogRepository.findByFilter("APPROVE", null, null, null, "", PageRequest.of(0, 10));
 
         assertThat(result.getContent()).allMatch(l -> l.getActionType() == ActionType.APPROVE);
     }
@@ -75,7 +75,7 @@ class AdminLogRepositoryTest {
         adminLogRepository.save(log(ActionType.APPROVE, TargetType.FOUNDATION, 1L));
         adminLogRepository.save(log(ActionType.APPROVE, TargetType.CAMPAIGN, 2L));
 
-        Page<AdminLog> result = adminLogRepository.findByFilter(null, "FOUNDATION", null, null, PageRequest.of(0, 10));
+        Page<AdminLog> result = adminLogRepository.findByFilter(null, "FOUNDATION", null, null, "", PageRequest.of(0, 10));
 
         assertThat(result.getContent()).allMatch(l -> l.getTargetType() == TargetType.FOUNDATION);
     }
@@ -88,7 +88,7 @@ class AdminLogRepositoryTest {
         LocalDateTime start = LocalDateTime.now().minusMinutes(1);
         LocalDateTime end = LocalDateTime.now().plusMinutes(1);
 
-        Page<AdminLog> result = adminLogRepository.findByFilter(null, null, start, end, PageRequest.of(0, 10));
+        Page<AdminLog> result = adminLogRepository.findByFilter(null, null, start, end, "", PageRequest.of(0, 10));
 
         assertThat(result.getContent()).isNotEmpty();
     }
@@ -101,7 +101,7 @@ class AdminLogRepositoryTest {
         LocalDateTime start = LocalDateTime.now().plusHours(1);
         LocalDateTime end = LocalDateTime.now().plusHours(2);
 
-        Page<AdminLog> result = adminLogRepository.findByFilter(null, null, start, end, PageRequest.of(0, 10));
+        Page<AdminLog> result = adminLogRepository.findByFilter(null, null, start, end, "", PageRequest.of(0, 10));
 
         assertThat(result.getContent()).isEmpty();
     }
@@ -113,7 +113,7 @@ class AdminLogRepositoryTest {
         adminLogRepository.save(log(ActionType.APPROVE, TargetType.CAMPAIGN, 2L));
         adminLogRepository.save(log(ActionType.REJECT, TargetType.FOUNDATION, 3L));
 
-        Page<AdminLog> result = adminLogRepository.findByFilter("APPROVE", "FOUNDATION", null, null, PageRequest.of(0, 10));
+        Page<AdminLog> result = adminLogRepository.findByFilter("APPROVE", "FOUNDATION", null, null, "", PageRequest.of(0, 10));
 
         assertThat(result.getContent()).allMatch(l ->
                 l.getActionType() == ActionType.APPROVE && l.getTargetType() == TargetType.FOUNDATION

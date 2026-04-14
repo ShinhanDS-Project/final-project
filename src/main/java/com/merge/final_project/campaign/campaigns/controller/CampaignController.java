@@ -10,6 +10,7 @@ import com.merge.final_project.campaign.campaigns.service.CampaignService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,14 +44,16 @@ public class CampaignController {
     }
 
     /* 신규 캠페인 등록 API: JSON 데이터(@RequestPart dto)와 이미지 파일들을 동시에 처리하는 multipart/form-data 방식 */
+    // [가빈] 로그인 되어 있는 기부단체만 등록할 수 있도록, foundationNo를 jwt 토큰의 claim으로 추출하는 방식으로 변경
     @ResponseBody
     @PostMapping(value = "/register", consumes = {"multipart/form-data"})
     public ResponseEntity<CampaignRegisterResponseDTO> register(
             @RequestPart("dto") CampaignRequestDTO dto,
             @RequestPart("imageFile") MultipartFile imageFile,
             @RequestPart(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles,
-            @RequestParam("foundationNo") Long foundationNo
+            Authentication authentication
     ) {
+        Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(campaignService.registerCampaign(dto, imageFile, detailImageFiles, foundationNo));
     }
 
@@ -94,3 +97,4 @@ public class CampaignController {
         return ResponseEntity.ok(campaignService.getCampaignDetail(campaignNo));
     }
 }
+
