@@ -53,7 +53,7 @@ public class BeneficiaryService implements UserDetailsService {
                 .build();
         Beneficiary saved = beneficiaryRepository.save(beneficiary);
         // 수혜자 계정 생성 직후 수혜자 전용 지갑을 생성하고 beneficiary 테이블에 바인딩한다.
-        // signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
+        signupWalletHookService.onBeneficiarySignupCompleted(saved.getBeneficiaryNo());
         return saved.getBeneficiaryNo();
     }
 

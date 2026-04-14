@@ -10,8 +10,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface RedemptionRepository extends JpaRepository<Redemption, Long> {
-    //상태별 조회
     List<Redemption> findAllByStatusOrderByRequestedAtDesc(RedemptionStatus status);
+
+    List<Redemption> findAllByStatusOrderByRedemptionNoAsc(RedemptionStatus status);
 
     // [가빈] 기부단체/수혜자 마이페이지 — 본인 환금(현금화) 내역 조회
     Page<Redemption> findByRequesterTypeAndRequesterNo(RequesterType requesterType, Long requesterNo, Pageable pageable);

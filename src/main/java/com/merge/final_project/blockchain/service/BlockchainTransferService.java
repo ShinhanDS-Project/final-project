@@ -36,9 +36,7 @@ public class BlockchainTransferService {
     private final GasStationService gasStationService;
     private final BlockchainTransferClient blockchainTransferClient;
     private final WalletCryptoService walletCryptoService;
-
-    @Value("${blockchain.token.decimals:18}")
-    private int tokenDecimals;
+    private final TokenAmountConverter tokenAmountConverter;
 
     @Value("${blockchain.contract.owner-address:}")
     private String contractOwnerAddress;
@@ -63,7 +61,7 @@ public class BlockchainTransferService {
         Wallet ownerWallet = findContractOwnerWallet(hotWallet);
         gasStationService.ensureSufficientPol(ownerWallet);
 
-        BigInteger onChainAmount = toOnChainTokenAmount(amount);
+        BigInteger onChainAmount = tokenAmountConverter.toOnChainAmount(amount);
         BigInteger resolvedDonationId = resolveDonationId(donationId);
 
         TransferResult transferResult = blockchainTransferClient.allocateToUser(
@@ -117,7 +115,7 @@ public class BlockchainTransferService {
                 .orElseThrow(() -> new IllegalArgumentException("campaign wallet not found: " + campaign.getWalletNo()));
         gasStationService.ensureSufficientPol(userWallet);
 
-        BigInteger onChainAmount = toOnChainTokenAmount(amount);
+        BigInteger onChainAmount = tokenAmountConverter.toOnChainAmount(amount);
         BigInteger resolvedDonationId = resolveDonationId(donationId);
 
         TransferResult transferResult = blockchainTransferClient.donateToCampaign(
@@ -173,10 +171,6 @@ public class BlockchainTransferService {
     /**
      * 비즈니스 금액(Long)을 토큰 최소 단위(10^decimals)로 변환한다.
      */
-    private BigInteger toOnChainTokenAmount(Long amount) {
-        return BigInteger.valueOf(amount).multiply(BigInteger.TEN.pow(tokenDecimals));
-    }
-
     /**
      * donationId가 유효하면 그대로 사용하고,
      * 없으면 epoch millis 기반 임시 ID를 생성해 컨트랙트 인자를 항상 채운다.

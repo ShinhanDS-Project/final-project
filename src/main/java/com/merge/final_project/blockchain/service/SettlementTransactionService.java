@@ -6,9 +6,10 @@ import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
 import com.merge.final_project.blockchain.repository.KeyRepository;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
+import com.merge.final_project.blockchain.security.WalletCryptoService;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
-import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import com.merge.final_project.campaign.settlement.Settlement;
 import com.merge.final_project.campaign.settlement.SettlementStatus;
@@ -47,6 +48,8 @@ public class SettlementTransactionService {
     private final SettlementCommandService settlementCommandService;
     private final SettlementRepository settlementRepository;
     private final CampaignRepository campaignRepository;
+    private final WalletCryptoService walletCryptoService;
+    private final TokenAmountConverter tokenAmountConverter;
 
     /**
      * 캠페인 정산 처리 메인 로직
@@ -56,55 +59,57 @@ public class SettlementTransactionService {
      * 2. 캠페인 지갑 잔액 및 온체인 잔액 검증
      * 3. 재단 / 수혜자 / 키 조회
      * 4. 정산 금액 계산
-     * 5. Settlement 생성 (PENDING → PROCESSING)
+     * 5. Settlement 생성 (PENDING -> PROCESSING)
      * 6. 스마트컨트랙트 호출 (온체인 정산)
      * 7. 트랜잭션 저장 + 지갑 업데이트 + 상태 변경
      */
-
     @Transactional
     public void processSettlement(Campaign campaign) {
         // 현재 시각 (트랜잭션 기록용)
         LocalDateTime now = LocalDateTime.now();
 
-        // ===================== 1. 캠페인 조회 =====================
-        // 영속 상태로 다시 조회 (Lazy 문제 및 최신 상태 보장)
+        // 영속 상태로 다시 조회해 최신 캠페인 상태를 기준으로 정산한다.
         Campaign managedCampaign = campaignRepository.findById(campaign.getCampaignNo())
-                .orElseThrow(() -> new IllegalArgumentException("캠페인을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("campaign not found"));
 
-        // 캠페인이 종료 상태가 아니면 정산하지 않음
+        // 종료된 캠페인만 정산 대상이다.
         if (managedCampaign.getCampaignStatus() != CampaignStatus.ENDED) {
             return;
         }
 
-        // ===================== 2. 중복 정산 방지 =====================
-        // 이미 같은 캠페인에 대해 정산 대기, 처리 중, 완료 이력이 있으면 스케줄러가 다시 집어가더라도 중복 정산을 막기 위해 즉시 종료한다.
+        // 이미 대기/진행/완료 정산이 있으면 스케줄러 중복 실행을 막기 위해 종료한다.
         if (settlementRepository.existsByCampaignAndStatusIn(
                 managedCampaign,
-                List.of(SettlementStatus.PENDING, SettlementStatus.PROCESSING, SettlementStatus.COMPLETED)
+                List.of(
+                        SettlementStatus.PENDING,
+                        SettlementStatus.PROCESSING,
+                        SettlementStatus.ONCHAIN_CONFIRMED,
+                        SettlementStatus.COMPLETED
+                )
         )) {
             return;
         }
 
-        // ===================== 3. 캠페인 지갑 조회 =====================
+        // 캠페인 지갑 조회
         Wallet campaignWallet = walletRepository.findById(managedCampaign.getWalletNo())
-                .orElseThrow(() -> new IllegalArgumentException("캠페인 지갑을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("campaign wallet not found"));
 
-        // 지갑 잔액이 없으면 정산할 필요 없음
+        // 로컬 잔액이 없으면 정산할 금액이 없다.
         if (campaignWallet.getBalance() == null || campaignWallet.getBalance().compareTo(BigDecimal.ZERO) <= 0) {
             return;
         }
 
-        // ===================== 4. 온체인 잔액 검증 =====================
         BigDecimal onChainCampaignBalance;
         try {
-            // 블록체인에서 실제 토큰 잔액 조회
-            onChainCampaignBalance = new BigDecimal(
+            // DB 잔액만 믿지 않고 실제 체인 잔액을 다시 확인한다.
+            onChainCampaignBalance = tokenAmountConverter.fromOnChainAmount(
                     blockchainService.getTokenBalance(campaignWallet.getWalletAddress())
             );
         } catch (Exception e) {
-            throw new RuntimeException("캠페인 지갑 온체인 잔액 조회에 실패했습니다.", e);
+            throw new RuntimeException("failed to read campaign on-chain balance", e);
         }
-        // DB 잔액과 온체인 잔액 불일치 또는 부족 시 정산 중단
+
+        // 온체인 잔액이 비어 있거나 DB보다 적으면 정산을 중단한다.
         if (onChainCampaignBalance.compareTo(BigDecimal.ZERO) <= 0
                 || onChainCampaignBalance.compareTo(campaignWallet.getBalance()) < 0) {
             log.warn(
@@ -117,115 +122,107 @@ public class SettlementTransactionService {
             return;
         }
 
-        // ===================== 5. 재단 조회 =====================
+        // 기부단체 조회
         Foundation foundation = foundationRepository.findById(managedCampaign.getFoundationNo())
-                .orElseThrow(() -> new IllegalArgumentException("재단을 찾을 수 없습니다."));
-
+                .orElseThrow(() -> new IllegalArgumentException("foundation not found"));
+        //기부단체 지갑
         if (foundation.getWallet() == null) {
-            throw new IllegalArgumentException("재단 지갑이 없습니다.");
+            throw new IllegalArgumentException("foundation wallet not found");
         }
         Wallet foundationWallet = foundation.getWallet();
 
-        // ===================== 6. 수혜자 조회 =====================
+        // 수혜자 조회
         Beneficiary beneficiary = beneficiaryRepository.findById(managedCampaign.getBeneficiaryNo())
-                .orElseThrow(() -> new IllegalArgumentException("수혜자를 찾을 수 없습니다."));
-
+                .orElseThrow(() -> new IllegalArgumentException("beneficiary not found"));
+        // 수혜자 지갑
         Wallet beneficiaryWallet = beneficiary.getWallet();
         if (beneficiaryWallet == null) {
-            throw new IllegalArgumentException("수혜자 지갑이 없습니다.");
+            throw new IllegalArgumentException("beneficiary wallet not found");
         }
 
-        // ===================== 7. 캠페인 키 조회 =====================
+        // 캠페인 지갑과 연결된 개인키가 있어야 한다.
         if (campaignWallet.getKey() == null) {
-            throw new IllegalArgumentException("캠페인 지갑 키가 없습니다.");
+            throw new IllegalArgumentException("campaign wallet key not found");
         }
         Key key = keyRepository.findById(campaignWallet.getKey().getKeyNo())
-                .orElseThrow(() -> new IllegalArgumentException("캠페인 키를 찾을 수 없습니다."));
-
-        // ===================== 8. 정산 금액 계산 =====================
+                .orElseThrow(() -> new IllegalArgumentException("campaign private key not found"));
+        // 정산 총액은 현재 캠페인 지갑 잔액이다.
         BigDecimal total = campaignWallet.getBalance();
 
-        if (foundation.getFeeRate() == null) {
-            throw new IllegalArgumentException("재단 수수료율이 없습니다.");
-        }
+        // 수수료율이 없으면 정산 금액 계산이 불가능
+        BigDecimal feeRatePercent = normalizeFeeRatePercent(foundation.getFeeRate());
 
-        // 재단 수수료 계산, 수수료를 퍼센트 기준으로 통일 (0.xx → ×100, 이미 %면 그대로 사용)
-        BigDecimal feeRatePercent = foundation.getFeeRate().compareTo(BigDecimal.ONE) < 0
-                ? foundation.getFeeRate().multiply(BigDecimal.valueOf(100))
-                : foundation.getFeeRate();
-        // 재단 몫
+        // 기부단체 수수료 금액 계산
+        // 소수점은 버림 처리하여 정수 단위 토큰으로 맞춘다.
         BigDecimal foundationAmount = total.multiply(feeRatePercent)
                 .divide(BigDecimal.valueOf(100), 0, RoundingMode.DOWN);
-        // 수혜자 몫
+        // 총액 - 수수료 = 수혜자 지급 금액
         BigDecimal beneficiaryAmount = total.subtract(foundationAmount);
 
-        // 트랜잭션 식별 코드 (DB 트랜잭션 묶음용)
+        // 하나의 정산 작업을 묶어서 추적할 내부 거래 코드 생성
         String transactionCode = UUID.randomUUID().toString();
 
-        // 온체인 정산 전에도 시도 이력을 남겨야
-        // 체인 실패와 로컬 후처리 실패를 DB 에서 구분해서 볼 수 있다.
         Settlement settlement;
         try {
+            // 온체인 호출 전에 정산 시도 이력을 먼저 남긴다.
             settlement = settlementCommandService.createPendingSettlement(
                     transactionCode,
                     foundation,
                     beneficiary,
-                    toLongExact(total, "정산 총액"),
-                    toLongExact(foundationAmount, "재단 정산 금액"),
-                    toLongExact(beneficiaryAmount, "수혜자 정산 금액"),
+                    toLongExact(total, "total amount"),
+                    toLongExact(foundationAmount, "foundation amount"),
+                    toLongExact(beneficiaryAmount, "beneficiary amount"),
                     managedCampaign
             );
-            //진행중인 정산 디비가 있음
         } catch (DataIntegrityViolationException e) {
-            log.info("이미 정산이 생성됨 (중복 요청) campaignNo={}", managedCampaign.getCampaignNo());
+            // 동시 실행 등으로 이미 정산이 생성된 경우 중복 생성하지 않는다.
+            log.info("settlement already exists. campaignNo={}", managedCampaign.getCampaignNo());
             return;
         }
 
-        // 상태를 PROCESSING으로 변경 (온체인 실행 직전)
+        // 체인 호출 직전 PROCESSING으로 전환해 PENDING과 구분한다.
         settlementCommandService.markProcessing(settlement.getSettlementNo());
 
-        // ===================== 10. 온체인 정산 =====================
         TransactionReceipt receipt;
         try {
-            // 스마트 컨트랙트는 BPS 단위 (basis point) 사용
-            BigInteger feeBps = feeRatePercent
-                    .multiply(BigDecimal.valueOf(100))
-                    .toBigIntegerExact();
+            // 스마트컨트랙트는 수수료율을 bps(1%=100bp) 단위로 사용하므로 변환한다.
+            BigInteger feeBps = feeRatePercent.movePointRight(2).toBigIntegerExact();
 
+            // 캠페인 지갑에서 기부단체/수혜자에게 토큰을 분배하는
+            // 실제 온체인 정산 트랜잭션 실행
             receipt = blockchainService.settleCampaignOnChain(
-                    key.getPrivateKey(),
+                    resolvePrivateKey(key),
                     foundationWallet.getWalletAddress(),
                     beneficiaryWallet.getWalletAddress(),
-                    total.toBigInteger(),
+                    tokenAmountConverter.toOnChainAmount(total),
                     feeBps,
                     BigInteger.valueOf(managedCampaign.getCampaignNo()),
                     BigInteger.valueOf(settlement.getSettlementNo())
             );
         } catch (Exception e) {
-            // 온체인 실패 → 정산 실패 처리
+            // 온체인 자체가 실패한 경우이므로 정산 상태를 FAILED로 내린다.
             settlementCommandService.markFailed(settlement.getSettlementNo());
-            throw new RuntimeException("정산 온체인 처리에 실패했습니다.", e);
+            throw new RuntimeException("failed to settle on chain", e);
         }
 
-        // ===================== 11. 후처리 (DB 반영) =====================
+        // 체인 송금은 끝났지만 로컬 후처리가 아직 남아 있으므로 중간 상태로 남긴다.
+        settlementCommandService.markOnChainConfirmed(settlement.getSettlementNo());
+
         try {
-            // 온체인 정산이 성공한 뒤에만 영수증 값으로 로컬 트랜잭션을 남긴다.
-            // 여기서 실패했다는 것은 체인은 이미 성공했고, 우리 DB 반영만 실패한 상태이므로
-            // FAILED 로 바꾸지 않고 PROCESSING 으로 남겨 중복 정산을 막는다.
+            // 체인 영수증을 기준으로 로컬 거래 2건(재단 몫 / 수혜자 몫)을 남긴다.
             String txHash = receipt.getTransactionHash();
             Long blockNum = receipt.getBlockNumber() != null ? receipt.getBlockNumber().longValue() : null;
-            // 가스비 저장
             BigDecimal gasFee = receipt.getGasUsed() != null
                     ? BigDecimal.valueOf(receipt.getGasUsed().longValue())
                     : null;
 
-            // 재단 트랜잭션 저장
+            // 기부단체 수수료 지급 내역 저장
             transactionRepository.save(
                     Transaction.builder()
                             .transactionCode(transactionCode)
                             .fromWallet(campaignWallet)
                             .toWallet(foundationWallet)
-                            .amount(toLongExact(foundationAmount, "재단 정산 트랜잭션 금액"))
+                            .amount(toLongExact(foundationAmount, "settlement fee transaction amount"))
                             .sentAt(now)
                             .txHash(txHash)
                             .blockNum(blockNum)
@@ -235,13 +232,13 @@ public class SettlementTransactionService {
                             .createdAt(now)
                             .build()
             );
-            // 수혜자 트랜잭션 저장
+            // 수혜자 정산금 지급 내역 저장
             transactionRepository.save(
                     Transaction.builder()
                             .transactionCode(transactionCode)
                             .fromWallet(campaignWallet)
                             .toWallet(beneficiaryWallet)
-                            .amount(toLongExact(beneficiaryAmount, "수혜자 정산 트랜잭션 금액"))
+                            .amount(toLongExact(beneficiaryAmount, "beneficiary settlement transaction amount"))
                             .sentAt(now)
                             .txHash(txHash)
                             .blockNum(blockNum)
@@ -251,43 +248,84 @@ public class SettlementTransactionService {
                             .createdAt(now)
                             .build()
             );
-            // 캠페인 상태 변경 (정산 완료)
+
+            // 캠페인 상태를 최종 정산 완료 상태로 변경한다.
             managedCampaign.setCampaignStatus(CampaignStatus.SETTLED);
 
-            // ===================== 12. 지갑 동기화 =====================
-            // 캠페인 지갑 온체인 잔액 조회 후 로컬 DB에 반영
+            // 정산 이후 각 지갑의 온체인 잔액을 다시 읽어 로컬 DB와 동기화한다.
             campaignWallet.updateBalance(
-                    BigDecimal.valueOf(blockchainService.getTokenBalance(campaignWallet.getWalletAddress()).longValue())
+                    tokenAmountConverter.fromOnChainAmount(
+                            blockchainService.getTokenBalance(campaignWallet.getWalletAddress())
+                    )
             );
-            // 지갑 사용 시간 갱신
             campaignWallet.updateLastUsedAt();
 
-            // 기부단체 지갑 온체인 잔액 반영
             foundationWallet.updateBalance(
-                    BigDecimal.valueOf(blockchainService.getTokenBalance(foundationWallet.getWalletAddress()).longValue())
+                    tokenAmountConverter.fromOnChainAmount(
+                            blockchainService.getTokenBalance(foundationWallet.getWalletAddress())
+                    )
             );
             foundationWallet.updateLastUsedAt();
 
-            // 수혜자 지갑 온체인 잔액 반영
             beneficiaryWallet.updateBalance(
-                    BigDecimal.valueOf(blockchainService.getTokenBalance(beneficiaryWallet.getWalletAddress()).longValue())
+                    tokenAmountConverter.fromOnChainAmount(
+                            blockchainService.getTokenBalance(beneficiaryWallet.getWalletAddress())
+                    )
             );
             beneficiaryWallet.updateLastUsedAt();
 
-            // ===================== 13. 정산 완료 =====================
+            // 모든 후처리까지 정상 종료되면 정산 상태를 완료로 변경한다.
             settlementCommandService.markCompleted(settlement.getSettlementNo());
         } catch (Exception e) {
-            throw new RuntimeException("정산 후처리에 실패했습니다.", e);
+            throw new RuntimeException("failed to finalize settlement", e);
         }
     }
 
-    // BigDecimal → Long 변환 (정수 + 범위 검증)
-    // 소수점이 있거나 long 범위를 벗어나면 예외 발생
+    /**
+     * key 테이블의 private key를 읽어 복호화한다.
+     * 과거 평문 데이터와의 호환을 위해 복호화 실패 시 raw 문자열을 그대로 사용한다.
+     */
+    private String resolvePrivateKey(Key key) {
+        String storedPrivateKey = key.getPrivateKey();
+        // 개인키가 없으면 온체인 서명이 불가능하다.
+        if (storedPrivateKey == null || storedPrivateKey.isBlank()) {
+            throw new IllegalStateException("private key is empty. keyNo=" + key.getKeyNo());
+        }
+
+        try {
+            // 암호화된 값이면 복호화해서 사용
+            return walletCryptoService.decryptPrivateKey(storedPrivateKey);
+        } catch (RuntimeException e) {
+            // 과거 평문 저장 데이터 호환을 위해 원본 문자열 그대로 사용
+            log.warn("keyNo={} is not decryptable payload. fallback to raw key string.", key.getKeyNo());
+            return storedPrivateKey;
+        }
+    }
+
+    // BigDecimal -> Long 변환 (정수 + 범위 검증)
     private Long toLongExact(BigDecimal amount, String fieldName) {
         try {
             return amount.longValueExact();
         } catch (ArithmeticException e) {
-            throw new IllegalArgumentException(fieldName + "이 long 범위를 벗어나거나 정수가 아닙니다.", e);
+            throw new IllegalArgumentException(fieldName + " must fit in long and be an integer", e);
         }
+    }
+
+    private BigDecimal normalizeFeeRatePercent(BigDecimal feeRate) {
+        if (feeRate == null) {
+            throw new IllegalArgumentException("foundation fee rate not found");
+        }
+
+        BigDecimal feeRatePercent = feeRate.compareTo(BigDecimal.ONE) <= 0
+                ? feeRate.movePointRight(2)
+                : feeRate;
+
+        if (feeRatePercent.compareTo(BigDecimal.ZERO) < 0 || feeRatePercent.compareTo(BigDecimal.valueOf(100)) > 0) {
+            throw new IllegalArgumentException("invalid foundation fee rate: " + feeRate);
+        }
+        if (feeRatePercent.scale() > 2) {
+            throw new IllegalArgumentException("invalid foundation fee rate precision: " + feeRate);
+        }
+        return feeRatePercent.stripTrailingZeros();
     }
 }

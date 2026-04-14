@@ -5,7 +5,12 @@ import com.merge.final_project.redemption.RedemptionStatus;
 import com.merge.final_project.redemption.RequesterType;
 import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -64,7 +69,7 @@ public class Redemption {
     @JoinColumn(name = "transaction_no")
     private Transaction transaction;
 
-    // 현금화 요청 생성 (초기 상태: PENDING)
+    // 환급 요청 생성 (초기 상태: PENDING)
     public static Redemption create(
             RequesterType requesterType,
             long requesterNo,
@@ -81,12 +86,19 @@ public class Redemption {
                 .build();
     }
 
-    // 온체인 호출 직전/진행 중 상태로 변경
+    // 온체인 호출 직전/진행 중 상태
     public void markProcessing() {
         this.status = RedemptionStatus.PROCESSING;
     }
 
-    // 온체인 성공 후 완료 처리 + 트랜잭션 정보 저장
+    // 온체인 환급은 성공했지만 로컬 후처리가 아직 끝나지 않은 상태
+    public void markOnChainConfirmed(Long blockNumber) {
+        this.status = RedemptionStatus.ONCHAIN_CONFIRMED;
+        this.blockNumber = blockNumber;
+        this.failureReason = null;
+    }
+
+    // 최종 완료 처리 + 연결된 트랜잭션 저장
     public void markCompleted(Transaction transaction, Long blockNumber) {
         this.status = RedemptionStatus.COMPLETED;
         this.transaction = transaction;
@@ -95,15 +107,14 @@ public class Redemption {
         this.failureReason = null;
     }
 
-    // 온체인 실패 시 상태 변경 및 실패 사유 기록
+    // 온체인 자체 실패
     public void markFailed(String failureReason) {
         this.status = RedemptionStatus.FAILED;
         this.failureReason = failureReason;
         this.processedAt = LocalDateTime.now();
     }
 
-    // 실제 현금 지급 완료 시간 기록 (관리자 처리용)
-    //계좌 구현이 아니면 사용되지 않음 (현재)
+    // 실제 현금 지급 완료
     public void markCashPaid() {
         this.status = RedemptionStatus.PAID;
         this.cashPaidAt = LocalDateTime.now();

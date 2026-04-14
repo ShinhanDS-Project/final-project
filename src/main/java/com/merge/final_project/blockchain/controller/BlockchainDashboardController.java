@@ -30,11 +30,12 @@ public class BlockchainDashboardController {
     @GetMapping("/transactions")
     public ResponseEntity<BlockchainTransactionsResponse> getTransactions(
             @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "SUCCESS") String status
     ) {
         return ResponseEntity.ok(
-                blockchainDashboardQueryService.getTransactions(page, keyword, status)
+                blockchainDashboardQueryService.getTransactions(page, size, keyword, status)
         );
     }
 
