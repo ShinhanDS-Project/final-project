@@ -1,119 +1,143 @@
 package com.merge.final_project.user.verify;
 
+import com.merge.final_project.user.signUp.UserSignUpRepository;
+import com.merge.final_project.user.verify.dto.UserVerifyRequestDTO;
+import com.merge.final_project.user.verify.dto.UserVerifyResponseDTO;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class VerificationServiceImpl implements VerificationService {
-    @Autowired
-    EmailVerificationRepository emailVerificationRepository;
 
-    //메일 전송을 위한 JavaMailSender
-    @Autowired
-    JavaMailSender mailSender;
+    private final EmailVerificationRepository emailVerificationRepository;
+    private final UserSignUpRepository userSignUpRepository;
+    private final JavaMailSender mailSender;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom(); // NAMEHASH 만들어주는 난수값
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final String SIGNUP_SUBJECT = "[giveNtoken] 회원가입 인증 번호입니다.";
+    private static final String RESET_SUBJECT = "[giveNtoken] 비밀번호 재설정 인증 번호입니다.";
 
-    @Transactional
     @Override
-    public void sendVerificationCode(String email) {
-
-        //요청횟수 확인하기
-        Optional<EmailVerification> emailVerificationOptional = emailVerificationRepository.findByEmail(email);
-
-        int currentCount = 0;
-
-        if(emailVerificationOptional.isPresent()) {
-            EmailVerification emailVerificationObj = emailVerificationOptional.get();
-            currentCount=emailVerificationObj.getRequestCount();
-
-            //시간 확인 -> 만료시간+4분보다 크고, 횟수가 5건이상이면 인증번호 요청횟수를 초과했다라고 띄우기
-            //요청한지 1분밖에 안됐을 때
-            if(emailVerificationObj.getExpiredAt().isAfter(LocalDateTime.now().plusMinutes(4))) {
-                throw new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다.");
-            }
-            //요청 횟수 5건 이상 불가
-            if(currentCount>=5){
-                throw new IllegalStateException("인증번호 요청 횟수 (5회)를 초과했습니다. 나중에 다시 시도해주세요.");
-            }
+    @Transactional
+    public UserVerifyResponseDTO sendVerificationCode(UserVerifyRequestDTO dto) {
+        if (userSignUpRepository.existsByEmailAndLoginType(dto.getEmail(), dto.getLoginType())) {
+            throw new IllegalStateException("이미 가입한 이메일입니다.");
         }
-        //코드 생성
-        String code=createVerificationCode();
-        LocalDateTime expiredAt=LocalDateTime.now().plusMinutes(5);
-        int newCount=currentCount+1; //횟수 증가
 
-        EmailVerification emailVerification=emailVerificationOptional
-                .map(existing->{
-                    existing.setVerificationCode(code);
-                    existing.setVerified(false);
-                    existing.setExpiredAt(expiredAt);
-                    existing.setRequestCount(newCount); // 증가된 횟수 저장
-                    return existing;
-                })
-                .orElseGet(()->
-                        EmailVerification.builder()
-                        .email(email)
-                        .verified(false)
-                        .verificationCode(code)
-                        .expiredAt(expiredAt)
-                                .requestCount(newCount)
-                        .build()
-                );
+        applicationEventPublisher.publishEvent(
+                new VerificationCodeIssueEvent(dto.getEmail(), SIGNUP_SUBJECT)
+        );
 
-        emailVerificationRepository.save(emailVerification);
-        //여기서 이메일 발송 코드 짜기 (부가기능 2)
-        sendEmail(email,code);
-
-
+        return UserVerifyResponseDTO.builder()
+                .success(true)
+                .message("인증번호가 발송되었습니다")
+                .build();
     }
 
     @Override
-    @Transactional
-    public void verifyCode(String email, String code) {
-        //코드 확인-> expired 일자 확인, 또는 일치하는지 확인할 것
-        EmailVerification emailVerification= emailVerificationRepository.findByEmail(email)
-                .orElseThrow(()->new IllegalArgumentException("인증 불가한 이메일입니다"));
-
-        //1. expired 일자가 현재 시간보다 이전인 경우
-        if(emailVerification.getExpiredAt().isBefore(LocalDateTime.now())){
-            throw new IllegalArgumentException("인증시간이 만료된 이메일입니다. 다시 시도해주세요.");
-        }
-        //2. 일치하는 이메일인지 확인
-        if(!emailVerification.getVerificationCode().equals(code)){
-            throw new IllegalArgumentException("일치하지 않습니다. 다시 시도해주세요");
-        }
-
-        emailVerification.setVerified(true);
-
-
+    public void sendPasswordResetCode(String email) {
+        applicationEventPublisher.publishEvent(
+                new VerificationCodeIssueEvent(email, RESET_SUBJECT)
+        );
     }
 
     @Override
-    @Transactional
+    public boolean verifyCode(String email, String code) {
+        EmailVerification verification = emailVerificationRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("인증 요청 이력이 없는 이메일입니다."));
+
+        if (verification.isVerified()) {
+            throw new IllegalStateException("이미 인증이 완료된 이메일입니다.");
+        }
+        if (verification.getExpiredAt() == null || verification.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("인증시간이 만료되었습니다. 다시 시도해주세요.");
+        }
+        if (verification.getAttemptCount() >= 5) {
+            throw new IllegalArgumentException("인증 실패 횟수(5회)를 초과하여 무효 처리되었습니다. 인증번호를 다시 발급받아 주세요.");
+        }
+        if (!verification.getVerificationCode().equals(code)) {
+            int currentAttempt = verification.getAttemptCount() + 1;
+            verification.setAttemptCount(currentAttempt);
+
+            if (currentAttempt >= 5) {
+                verification.setExpiredAt(LocalDateTime.now());
+                throw new IllegalArgumentException("인증번호가 5회 틀려 해당 인증번호는 무효 처리되었습니다. 인증번호를 다시 발급받아 주세요.");
+            }
+            throw new IllegalArgumentException("인증번호가 일치하지 않습니다. (남은 횟수: " + (5 - currentAttempt) + "회)");
+        }
+
+        verification.setVerified(true);
+        return true;
+    }
+
+    @Override
     public boolean isVerifiedEmail(String email) {
-        //가입전 확인-> 실제로 맞췄는지 확인
         return emailVerificationRepository.findByEmail(email)
                 .map(EmailVerification::isVerified)
                 .orElse(false);
     }
 
-    @Transactional
     @Override
     public void deleteVerification(String email) {
-        //배치코드? 또는 삭제
         emailVerificationRepository.deleteByEmail(email);
     }
-    private void sendEmail(String to, String code) {
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    protected void issueVerificationCode(VerificationCodeIssueEvent event) {
+        String email = event.email();
+        String subject = event.subject();
+
+        EmailVerification verification = emailVerificationRepository.findByEmail(email)
+                .orElse(null);
+
+        String code = createVerificationCode();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiredAt = now.plusMinutes(5);
+
+        if (verification != null) {
+            LocalDateTime existingExpiredAt = verification.getExpiredAt();
+            int currentCount = verification.getRequestCount();
+
+            if (existingExpiredAt != null && existingExpiredAt.isAfter(now.plusMinutes(4))) {
+                throw new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다.");
+            }
+
+            if (currentCount >= 5) {
+                throw new IllegalStateException("인증번호 요청 횟수(5회)를 초과했습니다. 잠시 후 다시 시도해주세요.");
+            }
+
+            verification.updateVerification(code, expiredAt);
+            verification.setRequestCount(currentCount + 1);
+        } else {
+            verification = EmailVerification.builder()
+                    .email(email)
+                    .verificationCode(code)
+                    .expiredAt(expiredAt)
+                    .requestCount(1)
+                    .attemptCount(0)
+                    .build();
+        }
+
+        emailVerificationRepository.save(verification);
+        sendEmail(email, code, subject);
+    }
+
+    private void sendEmail(String to, String code, String subject) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
-        message.setSubject("[giveNtoken] 회원가입 인증 번호입니다.");
+        message.setSubject(subject);
         message.setText("인증 번호: " + code + "\n5분 이내에 입력해주세요.");
         mailSender.send(message);
     }

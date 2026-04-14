@@ -233,7 +233,7 @@ class RealChainE2EManualTest {
                         .description("manual real-chain e2e")
                         .category(CampaignCategory.ETC)
                         .targetAmount(10L)
-                        .currentAmount(0L)
+                        .currentAmount(BigDecimal.ZERO)
                         .approvalStatus(ApprovalStatus.APPROVED)
                         .campaignStatus(CampaignStatus.ENDED)
                         .startAt(LocalDateTime.now().minusDays(3))

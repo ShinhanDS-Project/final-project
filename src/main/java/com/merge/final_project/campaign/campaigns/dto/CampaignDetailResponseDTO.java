@@ -3,6 +3,7 @@ package com.merge.final_project.campaign.campaigns.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class CampaignDetailResponseDTO {
     private String historyTitle;
     private String historyDescription;
     private Long targetAmount;
-    private Long currentAmount;
+    private BigDecimal currentAmount;
     private Integer progressPercent;
     private Long remainingAmount;
     private Long daysLeft;

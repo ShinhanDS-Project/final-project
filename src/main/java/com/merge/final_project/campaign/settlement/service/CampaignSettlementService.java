@@ -1,9 +1,10 @@
 package com.merge.final_project.campaign.settlement.service;
 
 import com.merge.final_project.blockchain.service.SettlementTransactionService;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
-import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ public class CampaignSettlementService {
 
     private final CampaignRepository campaignRepository;
     private final SettlementTransactionService settlementTransactionService;
+    private final SettlementRepository settlementRepository;
 
     //    캠페인 조회
     public void settleAll() {
@@ -31,5 +33,6 @@ public class CampaignSettlementService {
             }
         }
     }
+
 
 }

@@ -6,17 +6,46 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorCode {
 
+    // 비밀번호
+    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "PASSWORD_001", "새 비밀번호와 비밀번호 확인이 일치하지 않습니다."),
+    INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "PASSWORD_002", "비밀번호 형식이 올바르지 않습니다."),
+    PASSWORD_REUSE_NOT_ALLOWED(HttpStatus.CONFLICT, "PASSWORD_003", "기존 비밀번호와 동일한 비밀번호는 사용할 수 없습니다."),
+    CURRENT_PASSWORD_MISMATCH(HttpStatus.UNAUTHORIZED, "PASSWORD_004", "현재 비밀번호가 일치하지 않습니다."),
+
+    // 비밀번호 재설정 / 이메일 인증
+    PASSWORD_RESET_USER_MISMATCH(HttpStatus.BAD_REQUEST, "PASSWORD_RESET_001", "입력한 이메일 또는 이름이 올바르지 않습니다."),
+    PASSWORD_RESET_CODE_INVALID(HttpStatus.BAD_REQUEST, "PASSWORD_RESET_002", "인증 코드가 올바르지 않습니다."),
+    PASSWORD_RESET_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "PASSWORD_RESET_003", "인증 코드가 만료되었습니다."),
+    PASSWORD_RESET_NOT_VERIFIED(HttpStatus.FORBIDDEN, "PASSWORD_RESET_004", "이메일 인증이 완료되지 않았습니다."),
+    PASSWORD_RESET_TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "PASSWORD_RESET_005", "비밀번호 재설정 요청이 너무 많습니다. 잠시 후 다시 시도해주세요."),
     AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "ADMIN_001","아이디 또는 비밀번호가 올바르지 않습니다."),
     // 보안을 위해 외부로는 안 남기지만 내부 로깅 용으로 남길 코드들.
     ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN_002", "존재하지 않는 관리자입니다."),
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "ADMIN_003", "비밀번호가 일치하지 않습니다."),
-
+    // 결제
+    PAYMENT_INVALID_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_004", "유효하지 않은 결제 상태입니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001", "존재하지 않는 결제 내역입니다."),
+    PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_002", "결제 금액이 일치하지 않습니다."),
+    PAYMENT_ALREADY_COMPLETED(HttpStatus.CONFLICT, "PAYMENT_003", "이미 완료된 결제입니다."),
+    PAYMENT_CONFIRM_FAILED(HttpStatus.BAD_GATEWAY, "PAYMENT_005", "결제 승인에 실패했습니다."),
+    PAYMENT_READY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT_006", "결제 준비 중 오류가 발생했습니다."),
+    PAYMENT_METHOD_MISMATCH(HttpStatus.BAD_REQUEST,"PAYMENT_007","유효하지않은 결제 방식입니다."),
+    DUPLICATE_PAYMENT_KEY(HttpStatus.BAD_REQUEST,"PAYMENT_008","중복된 결제건입니다."),
     // 기부단체 가입 관련
     DUPLICATE_BUSINESS_REGISTRATION(HttpStatus.CONFLICT, "FOUNDATION_001", "이미 신청된 사업자등록번호입니다."),
     FOUNDATION_NOT_FOUND(HttpStatus.NOT_FOUND, "FOUNDATION_002", "존재하지 않는 기부단체입니다."),
     CANNOT_APPROVE_ILLEGAL_FOUNDATION(HttpStatus.CONFLICT, "FOUNDATION_003", "불성실기부단체에 포함되는 단체는 가입이 안됩니다."),
     FOUNDATION_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "FOUNDATION_004", "이메일 또는 비밀번호가 올바르지 않습니다."),
     FOUNDATION_NOT_ACTIVATED(HttpStatus.FORBIDDEN, "FOUNDATION_005", "승인되지 않은 단체입니다. 관리자 승인 후 로그인 가능합니다."),
+    FOUNDATION_ALREADY_ACTIVE(HttpStatus.CONFLICT, "FOUNDATION_006", "이미 활성화된 기부단체입니다."),
+    FOUNDATION_ALREADY_INACTIVE(HttpStatus.CONFLICT, "FOUNDATION_007", "이미 비활성화된 기부단체입니다."),
+    // 회원
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "존재하지 않는 회원입니다."),
+    USER_ALREADY_ACTIVE(HttpStatus.CONFLICT, "USER_002", "이미 활성화된 회원입니다."),
+    USER_ALREADY_INACTIVE(HttpStatus.CONFLICT, "USER_003", "이미 비활성화된 회원입니다."),
+    // 사용자
+    DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST,"USER_004","중복된 닉네임입니다."),
+
     // 파일 관련
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),
     FILE_UPLOAD_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_002", "파일 업로드 중 오류가 발생했습니다."),
@@ -29,13 +58,26 @@ public enum ErrorCode {
     CAMPAIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_001", "존재하지 않는 캠페인입니다."),
     CAMPAIGN_ALREADY_PROCESSED(HttpStatus.CONFLICT, "CAMPAIGN_002", "이미 처리된 캠페인입니다."),
     CAMPAIGN_INVALID_STATUS(HttpStatus.CONFLICT, "CAMPAIGN_003", "유효한 상태가 아닙니다."),
+    CAMPAIGN_INVALID_CURRENT_AMOUNT(HttpStatus.BAD_REQUEST,"CAMPAIGN_004","모금액 에러입니다."),
     // 활동 보고서
     FINAL_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_001", "존재하지 않는 활동 보고서입니다."),
     FINAL_REPORT_ALREADY_PROCESSED(HttpStatus.CONFLICT, "REPORT_002", "이미 처리된 활동 보고서입니다."),
+    // 캠페인
+    CAMPAIGN_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "CAMPAIGN_002", "현재 모금기간이 아닙니다."),
+    CAMPAIGN_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "CAMPAIGN_003", "캠페인 지갑 정보를 찾을 수 없습니다."),
+    // 기부단체
+    FOUNDATION_INACTIVE(HttpStatus.FORBIDDEN, "FOUNDATION_006", "현재 후원 가능한 기부단체가 아닙니다."),
+    // 기부
+
+    DONATION_CREATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "DONATION_001", "기부 내역 생성에 실패했습니다."),
+    DUPLICATE_DONATION(HttpStatus.BAD_REQUEST,"DONATION_002","중복된 기부건입니다."),
+    INVALID_DONATION_AMOUNT(HttpStatus.BAD_REQUEST,"DONATION_003","잘못된 기부금액입니다."),
+    DONATION_INVALID(HttpStatus.BAD_REQUEST,"DONATION_004","존재하지 않는 기부입니다."),
     // 알림
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001", "존재하지 않는 알림입니다."),
-    NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근 권한이 없습니다.");
-
+    NOTIFICATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "NOTIFICATION_002", "해당 알림에 접근 권한이 없습니다."),
+    //정산
+    SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"SETTLEMENT_001","존재하지않는 정산입니다.");
 
 
     private final HttpStatus status;

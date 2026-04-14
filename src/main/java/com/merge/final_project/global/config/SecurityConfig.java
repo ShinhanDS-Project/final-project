@@ -71,16 +71,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain beneficiaryFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
-                .securityMatcher("/api/beneficiary/**", "/finalReport/**") // 수혜자 전용 경로 지정
+                .securityMatcher("/api/beneficiary/", "/finalReport/", "/api/v1/**")
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 수혜자 로그인/회원가입은 인증 없이 접근 가능
+                        // 수혜자 로그인/회원가입은 공개 (v1 포함)
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
-
-                        // 그 외 보고서 작성 등은 모두 인증 필요
+                        .requestMatchers("/api/v1/beneficiary/signup", "/api/v1/beneficiary/signin").permitAll()
+                        // 그 외 수혜자/보고서 관련은 인증 필요
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
@@ -116,7 +116,8 @@ public class SecurityConfig {
                                 "/api/foundation/login",     // 로그인
                                 "/api/foundation/logout",     // 로그아웃 (토큰 만료 후에도 호출 가능해야 함),
                                 "/api/foundation/campaigns/*",   // 캠페인
-                                "/api/foundation/campaigns"   // 캠페인
+                                "/api/foundation/campaigns",   // 캠페인
+                                "/api/foundation/campaigns/*/detail"   // 캠페인
                         ).permitAll()
                         // 그 외 단체 전용 기능은 ROLE_FOUNDATION 필요
                         .anyRequest().hasAuthority("ROLE_FOUNDATION")

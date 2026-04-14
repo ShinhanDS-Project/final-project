@@ -9,6 +9,7 @@ import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.global.utils.FileUtil;
 import com.merge.final_project.notification.email.event.FoundationApprovedEvent;
+import com.merge.final_project.notification.email.event.FoundationDeactivatedByAdminEvent;
 import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
 import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
@@ -273,5 +274,89 @@ class FoundationServiceTest {
                 () -> foundationService.rejectFoundationForIllegal(999L));
 
         assertThat(exception.getMessage()).isEqualTo(ErrorCode.FOUNDATION_NOT_FOUND.getMessage());
+    }
+
+    // 기부단체 활성화 테스트
+
+    @Test
+    @DisplayName("비활성화된 승인 단체를 활성화하면 ACTIVE 상태가 되고 승인 이벤트가 발행된다")
+    void 단체_활성화_성공() {
+        Foundation foundation = Foundation.builder()
+                .foundationEmail("test@test.com")
+                .foundationName("테스트단체")
+                .accountStatus(AccountStatus.INACTIVE)
+                .reviewStatus(ReviewStatus.APPROVED)
+                .build();
+        when(foundationRepository.findById(1L)).thenReturn(Optional.of(foundation));
+        when(passwordEncoder.encode(any())).thenReturn("encodedTempPassword");
+
+        foundationService.activateFoundation(1L);
+
+        assertThat(foundation.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
+        verify(eventPublisher).publishEvent(any(FoundationApprovedEvent.class));
+    }
+
+    @Test
+    @DisplayName("이미 활성화된 단체를 활성화 시도하면 FOUNDATION_ALREADY_ACTIVE 예외가 발생한다")
+    void 단체_활성화_이미활성화_예외() {
+        Foundation foundation = Foundation.builder()
+                .accountStatus(AccountStatus.ACTIVE)
+                .reviewStatus(ReviewStatus.APPROVED)
+                .build();
+        when(foundationRepository.findById(1L)).thenReturn(Optional.of(foundation));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> foundationService.activateFoundation(1L));
+
+        assertThat(exception.getMessage()).isEqualTo(ErrorCode.FOUNDATION_ALREADY_ACTIVE.getMessage());
+    }
+
+    @Test
+    @DisplayName("미승인 단체는 활성화할 수 없다")
+    void 단체_활성화_미승인_예외() {
+        Foundation foundation = Foundation.builder()
+                .accountStatus(AccountStatus.INACTIVE)
+                .reviewStatus(ReviewStatus.CLEAN)
+                .build();
+        when(foundationRepository.findById(1L)).thenReturn(Optional.of(foundation));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> foundationService.activateFoundation(1L));
+
+        assertThat(exception.getMessage()).isEqualTo(ErrorCode.CANNOT_APPROVE_ILLEGAL_FOUNDATION.getMessage());
+    }
+
+    // 기부단체 비활성화 테스트
+
+    @Test
+    @DisplayName("활성화된 단체를 비활성화하면 INACTIVE 상태가 되고 비활성화 이벤트가 발행된다")
+    void 단체_비활성화_성공() {
+        Foundation foundation = Foundation.builder()
+                .foundationEmail("test@test.com")
+                .foundationName("테스트단체")
+                .accountStatus(AccountStatus.ACTIVE)
+                .reviewStatus(ReviewStatus.APPROVED)
+                .build();
+        when(foundationRepository.findById(1L)).thenReturn(Optional.of(foundation));
+
+        foundationService.deactivateFoundation(1L);
+
+        assertThat(foundation.getAccountStatus()).isEqualTo(AccountStatus.INACTIVE);
+        verify(eventPublisher).publishEvent(any(FoundationDeactivatedByAdminEvent.class));
+    }
+
+    @Test
+    @DisplayName("이미 비활성화된 단체를 비활성화 시도하면 FOUNDATION_ALREADY_INACTIVE 예외가 발생한다")
+    void 단체_비활성화_이미비활성화_예외() {
+        Foundation foundation = Foundation.builder()
+                .accountStatus(AccountStatus.INACTIVE)
+                .reviewStatus(ReviewStatus.APPROVED)
+                .build();
+        when(foundationRepository.findById(1L)).thenReturn(Optional.of(foundation));
+
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> foundationService.deactivateFoundation(1L));
+
+        assertThat(exception.getMessage()).isEqualTo(ErrorCode.FOUNDATION_ALREADY_INACTIVE.getMessage());
     }
 }

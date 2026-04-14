@@ -3,12 +3,13 @@ package com.merge.final_project.campaign.campaigns.service;
 import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
-import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.CampaignCategory;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignBeneficiaryCheckResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignDetailResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignFoundationCheckResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.dto.CampaignRegisterResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
@@ -32,6 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -50,12 +54,13 @@ public class CampaignServiceImpl implements CampaignService {
     private static final String REPRESENTATIVE_IMAGE_PURPOSE = "REPRESENTATIVE";
     private static final String DETAIL_IMAGE_PURPOSE = "DETAIL";
     private static final List<CampaignStatus> LIST_VISIBLE_STATUSES = List.of(
-        CampaignStatus.RECRUITING,
-        CampaignStatus.ACTIVE,
-        CampaignStatus.ENDED,
-        CampaignStatus.SETTLED,
-        CampaignStatus.COMPLETED,
-        CampaignStatus.CANCELLED
+            CampaignStatus.APPROVED,
+            CampaignStatus.RECRUITING,
+            CampaignStatus.ACTIVE,
+            CampaignStatus.ENDED,
+            CampaignStatus.SETTLED,
+            CampaignStatus.COMPLETED,
+            CampaignStatus.CANCELLED
     );
 
     private final FoundationRepository foundationRepository;
@@ -65,36 +70,36 @@ public class CampaignServiceImpl implements CampaignService {
     private final UsePlanRepository usePlanRepository;
     private final ImageRepository imageRepository;
     private final FileService fileService;
-    private final ApplicationEventPublisher eventPublisher; // [가빈] SSE 이벤트 발행용
+    private final ApplicationEventPublisher eventPublisher; // SSE 이벤트 발행을 위한 주입
 
     @Override
     @Transactional
-    public void registerCampaign(CampaignRequestDTO dto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo) {
+    public CampaignRegisterResponseDTO registerCampaign(CampaignRequestDTO dto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo) {
         if (imageFile == null || imageFile.isEmpty()) {
             throw new IllegalArgumentException("대표 이미지는 필수입니다.");
         }
 
         Foundation foundation = foundationRepository.findById(foundationNo)
-            .orElseThrow(() -> new IllegalArgumentException("?? ??? ?? ? ????."));
+                .orElseThrow(() -> new IllegalArgumentException("해당 재단 정보를 찾을 수 없습니다."));
 
         Beneficiary beneficiary = beneficiaryRepository.findByEntryCode(dto.getEntryCode())
-            .orElseThrow(() -> new IllegalArgumentException("Invalid beneficiary entry code."));
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 수혜자 코드입니다."));
 
         List<String> walletAddresses = Stream.of(
-            foundation.getCampaignWallet1(),
-            foundation.getCampaignWallet2(),
-            foundation.getCampaignWallet3()
+                foundation.getCampaignWallet1(),
+                foundation.getCampaignWallet2(),
+                foundation.getCampaignWallet3()
         ).filter(Objects::nonNull).toList();
 
         Wallet availableWallet = walletRepository
-            .findFirstByWalletAddressInAndStatus(walletAddresses, WalletStatus.INACTIVE)
-            .orElseThrow(() -> new IllegalStateException("?? ??? ??? ????."));
+                .findFirstByWalletAddressInAndStatus(walletAddresses, WalletStatus.INACTIVE)
+                .orElseThrow(() -> new IllegalStateException("사용 가능한 지갑이 없습니다."));
 
         Campaign campaign = dto.toEntity();
         campaign.setFoundationNo(foundationNo);
         campaign.setBeneficiaryNo(beneficiary.getBeneficiaryNo());
         campaign.setWalletNo(availableWallet.getWalletNo());
-        campaign.setCurrentAmount(0L);
+        campaign.setCurrentAmount(BigDecimal.valueOf(0)); //채원 수정
         campaign.setApprovalStatus(ApprovalStatus.PENDING);
         campaign.setCampaignStatus(CampaignStatus.PENDING);
         campaign.setUpdatedAt(LocalDateTime.now());
@@ -114,11 +119,19 @@ public class CampaignServiceImpl implements CampaignService {
         availableWallet.changeStatus(WalletStatus.ACTIVE);
         walletRepository.save(availableWallet);
 
-        // [가빈] 관리자에게 캠페인 승인 요청 SSE 알림
+        // 관리자에게 캠페인 승인 요청 SSE 알림 발행
         eventPublisher.publishEvent(new ApprovalRequestEvent(
                 TargetType.CAMPAIGN,
                 savedCampaign.getCampaignNo(),
                 savedCampaign.getTitle() + " 캠페인 승인 요청"));
+
+        return CampaignRegisterResponseDTO.builder()
+                .campaignNo(savedCampaign.getCampaignNo())
+                .foundationNo(savedCampaign.getFoundationNo())
+                .approvalStatus(savedCampaign.getApprovalStatus() == null ? null : savedCampaign.getApprovalStatus().name())
+                .campaignStatus(savedCampaign.getCampaignStatus() == null ? null : savedCampaign.getCampaignStatus().name())
+                .message("캠페인 등록 요청 완료")
+                .build();
     }
 
     @Override
@@ -128,21 +141,21 @@ public class CampaignServiceImpl implements CampaignService {
 
         if ("participation".equalsIgnoreCase(sort)) {
             comparator = Comparator
-                .comparing((Campaign campaign) -> campaign.getCurrentAmount() == null ? 0L : campaign.getCurrentAmount())
-                .reversed()
-                .thenComparing(Campaign::getCampaignNo, Comparator.reverseOrder());
+                    .comparing((Campaign campaign) -> campaign.getCurrentAmount() == null ? BigDecimal.ZERO : campaign.getCurrentAmount())
+                    .reversed()
+                    .thenComparing(Campaign::getCampaignNo, Comparator.reverseOrder());
         } else {
             comparator = Comparator
-                .comparing(Campaign::getEndAt, Comparator.nullsLast(Comparator.naturalOrder()))
-                .thenComparing(Campaign::getCampaignNo, Comparator.reverseOrder());
+                    .comparing(Campaign::getEndAt, Comparator.nullsLast(Comparator.naturalOrder()))
+                    .thenComparing(Campaign::getCampaignNo, Comparator.reverseOrder());
         }
 
         List<Campaign> campaigns = campaignRepository.findAll().stream()
-            .filter(campaign -> campaign.getCampaignStatus() != null && LIST_VISIBLE_STATUSES.contains(campaign.getCampaignStatus()))
-            .filter(campaign -> matchesCategory(campaign, category))
-            .filter(campaign -> matchesKeyword(campaign, searchType, keyword))
-            .sorted(comparator)
-            .toList();
+                .filter(campaign -> campaign.getCampaignStatus() != null && LIST_VISIBLE_STATUSES.contains(campaign.getCampaignStatus()))
+                .filter(campaign -> matchesCategory(campaign, category))
+                .filter(campaign -> matchesKeyword(campaign, searchType, keyword))
+                .sorted(comparator)
+                .toList();
 
         return toCampaignListResponse(campaigns);
     }
@@ -151,115 +164,115 @@ public class CampaignServiceImpl implements CampaignService {
     @Transactional(readOnly = true)
     public CampaignDetailResponseDTO getCampaignDetail(Long campaignNo) {
         Campaign campaign = campaignRepository.findByCampaignNoAndApprovalStatus(campaignNo, ApprovalStatus.APPROVED)
-            .orElseThrow(() -> new IllegalArgumentException("승인된 캠페인을 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("승인된 캠페인을 찾을 수 없습니다."));
 
         Foundation foundation = foundationRepository.findByFoundationNo(campaign.getFoundationNo())
-            .orElseThrow(() -> new IllegalArgumentException("기부 단체 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("기부 단체 정보를 찾을 수 없습니다."));
 
-        long currentAmount = campaign.getCurrentAmount() == null ? 0L : campaign.getCurrentAmount();
+        BigDecimal currentAmount = campaign.getCurrentAmount() == null ? BigDecimal.ZERO : campaign.getCurrentAmount();
         long targetAmount = campaign.getTargetAmount() == null ? 0L : campaign.getTargetAmount();
         CampaignStatus campaignStatus = campaign.getCampaignStatus() == null ? CampaignStatus.PENDING : campaign.getCampaignStatus();
         String walletAddress = campaign.getWalletNo() == null ? null : walletRepository.findById(campaign.getWalletNo())
-            .map(Wallet::getWalletAddress)
-            .orElse(null);
+                .map(Wallet::getWalletAddress)
+                .orElse(null);
 
         List<Image> campaignImages = imageRepository.findByTargetNameAndTargetNo(CAMPAIGN_IMAGE_TARGET_NAME, campaignNo)
-            .stream()
-            .sorted(Comparator.comparing(Image::getCreatedAt))
-            .toList();
+                .stream()
+                .sorted(Comparator.comparing(Image::getCreatedAt))
+                .toList();
 
         String representativeImagePath = campaignImages.stream()
-            .filter(image -> REPRESENTATIVE_IMAGE_PURPOSE.equals(image.getPurpose()))
-            .map(Image::getImgPath)
-            .findFirst()
-            .orElse(campaign.getImagePath());
+                .filter(image -> REPRESENTATIVE_IMAGE_PURPOSE.equals(image.getPurpose()))
+                .map(Image::getImgPath)
+                .findFirst()
+                .orElse(campaign.getImagePath());
 
         List<String> detailImagePaths = campaignImages.stream()
-            .filter(image -> DETAIL_IMAGE_PURPOSE.equals(image.getPurpose()))
-            .map(Image::getImgPath)
-            .toList();
+                .filter(image -> DETAIL_IMAGE_PURPOSE.equals(image.getPurpose()))
+                .map(Image::getImgPath)
+                .toList();
 
         List<CampaignDetailResponseDTO.UsePlanSummary> usePlans = usePlanRepository.findByCampaignNoOrderByUsePlanNoAsc(campaignNo)
-            .stream()
-            .map(plan -> CampaignDetailResponseDTO.UsePlanSummary.builder()
-                .usePlanNo(plan.getUsePlanNo())
-                .planContent(plan.getPlanContent())
-                .planAmount(plan.getPlanAmount())
-                .build())
-            .toList();
+                .stream()
+                .map(plan -> CampaignDetailResponseDTO.UsePlanSummary.builder()
+                        .usePlanNo(plan.getUsePlanNo())
+                        .planContent(plan.getPlanContent())
+                        .planAmount(plan.getPlanAmount())
+                        .build())
+                .toList();
 
         return CampaignDetailResponseDTO.builder()
-            .campaignNo(campaign.getCampaignNo())
-            .title(campaign.getTitle())
-            .description(campaign.getDescription())
-            .category(campaign.getCategory() == null ? null : campaign.getCategory().getLabel())
-            .approvalStatus(campaign.getApprovalStatus() == null ? ApprovalStatus.PENDING.name() : campaign.getApprovalStatus().name())
-            .campaignStatus(campaignStatus.name())
-            .campaignStatusLabel(toCampaignStatusLabel(campaignStatus))
-            .historyTitle(toHistoryTitle(campaignStatus))
-            .historyDescription(toHistoryDescription(campaignStatus))
-            .targetAmount(targetAmount)
-            .currentAmount(currentAmount)
-            .progressPercent(calculateProgressPercent(currentAmount, targetAmount))
-            .remainingAmount(calculateRemainingAmount(targetAmount, currentAmount))
-            .daysLeft(calculateDaysLeft(campaign.getEndAt()))
-            .startAt(campaign.getStartAt())
-            .endAt(campaign.getEndAt())
-            .usageStartAt(campaign.getUsageStartAt())
-            .usageEndAt(campaign.getUsageEndAt())
-            .walletAddress(walletAddress)
-            .representativeImagePath(representativeImagePath)
-            .detailImagePaths(detailImagePaths)
-            .foundation(CampaignDetailResponseDTO.FoundationSummary.builder()
-                .foundationNo(foundation.getFoundationNo())
-                .foundationName(foundation.getFoundationName())
-                .description(foundation.getDescription())
-                .profilePath(foundation.getProfilePath())
-                .build())
-            .usePlans(usePlans)
-            .build();
+                .campaignNo(campaign.getCampaignNo())
+                .title(campaign.getTitle())
+                .description(campaign.getDescription())
+                .category(campaign.getCategory() == null ? null : campaign.getCategory().getLabel())
+                .approvalStatus(campaign.getApprovalStatus() == null ? ApprovalStatus.PENDING.name() : campaign.getApprovalStatus().name())
+                .campaignStatus(campaignStatus.name())
+                .campaignStatusLabel(toCampaignStatusLabel(campaignStatus))
+                .historyTitle(toHistoryTitle(campaignStatus))
+                .historyDescription(toHistoryDescription(campaignStatus))
+                .targetAmount(targetAmount)
+                .currentAmount(currentAmount)
+                .progressPercent(calculateProgressPercent(currentAmount, targetAmount))
+                .remainingAmount(calculateRemainingAmount(targetAmount, currentAmount))
+                .daysLeft(calculateDaysLeft(campaign.getEndAt()))
+                .startAt(campaign.getStartAt())
+                .endAt(campaign.getEndAt())
+                .usageStartAt(campaign.getUsageStartAt())
+                .usageEndAt(campaign.getUsageEndAt())
+                .walletAddress(walletAddress)
+                .representativeImagePath(representativeImagePath)
+                .detailImagePaths(detailImagePaths)
+                .foundation(CampaignDetailResponseDTO.FoundationSummary.builder()
+                        .foundationNo(foundation.getFoundationNo())
+                        .foundationName(foundation.getFoundationName())
+                        .description(foundation.getDescription())
+                        .profilePath(foundation.getProfilePath())
+                        .build())
+                .usePlans(usePlans)
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
     public CampaignBeneficiaryCheckResponseDTO checkBeneficiaryByEntryCode(String entryCode) {
         return beneficiaryRepository.findByEntryCode(entryCode)
-            .map(beneficiary -> CampaignBeneficiaryCheckResponseDTO.builder()
-                .valid(true)
-                .beneficiaryNo(beneficiary.getBeneficiaryNo())
-                .entryCode(beneficiary.getEntryCode())
-                .name(beneficiary.getName())
-                .beneficiaryType(beneficiary.getBeneficiaryType() == null ? null : beneficiary.getBeneficiaryType().name())
-                .message("수혜자 정보를 확인했습니다.")
-                .build())
-            .orElseGet(() -> CampaignBeneficiaryCheckResponseDTO.builder()
-                .valid(false)
-                .entryCode(entryCode)
-                .message("일치하는 수혜자 entry code가 없습니다.")
-                .build());
+                .map(beneficiary -> CampaignBeneficiaryCheckResponseDTO.builder()
+                        .valid(true)
+                        .beneficiaryNo(beneficiary.getBeneficiaryNo())
+                        .entryCode(beneficiary.getEntryCode())
+                        .name(beneficiary.getName())
+                        .beneficiaryType(beneficiary.getBeneficiaryType() == null ? null : beneficiary.getBeneficiaryType().name())
+                        .message("수혜자 정보를 확인했습니다.")
+                        .build())
+                .orElseGet(() -> CampaignBeneficiaryCheckResponseDTO.builder()
+                        .valid(false)
+                        .entryCode(entryCode)
+                        .message("일치하는 수혜자 코드가 없습니다.")
+                        .build());
     }
 
     @Override
     @Transactional(readOnly = true)
     public CampaignFoundationCheckResponseDTO checkFoundationWalletStatus(Long foundationNo) {
         Foundation foundation = foundationRepository.findByFoundationNo(foundationNo)
-            .orElseThrow(() -> new IllegalArgumentException("기부 단체 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("기부 단체 정보를 찾을 수 없습니다."));
 
         List<CampaignFoundationCheckResponseDTO.WalletStatusItem> wallets = List.of(
-            toWalletStatusItem("지갑 1", foundation.getCampaignWallet1()),
-            toWalletStatusItem("지갑 2", foundation.getCampaignWallet2()),
-            toWalletStatusItem("지갑 3", foundation.getCampaignWallet3())
+                toWalletStatusItem("지갑 1", foundation.getCampaignWallet1()),
+                toWalletStatusItem("지갑 2", foundation.getCampaignWallet2()),
+                toWalletStatusItem("지갑 3", foundation.getCampaignWallet3())
         );
 
         boolean hasAvailableWallet = wallets.stream().anyMatch(CampaignFoundationCheckResponseDTO.WalletStatusItem::isAvailable);
 
         return CampaignFoundationCheckResponseDTO.builder()
-            .foundationNo(foundation.getFoundationNo())
-            .foundationName(foundation.getFoundationName())
-            .hasAvailableWallet(hasAvailableWallet)
-            .message(hasAvailableWallet ? "사용 가능한 캠페인 지갑이 있습니다." : "사용 가능한 캠페인 지갑이 없습니다.")
-            .wallets(wallets)
-            .build();
+                .foundationNo(foundation.getFoundationNo())
+                .foundationName(foundation.getFoundationName())
+                .hasAvailableWallet(hasAvailableWallet)
+                .message(hasAvailableWallet ? "사용 가능한 캠페인 지갑이 있습니다." : "사용 가능한 캠페인 지갑이 없습니다.")
+                .wallets(wallets)
+                .build();
     }
 
     private List<CampaignListResponseDTO> toCampaignListResponse(List<Campaign> campaigns) {
@@ -268,38 +281,38 @@ public class CampaignServiceImpl implements CampaignService {
         }
 
         Map<Long, String> imagePathByCampaignNo = campaigns.stream()
-            .collect(Collectors.toMap(
-                Campaign::getCampaignNo,
-                campaign -> imageRepository.findByTargetNameAndTargetNo(
-                        CAMPAIGN_IMAGE_TARGET_NAME,
-                        campaign.getCampaignNo()
-                    ).stream()
-                    .filter(image -> REPRESENTATIVE_IMAGE_PURPOSE.equals(image.getPurpose()))
-                    .sorted(Comparator.comparing(Image::getCreatedAt).reversed())
-                    .map(Image::getImgPath)
-                    .findFirst()
-                    .orElse(campaign.getImagePath() == null ? "" : campaign.getImagePath())
-            ));
+                .collect(Collectors.toMap(
+                        Campaign::getCampaignNo,
+                        campaign -> imageRepository.findByTargetNameAndTargetNo(
+                                        CAMPAIGN_IMAGE_TARGET_NAME,
+                                        campaign.getCampaignNo()
+                                ).stream()
+                                .filter(image -> REPRESENTATIVE_IMAGE_PURPOSE.equals(image.getPurpose()))
+                                .sorted(Comparator.comparing(Image::getCreatedAt).reversed())
+                                .map(Image::getImgPath)
+                                .findFirst()
+                                .orElse(campaign.getImagePath() == null ? "" : campaign.getImagePath())
+                ));
 
         return campaigns.stream()
-            .map(campaign -> CampaignListResponseDTO.builder()
-                .campaignNo(campaign.getCampaignNo())
-                .foundationNo(campaign.getFoundationNo())
-                .imagePath(imagePathByCampaignNo.get(campaign.getCampaignNo()))
-                .title(campaign.getTitle())
-                .foundationName(
-                    campaign.getFoundationNo() == null
-                        ? null
-                        : foundationRepository.findByFoundationNo(campaign.getFoundationNo())
-                            .map(Foundation::getFoundationName)
-                            .orElse(null)
-                )
-                .targetAmount(campaign.getTargetAmount())
-                .currentAmount(campaign.getCurrentAmount())
-                .category(toCampaignCategoryLabel(campaign.getCategory()))
-                .endAt(campaign.getEndAt())
-                .build())
-            .toList();
+                .map(campaign -> CampaignListResponseDTO.builder()
+                        .campaignNo(campaign.getCampaignNo())
+                        .foundationNo(campaign.getFoundationNo())
+                        .imagePath(imagePathByCampaignNo.get(campaign.getCampaignNo()))
+                        .title(campaign.getTitle())
+                        .foundationName(
+                                campaign.getFoundationNo() == null
+                                        ? null
+                                        : foundationRepository.findByFoundationNo(campaign.getFoundationNo())
+                                        .map(Foundation::getFoundationName)
+                                        .orElse(null)
+                        )
+                        .targetAmount(campaign.getTargetAmount())
+                        .currentAmount(campaign.getCurrentAmount())
+                        .category(toCampaignCategoryLabel(campaign.getCategory()))
+                        .endAt(campaign.getEndAt())
+                        .build())
+                .toList();
     }
 
     private boolean matchesCategory(Campaign campaign, String category) {
@@ -324,8 +337,8 @@ public class CampaignServiceImpl implements CampaignService {
 
         if ("foundation".equalsIgnoreCase(searchType)) {
             String foundationName = campaign.getFoundationNo() == null
-                ? null
-                : foundationRepository.findByFoundationNo(campaign.getFoundationNo())
+                    ? null
+                    : foundationRepository.findByFoundationNo(campaign.getFoundationNo())
                     .map(Foundation::getFoundationName)
                     .orElse(null);
             return foundationName != null && foundationName.toLowerCase().contains(normalizedKeyword);
@@ -341,7 +354,7 @@ public class CampaignServiceImpl implements CampaignService {
         }
 
         return switch (category) {
-            case CHILD_YOUTH -> "아동/청소년";
+            case CHILD_YOUTH -> "아동 및 청소년";
             case SENIOR -> "어르신";
             case DISABLED -> "장애인";
             case ANIMAL -> "동물";
@@ -370,54 +383,60 @@ public class CampaignServiceImpl implements CampaignService {
             String filePath = fileService.getFilePath(storedName);
 
             imageRepository.save(Image.builder()
-                .imgPath(filePath)
-                .imgOrgName(imageFile.getOriginalFilename())
-                .imgStoredName(storedName)
-                .targetName(CAMPAIGN_IMAGE_TARGET_NAME)
-                .targetNo(campaignNo)
-                .createdAt(LocalDateTime.now())
-                .purpose(purpose)
-                .build());
+                    .imgPath(filePath)
+                    .imgOrgName(imageFile.getOriginalFilename())
+                    .imgStoredName(storedName)
+                    .targetName(CAMPAIGN_IMAGE_TARGET_NAME)
+                    .targetNo(campaignNo)
+                    .createdAt(LocalDateTime.now())
+                    .purpose(purpose)
+                    .build());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("이미지 저장 중 오류가 발생했습니다.", e);
         }
     }
 
     private CampaignFoundationCheckResponseDTO.WalletStatusItem toWalletStatusItem(String walletLabel, String walletAddress) {
         if (walletAddress == null || walletAddress.isBlank()) {
             return CampaignFoundationCheckResponseDTO.WalletStatusItem.builder()
-                .walletLabel(walletLabel)
-                .walletAddress(null)
-                .status("NOT_REGISTERED")
-                .available(false)
-                .build();
+                    .walletLabel(walletLabel)
+                    .walletAddress(null)
+                    .status("미등록")
+                    .available(false)
+                    .build();
         }
 
         Optional<Wallet> wallet = walletRepository.findByWalletAddress(walletAddress);
-        String status = wallet.map(value -> value.getStatus() == null ? "UNKNOWN" : value.getStatus().name()).orElse("NOT_FOUND");
+        String status = wallet.map(
+                value -> value.getStatus() == null ? "상태불명" : value.getStatus().name()).orElse("찾을수없음");
         boolean available = wallet.map(value -> WalletStatus.INACTIVE.equals(value.getStatus())).orElse(false);
 
         return CampaignFoundationCheckResponseDTO.WalletStatusItem.builder()
-            .walletLabel(walletLabel)
-            .walletAddress(walletAddress)
-            .status(status)
-            .available(available)
-            .build();
+                .walletLabel(walletLabel)
+                .walletAddress(walletAddress)
+                .status(status)
+                .available(available)
+                .build();
     }
 
-    private int calculateProgressPercent(Long currentAmount, Long targetAmount) {
+    private int calculateProgressPercent(BigDecimal currentAmount, Long targetAmount) {
         if (targetAmount == null || targetAmount <= 0) {
             return 0;
         }
 
-        long safeCurrentAmount = currentAmount == null ? 0L : currentAmount;
-        return (int) Math.min(100, (safeCurrentAmount * 100) / targetAmount);
+        BigDecimal safeCurrentAmount = currentAmount == null ? BigDecimal.ZERO : currentAmount;
+        //BigDecimal은 *,/연산자 사용 불가라서 수정함.
+        return safeCurrentAmount
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(targetAmount), RoundingMode.DOWN)
+                .min(BigDecimal.valueOf(100))
+                .intValue();
     }
 
-    private long calculateRemainingAmount(Long targetAmount, Long currentAmount) {
+    private long calculateRemainingAmount(Long targetAmount, BigDecimal currentAmount) {
         long safeTargetAmount = targetAmount == null ? 0L : targetAmount;
-        long safeCurrentAmount = currentAmount == null ? 0L : currentAmount;
-        return Math.max(0L, safeTargetAmount - safeCurrentAmount);
+        BigDecimal safeCurrentAmount = currentAmount == null ? BigDecimal.ZERO : currentAmount;
+        return Math.max(0L, safeTargetAmount - safeCurrentAmount.longValue());
     }
 
     private long calculateDaysLeft(LocalDateTime endAt) {
@@ -435,37 +454,37 @@ public class CampaignServiceImpl implements CampaignService {
 
     private String toCampaignStatusLabel(CampaignStatus campaignStatus) {
         return switch (campaignStatus) {
-            case PENDING -> "승인 대기";
-            case RECRUITING -> "모금 준비 중";
-            case ACTIVE -> "나눔 진행 중";
-            case ENDED -> "정산 준비 중";
+            case PENDING -> "승인 대기중";
+            case APPROVED, RECRUITING -> "모집중";
+            case ACTIVE -> "진행중";
+            case ENDED -> "모집 종료";
             case SETTLED -> "정산 완료";
-            case COMPLETED -> "나눔 완료";
-            case CANCELLED -> "나눔 취소";
+            case COMPLETED -> "캠페인 종료";
+            case CANCELLED -> "취소됨";
         };
     }
 
     private String toHistoryTitle(CampaignStatus campaignStatus) {
         return switch (campaignStatus) {
-            case PENDING -> "캠페인 승인 대기";
-            case RECRUITING -> "모금 준비 중";
-            case ACTIVE -> "나눔 진행 중";
-            case ENDED -> "정산 준비 중";
-            case SETTLED -> "정산 완료";
-            case COMPLETED -> "나눔 완료";
-            case CANCELLED -> "캠페인 취소";
+            case PENDING -> "검토 중인 캠페인";
+            case APPROVED, RECRUITING -> "참여 가능한 캠페인";
+            case ACTIVE -> "기부금이 전달된 캠페인";
+            case ENDED -> "모집이 완료된 캠페인";
+            case SETTLED -> "정산이 보고된 캠페인";
+            case COMPLETED -> "모든 일정이 종료된 캠페인";
+            case CANCELLED -> "중단된 캠페인";
         };
     }
 
     private String toHistoryDescription(CampaignStatus campaignStatus) {
         return switch (campaignStatus) {
-            case PENDING -> "캠페인이 승인 대기 상태입니다. 운영진 검토가 끝나면 모금 일정이 공개됩니다.";
-            case RECRUITING -> "모금 시작 전 준비 단계입니다. 공개 일정이 시작되면 상세 내역이 순차적으로 반영됩니다.";
-            case ACTIVE -> "현재 모금이 진행 중이거나 정산 준비 단계에 있습니다. 정산이 완료되면 상세 내역이 여기에 표시됩니다.";
-            case ENDED -> "모금은 종료되었으며 정산을 준비하고 있습니다. 정산이 확정되면 나눔 내역을 확인할 수 있습니다.";
-            case SETTLED -> "정산이 완료되었습니다. 최종 보고와 사용 결과가 정리되면 이 영역에서 확인할 수 있습니다.";
-            case COMPLETED -> "나눔과 보고가 모두 완료된 캠페인입니다. 최종 집행 결과가 반영된 상태입니다.";
-            case CANCELLED -> "캠페인이 취소되었습니다. 진행 사유와 상태는 운영 정책에 따라 별도로 안내됩니다.";
+            case PENDING -> "관리자가 캠페인을 검토하고 있습니다.";
+            case APPROVED, RECRUITING -> "기부 참여가 활발히 이루어지고 있습니다.";
+            case ACTIVE -> "목표 금액이 달성되어 기부금이 수혜자에게 전달되었습니다.";
+            case ENDED -> "모집 기간이 종료되어 정산을 준비 중입니다.";
+            case SETTLED -> "기부금 사용 내역이 투명하게 공개되었습니다.";
+            case COMPLETED -> "성공적으로 캠페인이 마무리되었습니다.";
+            case CANCELLED -> "부득이한 사정으로 캠페인이 취소되었습니다.";
         };
     }
 }

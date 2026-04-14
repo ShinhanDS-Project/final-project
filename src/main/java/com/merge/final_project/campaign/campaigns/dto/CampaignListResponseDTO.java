@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -20,7 +21,7 @@ public class CampaignListResponseDTO {  //[가빈] 관리자 측에서 캠페인
     private String title;
     private String foundationName;
     private Long targetAmount;
-    private Long currentAmount;
+    private BigDecimal currentAmount;
     private String category;
     private LocalDateTime endAt;
     private Long foundationNo;

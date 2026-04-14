@@ -1,7 +1,5 @@
 package com.merge.final_project.user.users;
 
-
-
 import com.merge.final_project.wallet.entity.Wallet;
 import jakarta.persistence.*;
 import lombok.*;
@@ -15,7 +13,7 @@ import java.time.LocalDateTime;
         @UniqueConstraint(name = "uk_user_email_login_type", columnNames = {"email", "login_type"})
 }) //로그인 타입,별로 이메일 중복 허용ㅇ
 @Getter
-
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -41,6 +39,7 @@ public class User {
     @Column(name="email", nullable = false)
     private String email;
 
+    //닉네임 용도로 변경
     @Column(name="name_hash", unique = true, nullable = false)
     private String nameHash;
 
@@ -79,5 +78,14 @@ public class User {
     //비밀번호 틀렸을 경우에만 loginCount,로그인 성공시에 0
     public void setsLoginCount(Integer loginCount) {
         this.loginCount = loginCount;
+    }
+
+    // [가빈] 관리자 활성화/비활성화 기능 추가하면서 setter 대신 도메인 메서드로 추가함
+    public void activate() {
+        this.status = UserStatus.ACTIVE;
+    }
+
+    public void deactivate() {
+        this.status = UserStatus.INACTIVE;
     }
 }

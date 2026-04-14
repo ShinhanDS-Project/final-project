@@ -4,6 +4,7 @@ import com.merge.final_project.campaign.campaigns.dto.CampaignBeneficiaryCheckRe
 import com.merge.final_project.campaign.campaigns.dto.CampaignDetailResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignFoundationCheckResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.dto.CampaignRegisterResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import com.merge.final_project.campaign.campaigns.service.CampaignService;
 import lombok.RequiredArgsConstructor;
@@ -44,14 +45,13 @@ public class CampaignController {
     /* 신규 캠페인 등록 API: JSON 데이터(@RequestPart dto)와 이미지 파일들을 동시에 처리하는 multipart/form-data 방식 */
     @ResponseBody
     @PostMapping(value = "/register", consumes = {"multipart/form-data"})
-    public ResponseEntity<String> register(
+    public ResponseEntity<CampaignRegisterResponseDTO> register(
             @RequestPart("dto") CampaignRequestDTO dto,
             @RequestPart("imageFile") MultipartFile imageFile,
             @RequestPart(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles,
             @RequestParam("foundationNo") Long foundationNo
     ) {
-        campaignService.registerCampaign(dto, imageFile, detailImageFiles, foundationNo);
-        return ResponseEntity.ok("캠페인 등록 요청 완료");
+        return ResponseEntity.ok(campaignService.registerCampaign(dto, imageFile, detailImageFiles, foundationNo));
     }
 
     /* 수혜자 확인: 입력된 엔트리 코드가 유효한 수혜자인지 검증함 */
@@ -86,5 +86,11 @@ public class CampaignController {
         CampaignDetailResponseDTO campaign = campaignService.getCampaignDetail(campaignNo);
         model.addAttribute("campaign", campaign);
         return "campaign/detail";
+    }
+
+    @ResponseBody
+    @GetMapping("/{campaignNo}/detail")
+    public ResponseEntity<CampaignDetailResponseDTO> getCampaignDetail(@PathVariable Long campaignNo) {
+        return ResponseEntity.ok(campaignService.getCampaignDetail(campaignNo));
     }
 }

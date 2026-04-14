@@ -1,6 +1,5 @@
 package com.merge.final_project.user;
 
-import com.merge.final_project.user.signUp.UserSignUpRepository;
 import com.merge.final_project.user.users.LoginType;
 import com.merge.final_project.user.verify.VerificationController;
 import com.merge.final_project.user.verify.VerificationService;
@@ -15,10 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class VerificationTest {
@@ -27,186 +28,71 @@ class VerificationTest {
     private VerificationController verificationController;
 
     @MockitoBean
-    private UserSignUpRepository userSignUpRepository;
-
-    @MockitoBean
     private VerificationService verificationService;
 
     @Test
-    @DisplayName("성공: 유효한 이메일이면 인증번호 발송")
+    @DisplayName("인증번호 발송 요청을 서비스에 위임한다")
     void sendSuccessTest() {
-        // given
         UserVerifyRequestDTO request = new UserVerifyRequestDTO("test@gmail.com", LoginType.GOOGLE);
+        UserVerifyResponseDTO responseDto = UserVerifyResponseDTO.builder()
+                .success(true)
+                .available(true)
+                .message("인증번호가 발송되었습니다.")
+                .build();
 
-        when(userSignUpRepository.existsByEmailAndLoginType("test@gmail.com", LoginType.GOOGLE))
-                .thenReturn(false);
+        when(verificationService.sendVerificationCode(request)).thenReturn(responseDto);
 
-        // when
         ResponseEntity<UserVerifyResponseDTO> response = verificationController.send(request);
 
-        // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().isSuccess());
-        assertTrue(response.getBody().isAvailable());
-        assertEquals("인증번호가 발송되었습니다. 이메일을 확인해주세요", response.getBody().getMessage());
-
-        verify(verificationService, times(1)).sendVerificationCode("test@gmail.com");
+        assertEquals(responseDto, response.getBody());
+        verify(verificationService, times(1)).sendVerificationCode(request);
     }
 
     @Test
-    @DisplayName("실패: 이메일 형식이 올바르지 않으면 400 반환")
-    void sendFailInvalidEmailTest() {
-        // given
-        UserVerifyRequestDTO request = new UserVerifyRequestDTO("invalid-email", LoginType.LOCAL);
-
-        // when
-        ResponseEntity<UserVerifyResponseDTO> response = verificationController.send(request);
-
-        // then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertFalse(response.getBody().isAvailable());
-        assertEquals("이메일 형식이 올바르지 않습니다.", response.getBody().getMessage());
-
-        verify(userSignUpRepository, never()).existsByEmailAndLoginType(anyString(), eq(LoginType.LOCAL));
-        verify(verificationService, never()).sendVerificationCode(anyString());
-    }
-
-    @Test
-    @DisplayName("실패: 이미 가입된 이메일이면 409 반환")
+    @DisplayName("서비스 예외는 컨트롤러에서 그대로 전파된다")
     void sendFailDuplicateEmailTest() {
-        // given
         UserVerifyRequestDTO request = new UserVerifyRequestDTO("duplicate@gmail.com", LoginType.LOCAL);
 
-        when(userSignUpRepository.existsByEmailAndLoginType("duplicate@gmail.com", LoginType.LOCAL))
-                .thenReturn(true);
+        when(verificationService.sendVerificationCode(request))
+                .thenThrow(new IllegalStateException("이미 가입한 이메일입니다."));
 
-        // when
-        ResponseEntity<UserVerifyResponseDTO> response = verificationController.send(request);
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> verificationController.send(request)
+        );
 
-        // then
-        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertFalse(response.getBody().isAvailable());
-        assertEquals("이미 가입된 이메일입니다.", response.getBody().getMessage());
-
-        verify(verificationService, never()).sendVerificationCode(anyString());
+        assertEquals("이미 가입한 이메일입니다.", exception.getMessage());
+        verify(verificationService, times(1)).sendVerificationCode(request);
     }
 
     @Test
-    @DisplayName("실패: 인증번호 재요청 제한이면 429 반환")
-    void sendFailTooManyRequestsTest() {
-        // given
-        UserVerifyRequestDTO request = new UserVerifyRequestDTO("retry@gmail.com", LoginType.GOOGLE);
-
-        when(userSignUpRepository.existsByEmailAndLoginType("retry@gmail.com", LoginType.GOOGLE))
-                .thenReturn(false);
-
-        doThrow(new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다."))
-                .when(verificationService).sendVerificationCode("retry@gmail.com");
-
-        // when
-        ResponseEntity<UserVerifyResponseDTO> response = verificationController.send(request);
-
-        // then
-        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertFalse(response.getBody().isAvailable());
-        assertEquals("인증번호는 1분마다 재요청할 수 있습니다.", response.getBody().getMessage());
-
-        verify(verificationService, times(1)).sendVerificationCode("retry@gmail.com");
-    }
-
-    @Test
-    @DisplayName("실패: 요청 횟수 초과이면 429 반환")
-    void sendFailRequestCountExceededTest() {
-        // given
-        UserVerifyRequestDTO request = new UserVerifyRequestDTO("limit@gmail.com", LoginType.LOCAL);
-
-        when(userSignUpRepository.existsByEmailAndLoginType("limit@gmail.com", LoginType.LOCAL))
-                .thenReturn(false);
-
-        doThrow(new IllegalStateException("인증번호 요청 횟수 (5회)를 초과했습니다. 나중에 다시 시도해주세요."))
-                .when(verificationService).sendVerificationCode("limit@gmail.com");
-
-        // when
-        ResponseEntity<UserVerifyResponseDTO> response = verificationController.send(request);
-
-        // then
-        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertFalse(response.getBody().isAvailable());
-        assertEquals("인증번호 요청 횟수 (5회)를 초과했습니다. 나중에 다시 시도해주세요.", response.getBody().getMessage());
-    }
-
-    @Test
-    @DisplayName("성공: 같은 이메일이어도 loginType이 다르면 발송 가능")
-    void sendSuccessSameEmailDifferentLoginTypeTest() {
-        // given
-        UserVerifyRequestDTO request = new UserVerifyRequestDTO("same@gmail.com", LoginType.GOOGLE);
-
-        when(userSignUpRepository.existsByEmailAndLoginType("same@gmail.com", LoginType.GOOGLE))
-                .thenReturn(false);
-
-        // when
-        ResponseEntity<UserVerifyResponseDTO> response = verificationController.send(request);
-
-        // then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().isSuccess());
-        verify(verificationService, times(1)).sendVerificationCode("same@gmail.com");
-    }
-
-    @Test
-    @DisplayName("성공: 인증코드 확인이 완료되면 200 반환")
+    @DisplayName("인증코드가 맞으면 true를 반환한다")
     void confirmSuccessTest() {
-        // given
         UserVerifyCodeRequestDTO request = new UserVerifyCodeRequestDTO("verify@gmail.com", "123456");
 
-        // when
-        ResponseEntity<UserVerifyResponseDTO> response = verificationController.confirm(request);
+        when(verificationService.verifyCode("verify@gmail.com", "123456")).thenReturn(true);
 
-        // then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().isSuccess());
-        assertTrue(response.getBody().isAvailable());
+        boolean result = verificationController.verify(request);
+
+        assertTrue(result);
         verify(verificationService, times(1)).verifyCode("verify@gmail.com", "123456");
     }
 
     @Test
-    @DisplayName("실패: 인증코드 확인에 실패하면 400 반환")
+    @DisplayName("인증코드 확인 실패 예외는 그대로 전파된다")
     void confirmFailTest() {
-        // given
         UserVerifyCodeRequestDTO request = new UserVerifyCodeRequestDTO("verify@gmail.com", "000000");
-        doThrow(new IllegalArgumentException("인증코드가 일치하지 않습니다."))
-                .when(verificationService).verifyCode("verify@gmail.com", "000000");
 
-        // when
-        ResponseEntity<UserVerifyResponseDTO> response = verificationController.confirm(request);
+        when(verificationService.verifyCode("verify@gmail.com", "000000"))
+                .thenThrow(new IllegalArgumentException("인증코드가 일치하지 않습니다."));
 
-        // then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isSuccess());
-        assertFalse(response.getBody().isAvailable());
-        assertEquals("인증코드가 일치하지 않습니다.", response.getBody().getMessage());
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> verificationController.verify(request)
+        );
+
+        assertEquals("인증코드가 일치하지 않습니다.", exception.getMessage());
         verify(verificationService, times(1)).verifyCode("verify@gmail.com", "000000");
     }
-
-//    @Test
-//    @DisplayName("실제 내 이메일로 인증 메일 발송 테스트")
-//    void sendRealVerificationEmailTest() {
-//
-//
-//        verificationService.sendVerificationCode(email);
-//
-//        System.out.println("인증 메일 발송 완료: " + email);
-//    }
 }
