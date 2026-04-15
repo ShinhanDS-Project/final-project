@@ -5,7 +5,6 @@ import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.service.TransactionService;
 import com.merge.final_project.donation.donations.DonationService;
 import com.merge.final_project.user.users.dto.MicroTrackingDTO;
-import com.merge.final_project.user.users.dto.MyPageInfoResponseDTO;
 import com.merge.final_project.user.users.dto.UserTransactionResponseDTO;
 import com.merge.final_project.user.users.dto.UserWalletResponseDTO;
 import com.merge.final_project.user.users.dto.support.*;
