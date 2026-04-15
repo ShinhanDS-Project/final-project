@@ -20,6 +20,12 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
     // 기부 건수 조회
     long countByUserNo(Long userNo);
 
+    // [바다] count donations per campaign
+    long countByCampaignNo(Long campaignNo);
+
+    // [바다] recent donors per campaign
+    List<Donation> findTop5ByCampaignNoOrderByDonatedAtDesc(Long campaignNo);
+
     // 총 기부금액 조회
     @Query("select coalesce(sum(d.donationAmount), 0) from Donation d where d.userNo = :userNo")
     BigDecimal sumDonationAmountByUserNo(@Param("userNo") Long userNo);

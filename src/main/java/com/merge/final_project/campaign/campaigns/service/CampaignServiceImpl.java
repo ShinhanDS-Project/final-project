@@ -15,6 +15,8 @@ import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.campaign.useplan.entity.UsePlan;
 import com.merge.final_project.campaign.useplan.repository.UsePlanRepository;
+import com.merge.final_project.donation.donations.Donation;
+import com.merge.final_project.donation.donations.DonationRepository;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
 import com.merge.final_project.global.utils.FileService;
@@ -22,6 +24,8 @@ import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
+import com.merge.final_project.user.users.User;
+import com.merge.final_project.user.users.UserRepository;
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletStatus;
 import com.merge.final_project.wallet.repository.WalletRepository;
@@ -68,6 +72,9 @@ public class CampaignServiceImpl implements CampaignService {
     private final WalletRepository walletRepository;
     private final CampaignRepository campaignRepository;
     private final UsePlanRepository usePlanRepository;
+    // [바다] additional detail payload sources
+    private final DonationRepository donationRepository;
+    private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final FileService fileService;
     private final ApplicationEventPublisher eventPublisher; // SSE 이벤트 발행을 위한 주입
@@ -172,6 +179,8 @@ public class CampaignServiceImpl implements CampaignService {
         BigDecimal currentAmount = campaign.getCurrentAmount() == null ? BigDecimal.ZERO : campaign.getCurrentAmount();
         long targetAmount = campaign.getTargetAmount() == null ? 0L : campaign.getTargetAmount();
         CampaignStatus campaignStatus = campaign.getCampaignStatus() == null ? CampaignStatus.PENDING : campaign.getCampaignStatus();
+        // [바다] donors count for detail cards
+        long donors = donationRepository.countByCampaignNo(campaignNo);
         String walletAddress = campaign.getWalletNo() == null ? null : walletRepository.findById(campaign.getWalletNo())
                 .map(Wallet::getWalletAddress)
                 .orElse(null);
@@ -201,6 +210,33 @@ public class CampaignServiceImpl implements CampaignService {
                         .build())
                 .toList();
 
+        // [바다] beneficiary tab payload
+        Beneficiary beneficiary = beneficiaryRepository.findById(campaign.getBeneficiaryNo()).orElse(null);
+        CampaignDetailResponseDTO.BeneficiarySummary beneficiarySummary = CampaignDetailResponseDTO.BeneficiarySummary.builder()
+                .title(beneficiary == null ? "수혜자 정보 준비 중" : beneficiary.getName())
+                .target(beneficiary == null || beneficiary.getBeneficiaryType() == null
+                        ? "-"
+                        : beneficiary.getBeneficiaryType().name())
+                .build();
+
+        // [바다] recent donor tab payload
+        List<CampaignDetailResponseDTO.RecentDonorSummary> recentDonors = donationRepository
+                .findTop5ByCampaignNoOrderByDonatedAtDesc(campaignNo)
+                .stream()
+                .map(this::toRecentDonorSummary)
+                .toList();
+
+        // [바다] documents tab payload (minimal from use plans)
+        List<CampaignDetailResponseDTO.DocumentSummary> documents = usePlans.stream()
+                .map(plan -> CampaignDetailResponseDTO.DocumentSummary.builder()
+                        .name(plan.getPlanContent() == null || plan.getPlanContent().isBlank()
+                                ? "사용 계획서"
+                                : plan.getPlanContent())
+                        .size(plan.getPlanAmount() == null ? "-" : String.format("%,d원", plan.getPlanAmount()))
+                        .href("")
+                        .build())
+                .toList();
+
         return CampaignDetailResponseDTO.builder()
                 .campaignNo(campaign.getCampaignNo())
                 .title(campaign.getTitle())
@@ -216,6 +252,7 @@ public class CampaignServiceImpl implements CampaignService {
                 .progressPercent(calculateProgressPercent(currentAmount, targetAmount))
                 .remainingAmount(calculateRemainingAmount(targetAmount, currentAmount))
                 .daysLeft(calculateDaysLeft(campaign.getEndAt()))
+                .donors(donors)
                 .startAt(campaign.getStartAt())
                 .endAt(campaign.getEndAt())
                 .usageStartAt(campaign.getUsageStartAt())
@@ -230,6 +267,9 @@ public class CampaignServiceImpl implements CampaignService {
                         .profilePath(foundation.getProfilePath())
                         .build())
                 .usePlans(usePlans)
+                .beneficiary(beneficiarySummary)
+                .recentDonors(recentDonors)
+                .documents(documents)
                 .build();
     }
 
@@ -313,6 +353,40 @@ public class CampaignServiceImpl implements CampaignService {
                         .endAt(campaign.getEndAt())
                         .build())
                 .toList();
+    }
+
+    // [바다] mapper for recent donor payload
+    private CampaignDetailResponseDTO.RecentDonorSummary toRecentDonorSummary(Donation donation) {
+        String donorName;
+        if (donation.isAnonymous()) {
+            donorName = "익명";
+        } else {
+            donorName = userRepository.findByUserNo(donation.getUserNo())
+                    .map(User::getName)
+                    .orElse("기부자");
+        }
+
+        long amount = donation.getDonationAmount() == null ? 0L : donation.getDonationAmount().longValue();
+        return CampaignDetailResponseDTO.RecentDonorSummary.builder()
+                .name(donorName)
+                .amount(amount)
+                .time(toRelativeTime(donation.getDonatedAt()))
+                .build();
+    }
+
+    // [바다] relative time formatter for recent donors
+    private String toRelativeTime(LocalDateTime donatedAt) {
+        if (donatedAt == null) {
+            return "-";
+        }
+        Duration duration = Duration.between(donatedAt, LocalDateTime.now());
+        long minutes = Math.max(0L, duration.toMinutes());
+        if (minutes < 1) return "방금 전";
+        if (minutes < 60) return minutes + "분 전";
+        long hours = minutes / 60;
+        if (hours < 24) return hours + "시간 전";
+        long days = hours / 24;
+        return days + "일 전";
     }
 
     private boolean matchesCategory(Campaign campaign, String category) {

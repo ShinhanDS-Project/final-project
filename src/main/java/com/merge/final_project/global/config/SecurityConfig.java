@@ -185,8 +185,11 @@ public class SecurityConfig {
                                 "/oauth2/**",
                                 "/login/**",
                                 "/social-info",
-                                "/users/support/**"
-                        ).permitAll()
+                                "/users/support/**",
+                                "/api/donation/public/stats",    // main의 기부 누적 조회
+                                "/api/donation/public/home-hub"
+
+                                ).permitAll()
 
                         // 2. [인증 경로] 로그인한 사용자만 가능
                         .requestMatchers("/finalReport/**").authenticated()

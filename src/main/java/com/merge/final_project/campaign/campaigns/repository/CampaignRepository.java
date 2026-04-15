@@ -2,7 +2,6 @@ package com.merge.final_project.campaign.campaigns.repository;
 
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
-import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -117,5 +116,20 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
 
     //[채원]
     List<Campaign> findAllByCampaignNoIn(List<Long> campaignNos);
+
+    //[바다] main 사용 캠페인
+    Page<Campaign> findByCampaignStatusInAndApprovalStatusOrderByEndAtAscCampaignNoDesc(
+            Collection<CampaignStatus> campaignStatuses,
+            ApprovalStatus approvalStatus,
+            Pageable pageable
+    );
+
+    //[바다] main 사용 캠페인
+    Page<Campaign> findByCampaignStatusInAndApprovalStatusOrderByCurrentAmountDescCampaignNoDesc(
+            Collection<CampaignStatus> campaignStatuses,
+            ApprovalStatus approvalStatus,
+            Pageable pageable
+    );
+
 
 }

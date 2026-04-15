@@ -1,5 +1,7 @@
 package com.merge.final_project.donation.donations;
 
+import com.merge.final_project.donation.donations.dto.HomeHubResponseDTO;
+import com.merge.final_project.donation.donations.dto.PublicStatsResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,4 +24,18 @@ public class DonationController {
         List<Donation> donations=donationService.requestDonation(loginUserNo);
         return ResponseEntity.ok(donations);
     }
+
+    //[바다] main 기부 누적 내역 조회
+    @GetMapping("/public/stats")
+    public ResponseEntity<PublicStatsResponseDTO> getPublicStats() {
+        return ResponseEntity.ok(donationService.getPublicStats());
+    }
+
+    //[바다] main 캠페인 리스트
+    @GetMapping("/public/home-hub")
+    public ResponseEntity<HomeHubResponseDTO> getHomeHub() {
+        return ResponseEntity.ok(donationService.getHomeHub());
+    }
+
+
 }
