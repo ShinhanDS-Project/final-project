@@ -3,6 +3,7 @@ package com.merge.final_project.blockchain.service;
 import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
+import com.merge.final_project.blockchain.gas.GasStationService;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.blockchain.security.WalletPrivateKeyResolver;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
@@ -47,6 +48,7 @@ public class SettlementTransactionService {
     private final CampaignRepository campaignRepository;
     private final WalletPrivateKeyResolver walletPrivateKeyResolver;
     private final TokenAmountConverter tokenAmountConverter;
+    private final GasStationService gasStationService;
 
     /**
      * 캠페인 정산 처리 메인 로직
@@ -182,6 +184,7 @@ public class SettlementTransactionService {
         try {
             // 스마트컨트랙트는 수수료율을 bps(1%=100bp) 단위로 사용하므로 변환한다.
             BigInteger feeBps = feeRatePercent.movePointRight(2).toBigIntegerExact();
+            gasStationService.ensureSufficientPol(campaignWallet);
 
             // 캠페인 지갑에서 기부단체/수혜자에게 토큰을 분배하는
             // 실제 온체인 정산 트랜잭션 실행

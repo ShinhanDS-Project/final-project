@@ -6,6 +6,7 @@ import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
 import com.merge.final_project.blockchain.repository.KeyRepository;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
+import com.merge.final_project.blockchain.security.WalletCryptoService;
 import com.merge.final_project.blockchain.service.BlockchainService;
 import com.merge.final_project.blockchain.service.SettlementTransactionService;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
@@ -72,6 +73,8 @@ public class SettlementRepositoryTests {
     private SettlementRepository settlementRepository;
     @Autowired
     private TransactionRepository transactionRepository;
+    @Autowired
+    private WalletCryptoService walletCryptoService;
 
 //    @Test
 //    @DisplayName("정산 성공 시 settlement, transaction, campaign, wallet 상태가 정상 반영된다")
@@ -239,9 +242,10 @@ public class SettlementRepositoryTests {
 //    }
 
     private Wallet saveWallet(String privateKey, String addressPrefix, BigDecimal balance) {
+        String encryptedPrivateKey = walletCryptoService.encryptPrivateKey(privateKey);
         Key key = keyRepository.save(
                 Key.builder()
-                        .privateKey(privateKey)
+                        .privateKey(encryptedPrivateKey)
                         .build()
         );
 

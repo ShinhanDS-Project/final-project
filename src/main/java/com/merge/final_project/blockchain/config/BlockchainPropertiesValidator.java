@@ -25,9 +25,6 @@ public class BlockchainPropertiesValidator {
     @Value("${blockchain.wallet.hot-address:}")
     private String hotWalletAddress;
 
-    @Value("${blockchain.contract.owner-address:}")
-    private String contractOwnerAddress;
-
     @PostConstruct
     void validate() {
         if (stubEnabled) {
@@ -46,9 +43,6 @@ public class BlockchainPropertiesValidator {
         validateAddress(donationTokenAddress, "blockchain.contract.donation-token-address");
         validateAddress(hotWalletAddress, "blockchain.wallet.hot-address");
 
-        if (!contractOwnerAddress.isBlank()) {
-            validateAddress(contractOwnerAddress, "blockchain.contract.owner-address");
-        }
     }
 
     private void requireNotBlank(String value, String propertyName) {
