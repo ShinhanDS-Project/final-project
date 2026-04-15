@@ -110,6 +110,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
                         .requestMatchers("/api/v1/beneficiary/signup", "/api/v1/beneficiary/signin").permitAll()
                         .requestMatchers("/api/v1/final-reports/campaigns").permitAll() // 필요 시 개방
+                        .requestMatchers("/api/v1/final-reports/campaign/**").permitAll() // 보고서 상세 조회 (공개)
 
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()

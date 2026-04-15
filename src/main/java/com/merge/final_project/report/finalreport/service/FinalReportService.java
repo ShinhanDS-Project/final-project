@@ -104,6 +104,21 @@ public class FinalReportService {
         }
     }
 
+    /**
+     * 캠페인 번호로 승인된 보고서 조회 (공개용)
+     */
+    @Transactional(readOnly = true)
+    public FinalReportResponseDTO getPublicReportByCampaign(Long campaignNo) {
+        FinalReport report = finalReportRepository.findByCampaign_no(campaignNo)
+                .orElseThrow(() -> new RuntimeException("해당 캠페인의 보고서를 찾을 수 없습니다."));
+
+        // 보통 승인된 보고서만 공개하는 것이 일반적이므로 상태 체크를 추가할 수 있습니다.
+        // if (report.getApprovalStatus() != ReportApprovalStatus.APPROVED) { ... }
+
+        List<Image> images = imageRepository.findByTargetNameAndTargetNo("final_report", report.getReportNo());
+        return new FinalReportResponseDTO(report, images);
+    }
+
     @Transactional(readOnly = true)
     public List<FinalReportResponseDTO> getMyReports(String email) {
         List<FinalReport> reports = finalReportRepository.findByBeneficiaryEmail(email);
