@@ -5,6 +5,7 @@ import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.service.TransactionService;
 import com.merge.final_project.donation.donations.DonationService;
 import com.merge.final_project.user.users.dto.MicroTrackingDTO;
+import com.merge.final_project.user.users.dto.MyPageInfoResponseDTO;
 import com.merge.final_project.user.users.dto.UserTransactionResponseDTO;
 import com.merge.final_project.user.users.dto.UserWalletResponseDTO;
 import com.merge.final_project.user.users.dto.support.*;
@@ -17,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users/support")
@@ -26,7 +28,8 @@ public class UserController {
     private UserService userService;
     @Autowired
     private DonationService donationService;
-
+    @Autowired
+    private UserRepository userRepository;
 
     // 이메일 찾기
     @PostMapping("/email")
