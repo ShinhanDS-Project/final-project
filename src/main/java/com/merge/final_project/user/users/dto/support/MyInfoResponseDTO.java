@@ -28,4 +28,7 @@ public class MyInfoResponseDTO {
 
     private String profilePath;
     // 프로필 사진 수정
+
+    //이채원:[누락] 생일(수정불가)
+    private LocalDate birth;
 }
