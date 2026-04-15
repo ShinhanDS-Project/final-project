@@ -92,15 +92,18 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * 2. 수혜자 및 리액트 API 전용 필터 체인
+     */
     @Order(2)
     @Bean
     public SecurityFilterChain beneficiaryFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
-                .securityMatcher("/api/beneficiary/", "/finalReport/", "/api/v1/", "/api/redemptions/")
+                .securityMatcher("/api/beneficiary/**", "/finalReport/**", "/api/v1/**", "/api/redemptions/**")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable()) //  팝업 방지 확실히!
+                .httpBasic(basic -> basic.disable()) // 💡 팝업 방지 확실히!
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // 수혜자 및 공용 API 개방
@@ -112,7 +115,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint) //  팝업 대신 JSON 응답
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint) // 💡 팝업 대신 JSON 응답
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
