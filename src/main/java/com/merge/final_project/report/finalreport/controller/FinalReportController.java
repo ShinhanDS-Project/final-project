@@ -129,4 +129,11 @@ public class FinalReportController {
         if (principal == null) return ResponseEntity.status(401).body("로그인 필요");
         return ResponseEntity.ok(finalReportService.getMyReports(principal.getName()));
     }
+
+    @GetMapping("/my/campaigns")
+    @ResponseBody
+    public ResponseEntity<?> getMyCampaigns(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body("로그인 필요");
+        return ResponseEntity.ok(beneficiaryService.getMyCampaigns(principal.getName()));
+    }
 }

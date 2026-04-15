@@ -82,6 +82,18 @@ public class BeneficiaryController {
     }
 
     /**
+     * 내 정보 조회 (API)
+     */
+    @GetMapping("/me")
+    @ResponseBody
+    public ResponseEntity<?> getMyInfo(java.security.Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body("로그인 필요");
+
+        BeneficiaryInfoResponseDTO myInfo = beneficiaryService.getMyDetailInfo(principal.getName());
+        return ResponseEntity.ok(myInfo);
+    }
+
+    /**
      * 로그인 처리 (API)
      */
     @PostMapping("/signin")@ResponseBody

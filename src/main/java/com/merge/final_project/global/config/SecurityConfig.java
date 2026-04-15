@@ -16,6 +16,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -37,6 +42,21 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // 리액트 개발 환경 포트들 허용
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
     /**
      * 1. 관리자 전용 필터 체인 (/admin/**)
      */
@@ -45,9 +65,10 @@ public class SecurityConfig {
     public SecurityFilterChain adminFilterChain(HttpSecurity http, AdminJwtFilter adminJwtFilter) throws Exception {
         http
                 .securityMatcher("/admin/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable())
+                .httpBasic(basic -> basic.disable()) // 팝업 방지
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/admin/auth/login").permitAll()
@@ -63,26 +84,29 @@ public class SecurityConfig {
     }
 
     /**
-     * 2. 수혜자 및 리액트 전용 API 필터 체인
+     * 2. 수혜자 및 리액트 API 전용 필터 체인
      */
     @Order(2)
     @Bean
     public SecurityFilterChain beneficiaryFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
-                .securityMatcher("/api/beneficiary/**", "/finalReport/**", "/api/v1/**")
+                .securityMatcher("/api/beneficiary/**", "/finalReport/**", "/api/v1/**", "/api/redemptions/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable())
+                .httpBasic(basic -> basic.disable()) // 💡 팝업 방지 확실히!
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 수혜자 로그인/회원가입은 공개 (v1 포함)
+                        // 수혜자 및 공용 API 개방
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
                         .requestMatchers("/api/v1/beneficiary/signup", "/api/v1/beneficiary/signin").permitAll()
-                        // 그 외 수혜자/보고서 관련은 인증 필요
+                        .requestMatchers("/api/v1/final-reports/campaigns").permitAll() // 필요 시 개방
+                        
+                        // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint) // 💡 팝업 대신 JSON 응답
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -104,6 +128,7 @@ public class SecurityConfig {
     public SecurityFilterChain foundationFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
                 .securityMatcher("/api/foundation/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
@@ -134,6 +159,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain defaultFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
