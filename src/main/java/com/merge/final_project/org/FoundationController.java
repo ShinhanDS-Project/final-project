@@ -122,7 +122,7 @@ public class FoundationController {
     // 기부단체 회원정보 수정 (설명, 연락처, 계좌, 은행명, 수수료율, 프로필 이미지)
     @Operation(summary = "기부단체 회원정보 수정", description = "로그인한 기부단체의 설명·연락처·계좌·은행명·수수료율·프로필 이미지를 수정합니다. "
             + "multipart/form-data: data 파트(JSON)와 profileImage 파트(이미지, 선택)를 함께 전송합니다.")
-    @ApiResponses({r
+    @ApiResponses({
 
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "400", description = "요청 값 유효성 오류"),
