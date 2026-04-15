@@ -164,6 +164,7 @@ public class UserServiceImpl implements UserService {
                 .name(user.getName())
                 .phone(user.getPhone())
                 .nameHash(user.getNameHash())
+                .birth(user.getBirth())
                 .profilePath(user.getProfilePath())
                 .build();
 
