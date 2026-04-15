@@ -55,7 +55,7 @@ public class AdminFoundationController {
         return ResponseEntity.ok(foundationService.getRejectedFoundationListWithFilter(keyword, pageable));
     }
 
-    @Operation(summary = "승인된 기부단체 목록 조회", description = "reviewStatus = APPROVED 인 기부단체 목록을 키워드 검색과 페이징으로 조회합니다.")
+    @Operation(summary = "승인된 기부단체 목록 조회", description = "reviewStatus = APPROVED 인 기부단체 목록을 계정 상태 필터, 키워드 검색, 페이징으로 조회합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "401", description = "인증되지 않은 요청"),
@@ -63,8 +63,9 @@ public class AdminFoundationController {
     })
     @GetMapping("/approved")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
-            @Parameter(description = "단체명 또는 대표자명 키워드 검색", example = "초록")
+            @Parameter(description = "계정 상태 필터 (ACTIVE, INACTIVE) — 미입력 시 전체 조회", example = "ACTIVE")
             @RequestParam(required = false) AccountStatus accountStatus,
+            @Parameter(description = "단체명 또는 대표자명 키워드 검색", example = "초록")
             @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(foundationService.getApprovedFoundationListForAdmin(accountStatus, keyword, pageable));
