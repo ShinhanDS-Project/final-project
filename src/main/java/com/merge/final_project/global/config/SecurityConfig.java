@@ -150,6 +150,9 @@ public class SecurityConfig {
                         // GET 한정 공개 — POST /register는 ROLE_FOUNDATION 필요
                         .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/*/detail").permitAll()
+                        // GET 한정 공개 — 기부단체 지갑 정보 및 캠페인 목록 (foundationNo 경로 파라미터)
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/*/wallet").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/*/campaigns").permitAll()
                         // 그 외 단체 전용 기능은 ROLE_FOUNDATION 필요
                         .anyRequest().hasAuthority("ROLE_FOUNDATION")
                 )

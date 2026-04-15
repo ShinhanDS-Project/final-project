@@ -92,12 +92,11 @@ public class FoundationController {
         return ResponseEntity.ok().build();
     }
 
-    //기부단체가 본인 캠페인 리스트 조회 (기본: 최신순)
-    @GetMapping("/me/campaigns")
+    //기부단체 캠페인 리스트 조회 (기본: 최신순, 공개)
+    @GetMapping("/{foundationNo}/campaigns")
     public ResponseEntity<Page<CampaignListResponseDTO>> getMyCampaigns(
-            Authentication authentication,
+            @PathVariable Long foundationNo,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyCampaigns(foundationNo, pageable));
     }
 
@@ -119,10 +118,9 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.getMyPageStats(foundationNo));
     }
 
-    // 기부단체 마이페이지 — 지갑 주소 + 잔액
-    @GetMapping("/me/wallet")
-    public ResponseEntity<FoundationWalletDTO> getMyWalletInfo(Authentication authentication) {
-        Long foundationNo = (Long) authentication.getDetails();
+    // 기부단체 지갑 주소 + 잔액 조회 (공개)
+    @GetMapping("/{foundationNo}/wallet")
+    public ResponseEntity<FoundationWalletDTO> getMyWalletInfo(@PathVariable Long foundationNo) {
         return ResponseEntity.ok(foundationService.getMyWalletInfo(foundationNo));
     }
 
