@@ -6,6 +6,7 @@ import com.merge.final_project.blockchain.gas.GasStationService;
 import com.merge.final_project.blockchain.security.WalletPrivateKeyResolver;
 import com.merge.final_project.blockchain.tx.BlockchainTransferClient;
 import com.merge.final_project.blockchain.tx.TransferResult;
+import com.merge.final_project.blockchain.wallet.HotWalletResolver;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.wallet.entity.Wallet;
@@ -14,7 +15,6 @@ import com.merge.final_project.wallet.repository.WalletLookupRepository;
 import com.merge.final_project.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,11 +35,9 @@ public class BlockchainTransferService {
     private final BlockchainTransferClient blockchainTransferClient;
     private final WalletPrivateKeyResolver walletPrivateKeyResolver;
     private final TokenAmountConverter tokenAmountConverter;
+    private final HotWalletResolver hotWalletResolver;
 
-    @Value("${blockchain.contract.owner-address:}")
-    private String contractOwnerAddress;
-
-    @Value("${blockchain.wallet.hot-address:}")
+    @org.springframework.beans.factory.annotation.Value("${blockchain.wallet.hot-address:}")
     private String hotWalletAddress;
 
     @Transactional
@@ -51,14 +49,13 @@ public class BlockchainTransferService {
         Wallet hotWallet = findHotWallet();
         Wallet userWallet = walletLookupRepository.findByWalletTypeAndOwnerNo(WalletType.USER, userNo)
                 .orElseThrow(() -> new IllegalArgumentException("user wallet not found: " + userNo));
-        Wallet ownerWallet = findContractOwnerWallet(hotWallet);
-        gasStationService.ensureSufficientPol(ownerWallet);
+        gasStationService.ensureSufficientPol(hotWallet);
 
         BigInteger onChainAmount = tokenAmountConverter.toOnChainAmount(amount);
         BigInteger resolvedDonationId = resolveDonationId(donationId);
 
         TransferResult transferResult = blockchainTransferClient.allocateToUser(
-                walletPrivateKeyResolver.resolveForWallet(ownerWallet),
+                walletPrivateKeyResolver.resolveForWallet(hotWallet),
                 userWallet.getWalletAddress(),
                 onChainAmount,
                 resolvedDonationId
@@ -145,23 +142,7 @@ public class BlockchainTransferService {
     }
 
     private Wallet findHotWallet() {
-        if (hotWalletAddress == null || hotWalletAddress.isBlank()) {
-            throw new IllegalStateException("configured hot wallet address is empty");
-        }
-        Wallet hotWallet = walletLookupRepository.findByWalletAddressIgnoreCase(hotWalletAddress)
-                .orElseThrow(() -> new IllegalStateException("HOT wallet not found by configured address: " + hotWalletAddress));
-        if (hotWallet.getWalletType() != WalletType.HOT) {
-            throw new IllegalStateException("configured hot wallet address is not HOT type: " + hotWalletAddress);
-        }
-        return hotWallet;
-    }
-
-    private Wallet findContractOwnerWallet(Wallet hotWallet) {
-        if (contractOwnerAddress == null || contractOwnerAddress.isBlank()) {
-            return hotWallet;
-        }
-        return walletLookupRepository.findByWalletAddressIgnoreCase(contractOwnerAddress)
-                .orElseThrow(() -> new IllegalStateException("contract owner wallet not found in DB: " + contractOwnerAddress));
+        return hotWalletResolver.resolve(hotWalletAddress);
     }
 
     private BigInteger resolveDonationId(Long donationId) {

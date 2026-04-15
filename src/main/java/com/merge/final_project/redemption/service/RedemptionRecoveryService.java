@@ -6,11 +6,11 @@ import com.merge.final_project.blockchain.entity.TransactionStatus;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.blockchain.service.BlockchainService;
 import com.merge.final_project.blockchain.service.TokenAmountConverter;
+import com.merge.final_project.blockchain.wallet.HotWalletResolver;
 import com.merge.final_project.redemption.RedemptionStatus;
 import com.merge.final_project.redemption.entity.Redemption;
 import com.merge.final_project.redemption.repository.RedemptionRepository;
 import com.merge.final_project.wallet.entity.Wallet;
-import com.merge.final_project.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +28,7 @@ public class RedemptionRecoveryService {
 
     private final RedemptionRepository redemptionRepository;
     private final RedemptionCommandService redemptionCommandService;
-    private final WalletRepository walletRepository;
+    private final HotWalletResolver hotWalletResolver;
     private final TransactionRepository transactionRepository;
     private final BlockchainService blockchainService;
     private final TokenAmountConverter tokenAmountConverter;
@@ -67,8 +67,7 @@ public class RedemptionRecoveryService {
         // 요청자 지갑
         Wallet requesterWallet = redemption.getWallet();
         // HOT 지갑 조회
-        Wallet hotWallet = walletRepository.findByWalletAddress(hotWalletAddress)
-                .orElseThrow(() -> new IllegalArgumentException("hot wallet not found"));
+        Wallet hotWallet = resolveHotWallet();
 
         // 기존 트랜잭션 확인
         Transaction transaction = redemption.getTransaction();
@@ -110,5 +109,9 @@ public class RedemptionRecoveryService {
         } catch (Exception e) {
             throw new RuntimeException("failed to sync wallet balance", e);
         }
+    }
+
+    private Wallet resolveHotWallet() {
+        return hotWalletResolver.resolve(hotWalletAddress);
     }
 }

@@ -4,9 +4,9 @@ import com.merge.final_project.blockchain.security.WalletPrivateKeyResolver;
 import com.merge.final_project.blockchain.service.TransferTransactionService;
 import com.merge.final_project.blockchain.tx.BlockchainTransferClient;
 import com.merge.final_project.blockchain.tx.TransferResult;
+import com.merge.final_project.blockchain.wallet.HotWalletResolver;
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletType;
-import com.merge.final_project.wallet.repository.WalletLookupRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import java.math.BigInteger;
 @Service
 public class GasStationService {
 
-    private final WalletLookupRepository walletLookupRepository;
+    private final HotWalletResolver hotWalletResolver;
     private final BlockchainTransferClient blockchainTransferClient;
     private final TransferTransactionService transferTransactionService;
     private final WalletPrivateKeyResolver walletPrivateKeyResolver;
@@ -35,21 +35,21 @@ public class GasStationService {
     private final String hotWalletAddress;
 
     public GasStationService(
-            WalletLookupRepository walletLookupRepository,
+            HotWalletResolver hotWalletResolver,
             BlockchainTransferClient blockchainTransferClient,
             TransferTransactionService transferTransactionService,
             WalletPrivateKeyResolver walletPrivateKeyResolver,
             Web3j web3j,
-            @Value("${blockchain.gas.initial-pol-wei:30000000000000000}") String initialPolWei,
+            @Value("${blockchain.gas.initial-pol-wei:15000000000000000}") String initialPolWei,
             @Value("${blockchain.gas.min-pol-wei:10000000000000000}") String minPolWei,
             @Value("${blockchain.gas.max-topup-pol-wei:50000000000000000}") String maxTopUpPolWei,
-            @Value("${blockchain.tx.gas-limit:300000}") String txGasLimit,
+            @Value("${blockchain.tx.gas-limit:120000}") String txGasLimit,
             @Value("${blockchain.gas.topup-buffer-bps:12500}") String topUpBufferBps,
             @Value("${blockchain.gas.topup-headroom-wei:5000000000000000}") String topUpHeadroomWei,
             @Value("${blockchain.gas.dynamic-cap-multiplier:3}") String dynamicCapMultiplier,
             @Value("${blockchain.wallet.hot-address:}") String hotWalletAddress
     ) {
-        this.walletLookupRepository = walletLookupRepository;
+        this.hotWalletResolver = hotWalletResolver;
         this.blockchainTransferClient = blockchainTransferClient;
         this.transferTransactionService = transferTransactionService;
         this.walletPrivateKeyResolver = walletPrivateKeyResolver;
@@ -67,7 +67,7 @@ public class GasStationService {
     @Transactional
     public void fundInitialPol(Wallet wallet) {
         // 초기 가스 지급도 동적 기준을 적용해 가스 급등 시 과소 충전을 방지한다.
-        BigInteger amountWei = resolveDynamicTopUpAmount(BigInteger.ZERO);
+        BigInteger amountWei = resolveInitialTopUpAmount(BigInteger.ZERO);
         topUpPolFromHot(wallet, amountWei, "POL_AUTO_TOPUP");
     }
 
@@ -103,7 +103,7 @@ public class GasStationService {
         }
 
         // 동적 목표치 대비 부족분만 계산해서 충전한다.
-        BigInteger amountWei = resolveDynamicTopUpAmount(currentBalance);
+        BigInteger amountWei = resolveEnsureTopUpAmount(currentBalance, requiredReserveWei);
         topUpPolFromHot(signerWallet, amountWei, "POL_AUTO_TOPUP");
     }
 
@@ -162,11 +162,32 @@ public class GasStationService {
         }
     }
 
-    private BigInteger resolveDynamicTopUpAmount(BigInteger currentBalanceWei) {
+    private BigInteger resolveInitialTopUpAmount(BigInteger currentBalanceWei) {
         // targetWei = max(초기 기준값, 동적 필요 예비금)
         BigInteger safeCurrentBalance = currentBalanceWei == null ? BigInteger.ZERO : currentBalanceWei;
         BigInteger requiredWei = resolveRequiredGasReserveWei();
         BigInteger targetWei = initialPolWei.max(requiredWei);
+        BigInteger shortageWei = targetWei.subtract(safeCurrentBalance);
+        if (shortageWei.signum() <= 0) {
+            return BigInteger.ZERO;
+        }
+        BigInteger dynamicCapWei = resolveDynamicTopUpCapWei();
+        if (shortageWei.compareTo(dynamicCapWei) > 0) {
+            log.warn(
+                    "POL top-up shortage exceeds dynamic cap. shortageWei={}, capWei={}, targetWei={}, currentWei={}",
+                    shortageWei,
+                    dynamicCapWei,
+                    targetWei,
+                    safeCurrentBalance
+            );
+            return dynamicCapWei;
+        }
+        return shortageWei;
+    }
+
+    private BigInteger resolveEnsureTopUpAmount(BigInteger currentBalanceWei, BigInteger requiredReserveWei) {
+        BigInteger safeCurrentBalance = currentBalanceWei == null ? BigInteger.ZERO : currentBalanceWei;
+        BigInteger targetWei = minPolWei.max(requiredReserveWei);
         BigInteger shortageWei = targetWei.subtract(safeCurrentBalance);
         if (shortageWei.signum() <= 0) {
             return BigInteger.ZERO;
@@ -217,15 +238,7 @@ public class GasStationService {
     }
 
     private Wallet resolveHotWallet() {
-        if (hotWalletAddress == null || hotWalletAddress.isBlank()) {
-            throw new IllegalStateException("configured hot wallet address is empty");
-        }
-        Wallet hotWallet = walletLookupRepository.findByWalletAddressIgnoreCase(hotWalletAddress)
-                .orElseThrow(() -> new IllegalStateException("HOT wallet not found by configured address: " + hotWalletAddress));
-        if (hotWallet.getWalletType() != WalletType.HOT) {
-            throw new IllegalStateException("configured hot wallet address is not HOT type: " + hotWalletAddress);
-        }
-        return hotWallet;
+        return hotWalletResolver.resolve(hotWalletAddress);
     }
 
     private boolean isHotWallet(Wallet wallet) {
