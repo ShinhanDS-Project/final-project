@@ -145,6 +145,8 @@ public class SecurityConfig {
                                 "/api/foundation/logout",    // 로그아웃 (토큰 만료 후에도 호출 가능해야 함)
                                 "/api/foundation/campaigns"  // 캠페인 목록 조회 (공개)
                         ).permitAll()
+                        // GET 한정 공개 — 일반 사용자 기부단체 상세 조회 (숫자 ID 경로만 허용, /me 등 제외)
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/{foundationNo:\\d+}").permitAll()
                         // GET 한정 공개 — POST /register는 ROLE_FOUNDATION 필요
                         .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/*/detail").permitAll()

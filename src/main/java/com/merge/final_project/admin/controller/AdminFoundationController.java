@@ -3,6 +3,7 @@ package com.merge.final_project.admin.controller;
 import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.FoundationService;
 import com.merge.final_project.org.ReviewStatus;
+import com.merge.final_project.org.dto.FoundationDetailResponseDTO;
 import com.merge.final_project.org.dto.FoundationListResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,6 +26,13 @@ public class AdminFoundationController {
 
     private final FoundationService foundationService;
 
+    // 관리자 기부단체 상세 조회 — 민감 정보 포함 (이메일, 계좌, 상태값 등 모두 노출)
+    @GetMapping("/{foundationNo}")
+    public ResponseEntity<FoundationDetailResponseDTO> getDetail(@PathVariable Long foundationNo) {
+        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
+    }
+
+    // 승인 전 기부단체 리스트 조회 — 키워드 검색 + 페이징 + 정렬
     @Operation(summary = "가입 신청 대기 기부단체 목록 조회", description = "accountStatus = PRE_REGISTERED 인 기부단체 가입 신청 목록을 reviewStatus 필터, 키워드 검색, 정렬, 페이징으로 조회합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -109,8 +117,7 @@ public class AdminFoundationController {
             @ApiResponse(responseCode = "403", description = "관리자 권한 없음")
     })
     @PatchMapping("/{foundationNo}/activate")
-    public ResponseEntity<Void> activate(
-            @Parameter(description = "기부단체 번호", example = "1") @PathVariable Long foundationNo) {
+    public ResponseEntity<Void> activate(@PathVariable Long foundationNo) {
         foundationService.activateFoundation(foundationNo);
         return ResponseEntity.ok().build();
     }

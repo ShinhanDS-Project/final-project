@@ -28,10 +28,7 @@ public class FoundationController {
 
     private final FoundationService foundationService;
 
-    @Operation(summary = "사업자등록번호 중복 확인", description = "가입 신청 전 사업자등록번호 중복 여부를 확인합니다. true=이미 존재, false=사용 가능")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "확인 성공 (true: 중복, false: 사용 가능)")
-    })
+    // 사업자등록번호 중복 체크 (가입 신청 전 선행 확인)
     @GetMapping("/check-brn")
     public ResponseEntity<Boolean> checkBusinessRegistrationNumber(
             @Parameter(description = "사업자등록번호 (하이픈 제외)", example = "1234567890", required = true)
@@ -69,12 +66,15 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.getPublicFoundationList(keyword, pageable));
     }
 
+    // 기부단체 상세 조회 (일반 사용자 공개 — ACTIVE 단체만, 민감 정보 제외)
     @Operation(summary = "기부단체 상세 조회", description = "기부단체 상세 정보를 조회합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "404", description = "기부단체를 찾을 수 없음")
     })
     @GetMapping("/{foundationNo}")
+    public ResponseEntity<FoundationPublicDetailDTO> getDetail(@PathVariable Long foundationNo) {
+        return ResponseEntity.ok(foundationService.getPublicFoundationDetail(foundationNo));
     public ResponseEntity<FoundationDetailResponseDTO> getDetail(
             @Parameter(description = "기부단체 번호", example = "1") @PathVariable Long foundationNo) {
         return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
@@ -105,6 +105,14 @@ public class FoundationController {
         return ResponseEntity.ok().build();
     }
 
+    // 기부단체 본인 상세 정보 조회 (마이페이지 / 회원정보 수정 화면 진입 시)
+    @GetMapping("/me")
+    public ResponseEntity<FoundationDetailResponseDTO> getMyDetail(Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
+    }
+
+    // 기부단체 회원정보 수정 (설명, 연락처, 계좌, 은행명, 수수료율, 프로필 이미지)
     @Operation(summary = "기부단체 회원정보 수정", description = "로그인한 기부단체의 설명·연락처·계좌·은행명·수수료율·프로필 이미지를 수정합니다. "
             + "multipart/form-data: data 파트(JSON)와 profileImage 파트(이미지, 선택)를 함께 전송합니다.")
     @ApiResponses({

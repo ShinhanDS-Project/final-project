@@ -31,6 +31,9 @@ public interface FoundationService {
     //공개 단체 목록 — 키워드 검색 추가 (여기는 상태가 승인된 애들만 공개 됨)
     Page<FoundationListResponseDTO> getPublicFoundationList(String keyword, Pageable pageable);
 
+    // 일반 사용자용 기부단체 상세 조회 — ACTIVE 단체만, 민감 정보 제외
+    FoundationPublicDetailDTO getPublicFoundationDetail(Long foundationNo);
+
     //관리자 승인 단체 목록 — 상태 필터 + 키워드 검색 + 페이징
     Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(AccountStatus accountStatus, String keyword, Pageable pageable);
     FoundationDetailResponseDTO getFoundationDetail(Long foundationNo);
