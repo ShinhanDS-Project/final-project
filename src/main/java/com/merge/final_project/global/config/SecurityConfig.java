@@ -195,14 +195,16 @@ public class SecurityConfig {
                                 "/api/blockchain/**",
                                 "/oauth2/**",
                                 "/login/**",
-                                "/social-info",
-                                // UserController의 API 중 로그인이 필요 없는 기능만 명시적으로 허용
+                                "/social-info"
+                        ).permitAll()
+                        // UserController의 API 중 로그인이 필요 없는 기능만 명시적으로 허용
+                        .requestMatchers(HttpMethod.POST,
                                 "/users/support/email",
                                 "/users/support/password/reset/request",
                                 "/users/support/password/reset/verify",
-                                "/users/support/password/reset/confirm",
-                                "/users/support/see"
+                                "/users/support/password/reset/confirm"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/support/see").permitAll()
 
                         // 2. [인증 경로] 로그인한 사용자만 가능
                         .requestMatchers("/finalReport/**").authenticated()

@@ -82,8 +82,10 @@ public enum ErrorCode {
     //월렛
     USER_WALLET_NOT_FOUND(HttpStatus.NOT_FOUND,"WALLET_001","해당 유저의 지갑을 찾을 수 없습니다."),
     //정산
-    SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"SETTLEMENT_001","존재하지않는 정산입니다.");
+    SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"SETTLEMENT_001","존재하지않는 정산입니다."),
 
+    //수혜자
+    BENEFICIARY_NOT_FOUND(HttpStatus.NOT_FOUND,"BENEFICIARY_001","찾을 수 없는 수혜자입니다.");
 
     private final HttpStatus status;
     private final String code;

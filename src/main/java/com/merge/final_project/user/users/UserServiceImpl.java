@@ -202,6 +202,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public MicroTrackingDTO showMicroTracking(Long campaignNo) {
+
         // ---> 1. 정산내용
         // Optional을 활용하여 정산이 없는 경우 예외를 던지지 않고 처리
         Optional<Settlement> settlementOpt = settlementRepository.findByCampaign_CampaignNo(campaignNo).stream()
