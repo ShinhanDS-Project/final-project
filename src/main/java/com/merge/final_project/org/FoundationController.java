@@ -66,17 +66,31 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.getPublicFoundationList(keyword, pageable));
     }
 
-    // 기부단체 상세 조회 (일반 사용자 공개 — ACTIVE 단체만, 민감 정보 제외)
-    @Operation(summary = "기부단체 상세 조회", description = "기부단체 상세 정보를 조회합니다.")
+    // 기부단체 공개 상세 조회 — 인증 불필요, ACTIVE 단체만, 이메일·계좌·상태값 제외
+    @Operation(summary = "기부단체 상세 조회 (공개)",
+            description = "일반 사용자용 기부단체 상세 정보를 조회합니다. 인증 불필요. "
+                    + "ACTIVE 상태 단체만 조회 가능하며, 이메일·계좌번호·심사 상태 등 민감 정보는 포함되지 않습니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "404", description = "기부단체를 찾을 수 없음")
+            @ApiResponse(responseCode = "404", description = "기부단체를 찾을 수 없음 (비활성화 단체 포함)")
     })
     @GetMapping("/{foundationNo}")
-    public ResponseEntity<FoundationPublicDetailDTO> getDetail(@PathVariable Long foundationNo) {
-        return ResponseEntity.ok(foundationService.getPublicFoundationDetail(foundationNo));
-    public ResponseEntity<FoundationDetailResponseDTO> getDetail(
+    public ResponseEntity<FoundationPublicDetailDTO> getDetail(
             @Parameter(description = "기부단체 번호", example = "1") @PathVariable Long foundationNo) {
+        return ResponseEntity.ok(foundationService.getPublicFoundationDetail(foundationNo));
+    }
+
+    // 기부단체 본인 상세 정보 조회 — ROLE_FOUNDATION 필요, 이메일·계좌 등 전체 정보 포함
+    @Operation(summary = "내 기부단체 정보 조회 (마이페이지)",
+            description = "로그인한 기부단체 본인의 전체 상세 정보를 조회합니다. 회원정보 수정 화면 진입 시 사용합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 요청"),
+            @ApiResponse(responseCode = "403", description = "기부단체 권한 없음")
+    })
+    @GetMapping("/me")
+    public ResponseEntity<FoundationDetailResponseDTO> getMyDetail(Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
     }
 
@@ -105,17 +119,11 @@ public class FoundationController {
         return ResponseEntity.ok().build();
     }
 
-    // 기부단체 본인 상세 정보 조회 (마이페이지 / 회원정보 수정 화면 진입 시)
-    @GetMapping("/me")
-    public ResponseEntity<FoundationDetailResponseDTO> getMyDetail(Authentication authentication) {
-        Long foundationNo = (Long) authentication.getDetails();
-        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
-    }
-
     // 기부단체 회원정보 수정 (설명, 연락처, 계좌, 은행명, 수수료율, 프로필 이미지)
     @Operation(summary = "기부단체 회원정보 수정", description = "로그인한 기부단체의 설명·연락처·계좌·은행명·수수료율·프로필 이미지를 수정합니다. "
             + "multipart/form-data: data 파트(JSON)와 profileImage 파트(이미지, 선택)를 함께 전송합니다.")
-    @ApiResponses({
+    @ApiResponses({r
+
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "400", description = "요청 값 유효성 오류"),
             @ApiResponse(responseCode = "401", description = "인증되지 않은 요청"),
