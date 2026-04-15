@@ -277,12 +277,16 @@ public class  FoundationServiceImpl implements FoundationService {
         // 추후 시간 남으면 블랙리스트 구현해서 체크하는 서비스로 확장 예정
     }
 
-    // [가빈] 관리자 신청 목록 — accountStatus = PRE_REGISTERED + reviewStatus 필터 + 키워드 검색
+    // [가빈] 관리자 신청 목록 — accountStatus = PRE_REGISTERED + reviewStatus 필터(선택) + 키워드 검색
+    // reviewStatus null → PostgreSQL 타입 추론 오류 방지를 위해 쿼리 메서드 분기
     @Override
     @Transactional(readOnly = true)
     public Page<FoundationListResponseDTO> getFoundationApplicationListWithFilter(ReviewStatus reviewStatus, String keyword, Pageable pageable) {
-        return foundationRepository.findApplicationsWithFilter(reviewStatus, keyword != null ? keyword : "", pageable)
-                .map(FoundationListResponseDTO::from);
+        String kw = keyword != null ? keyword : "";
+        Page<Foundation> result = reviewStatus != null
+                ? foundationRepository.findApplicationsByReviewStatusWithFilter(reviewStatus, kw, pageable)
+                : foundationRepository.findApplicationsWithFilter(kw, pageable);
+        return result.map(FoundationListResponseDTO::from);
     }
 
     // [가빈] 관리자 반려 목록 — 키워드 검색
@@ -301,11 +305,11 @@ public class  FoundationServiceImpl implements FoundationService {
                 .map(FoundationListResponseDTO::from);
     }
 
-    // [가빈] 관리자 승인 단체 목록 — 키워드 검색 + 페이징 (accountStatus 필터 제거)
+    // [가빈] 관리자 승인 단체 목록 — 상태 필터 + 키워드 검색 + 페이징
     @Override
     @Transactional(readOnly = true)
-    public Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(String keyword, Pageable pageable) {
-        return foundationRepository.findApprovedWithFilter(null, keyword != null ? keyword : "", pageable)
+    public Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(AccountStatus accountStatus, String keyword, Pageable pageable) {
+        return foundationRepository.findApprovedWithFilter(accountStatus, keyword != null ? keyword : "", pageable)
                 .map(FoundationListResponseDTO::from);
     }
 
