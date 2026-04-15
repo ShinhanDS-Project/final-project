@@ -322,6 +322,18 @@ public class  FoundationServiceImpl implements FoundationService {
         return FoundationDetailResponseDTO.from(foundation);
     }
 
+    // 일반 사용자용 기부단체 상세 조회 — ACTIVE 단체만, 민감 정보 제외
+    @Override
+    @Transactional(readOnly = true)
+    public FoundationPublicDetailDTO getPublicFoundationDetail(Long foundationNo) {
+        Foundation foundation = foundationRepository.findById(foundationNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+        if (foundation.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND);
+        }
+        return FoundationPublicDetailDTO.from(foundation);
+    }
+
     // 기부단체 승인 시 임시 비밀번호 생성 후 메일 보내는 메서드 비동기로 호출,
     @Transactional
     @Override
