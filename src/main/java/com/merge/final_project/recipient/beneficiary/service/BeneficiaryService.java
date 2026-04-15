@@ -3,6 +3,8 @@ package com.merge.final_project.recipient.beneficiary.service;
 import com.merge.final_project.auth.useraccount.SignupWalletHookService;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryInfoResponseDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiarySigninRequestDTO;
 import com.merge.final_project.recipient.beneficiary.dto.BeneficiaryUpdateRequestDTO;
@@ -149,4 +151,10 @@ public class BeneficiaryService implements UserDetailsService {
         return beneficiary.getBeneficiaryNo();
     }
 
+    public Long findBeneficiary(BeneficiarySigninRequestDTO dto){
+        Beneficiary beneficiary= beneficiaryRepository.findByEmail(dto.getEmail())
+                .orElseThrow(()->new BusinessException(ErrorCode.AUTHENTICATION_FAILED));
+
+        return beneficiary.getBeneficiaryNo();
+    }
 }
