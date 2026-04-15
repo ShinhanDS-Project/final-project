@@ -3,6 +3,7 @@ package com.merge.final_project.admin.controller;
 import com.merge.final_project.org.AccountStatus;
 import com.merge.final_project.org.FoundationService;
 import com.merge.final_project.org.ReviewStatus;
+import com.merge.final_project.org.dto.FoundationDetailResponseDTO;
 import com.merge.final_project.org.dto.FoundationListResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,7 +20,12 @@ public class AdminFoundationController {
 
     private final FoundationService foundationService;
 
-    // 상세 조회 및 승인 후 리스트(가입완료) 조회는 추후 다른 곳에서도 쓸 수 있을 것 같아서 관리자 권한에서 제외시킴
+    // 관리자 기부단체 상세 조회 — 민감 정보 포함 (이메일, 계좌, 상태값 등 모두 노출)
+    @GetMapping("/{foundationNo}")
+    public ResponseEntity<FoundationDetailResponseDTO> getDetail(@PathVariable Long foundationNo) {
+        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
+    }
+
     // 승인 전 기부단체 리스트 조회 — 키워드 검색 + 페이징 + 정렬
     @GetMapping("/applications")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApplicationList(

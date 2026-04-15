@@ -46,10 +46,10 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.getPublicFoundationList(keyword, pageable));
     }
 
-    // 기부단체 상세 조회
+    // 기부단체 상세 조회 (일반 사용자 공개 — ACTIVE 단체만, 민감 정보 제외)
     @GetMapping("/{foundationNo}")
-    public ResponseEntity<FoundationDetailResponseDTO> getDetail(@PathVariable Long foundationNo) {
-        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
+    public ResponseEntity<FoundationPublicDetailDTO> getDetail(@PathVariable Long foundationNo) {
+        return ResponseEntity.ok(foundationService.getPublicFoundationDetail(foundationNo));
     }
 
     // 기부단체 로그인
@@ -63,6 +63,13 @@ public class FoundationController {
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String bearerToken) {
         foundationService.logout(bearerToken);
         return ResponseEntity.ok().build();
+    }
+
+    // 기부단체 본인 상세 정보 조회 (마이페이지 / 회원정보 수정 화면 진입 시)
+    @GetMapping("/me")
+    public ResponseEntity<FoundationDetailResponseDTO> getMyDetail(Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
     }
 
     // 기부단체 회원정보 수정 (설명, 연락처, 계좌, 은행명, 수수료율, 프로필 이미지)
