@@ -1,5 +1,5 @@
 # 1. Build Stage
-FROM gradle:7.6.1-jdk17 AS build
+FROM gradle:8.12.1-jdk17 AS build
 WORKDIR /home/gradle/src
 COPY --chown=gradle:gradle . .
 # Build using the gradle image directly, avoiding the missing wrapper issue
