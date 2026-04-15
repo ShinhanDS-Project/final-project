@@ -1,11 +1,14 @@
 package com.merge.final_project.org;
 
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.org.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,24 +33,23 @@ public class FoundationController {
 
     // 비회원 기부단체 가입 신청 (승인/반려 전)
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> apply(@RequestPart("data") @Valid FoundationApplyRequestDTO requestDTO,
+    public ResponseEntity<FoundationApplyResponseDTO> apply(@RequestPart("data") @Valid FoundationApplyRequestDTO requestDTO,
                                       @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
-        foundationService.apply(requestDTO, profileImage);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(foundationService.apply(requestDTO, profileImage));
     }
 
-    // 승인 완료된 기부단체 리스트 조회 (accountStatus 파라미터로 활성화/비활성화 필터링)
+    // 승인 완료된 기부단체 리스트 조회 (사용자용 — 키워드 검색, 페이징, 기본: 최신순)
     @GetMapping("/all")
     public ResponseEntity<Page<FoundationListResponseDTO>> getApprovedList(
-            @RequestParam(required = false) AccountStatus accountStatus,
-            Pageable pageable) {
-        return ResponseEntity.ok(foundationService.getApprovedFoundationList(accountStatus, pageable));
+            @RequestParam(defaultValue = "") String keyword,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(foundationService.getPublicFoundationList(keyword, pageable));
     }
 
-    // 기부단체 상세 조회
+    // 기부단체 상세 조회 (일반 사용자 공개 — ACTIVE 단체만, 민감 정보 제외)
     @GetMapping("/{foundationNo}")
-    public ResponseEntity<FoundationDetailResponseDTO> getDetail(@PathVariable Long foundationNo) {
-        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
+    public ResponseEntity<FoundationPublicDetailDTO> getDetail(@PathVariable Long foundationNo) {
+        return ResponseEntity.ok(foundationService.getPublicFoundationDetail(foundationNo));
     }
 
     // 기부단체 로그인
@@ -61,6 +63,13 @@ public class FoundationController {
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String bearerToken) {
         foundationService.logout(bearerToken);
         return ResponseEntity.ok().build();
+    }
+
+    // 기부단체 본인 상세 정보 조회 (마이페이지 / 회원정보 수정 화면 진입 시)
+    @GetMapping("/me")
+    public ResponseEntity<FoundationDetailResponseDTO> getMyDetail(Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
     }
 
     // 기부단체 회원정보 수정 (설명, 연락처, 계좌, 은행명, 수수료율, 프로필 이미지)
@@ -83,12 +92,55 @@ public class FoundationController {
         return ResponseEntity.ok().build();
     }
 
-    //기부단체가 본인 캠페인 리스트 조회
+    //기부단체가 본인 캠페인 리스트 조회 (기본: 최신순)
     @GetMapping("/me/campaigns")
     public ResponseEntity<Page<CampaignListResponseDTO>> getMyCampaigns(
             Authentication authentication,
-            Pageable pageable) {
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyCampaigns(foundationNo, pageable));
+    }
+
+    // 기부단체 마이페이지 — 상태 필터 + 키워드 검색 캠페인 목록 (기본: 최신순)
+    @GetMapping("/me/campaigns/filter")
+    public ResponseEntity<Page<FoundationMyCampaignDTO>> getMyCampaignsWithFilter(
+            Authentication authentication,
+            @RequestParam(required = false) CampaignStatus campaignStatus,
+            @RequestParam(defaultValue = "") String keyword,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMyCampaignsWithFilter(foundationNo, campaignStatus, keyword, pageable));
+    }
+
+    // 기부단체 마이페이지 — 진행 중 캠페인 수 + 이번달 모금액
+    @GetMapping("/me/stats")
+    public ResponseEntity<FoundationMyPageStatsDTO> getMyPageStats(Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMyPageStats(foundationNo));
+    }
+
+    // 기부단체 마이페이지 — 지갑 주소 + 잔액
+    @GetMapping("/me/wallet")
+    public ResponseEntity<FoundationWalletDTO> getMyWalletInfo(Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMyWalletInfo(foundationNo));
+    }
+
+    // 기부단체 마이페이지 — 정산 내역 (기본: 최신순)
+    @GetMapping("/me/settlements")
+    public ResponseEntity<Page<FoundationSettlementDTO>> getMySettlements(
+            Authentication authentication,
+            @PageableDefault(sort = "settledAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMySettlements(foundationNo, pageable));
+    }
+
+    // 기부단체 마이페이지 — 환금(현금화) 내역 (기본: 최신순)
+    @GetMapping("/me/redemptions")
+    public ResponseEntity<Page<FoundationRedemptionDTO>> getMyRedemptions(
+            Authentication authentication,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getMyRedemptions(foundationNo, pageable));
     }
 }

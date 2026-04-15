@@ -148,11 +148,10 @@ public class Web3jBlockchainTransferClient implements BlockchainTransferClient {
      */
     @Override
     public TransferResult transferNative(String fromAddress, String decryptedPrivateKey, String toAddress, BigInteger amountWei) {
-        Credentials credentials = Credentials.create(sanitizeHexKey(decryptedPrivateKey));
-        TransactionManager txManager = new RawTransactionManager(web3j, credentials, chainId);
-        BigInteger gasPrice = fetchGasPrice();
-
         try {
+            Credentials credentials = Credentials.create(sanitizeHexKey(decryptedPrivateKey));
+            TransactionManager txManager = new RawTransactionManager(web3j, credentials, chainId);
+            BigInteger gasPrice = fetchGasPrice();
             EthSendTransaction send = txManager.sendTransaction(gasPrice, BigInteger.valueOf(21_000), toAddress, "", amountWei);
             if (send.hasError()) {
                 return new TransferResult(null, null, "FAIL", send.getError().getMessage(), "ALLOCATION", fromAddress, toAddress, null, null, amountWei);

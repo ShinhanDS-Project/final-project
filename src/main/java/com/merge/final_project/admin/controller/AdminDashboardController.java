@@ -5,6 +5,7 @@ import com.merge.final_project.admin.dashboard.AdminDashboardService;
 import com.merge.final_project.admin.dashboard.dto.CategoryRatioDTO;
 import com.merge.final_project.admin.dashboard.dto.DashboardSummaryDTO;
 import com.merge.final_project.admin.dashboard.dto.DonationTrendDTO;
+import com.merge.final_project.admin.dashboard.dto.UserRegistrationTrendDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +43,13 @@ public class AdminDashboardController {
     @GetMapping("/category-ratio")
     public ResponseEntity<List<CategoryRatioDTO>> getCategoryRatio() {
         return ResponseEntity.ok(adminDashboardService.getCategoryRatio());
+    }
+
+    // 일별 사용자 가입 추이 차트 (days=7|14|30)
+    @GetMapping("/user-registration-trend")
+    public ResponseEntity<List<UserRegistrationTrendDTO>> getUserRegistrationTrend(
+            @RequestParam(defaultValue = "14") int days) {
+        return ResponseEntity.ok(adminDashboardService.getUserRegistrationTrend(days));
     }
 
     // 최근 활동 로그 (새로운 요청 소식 — REST initial load)

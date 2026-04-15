@@ -10,9 +10,9 @@ public interface AdminCampaignService {
 
     void rejectCampaign(Long campaignNo, String reason);
 
-    Page<CampaignListResponseDTO> getPendingCampaigns(Pageable pageable);
+    Page<CampaignListResponseDTO> getPendingCampaigns(String keyword, Pageable pageable);
 
-    Page<CampaignListResponseDTO> getRejectedCampaigns(Pageable pageable);
+    Page<CampaignListResponseDTO> getRejectedCampaigns(String keyword, Pageable pageable);
 
-    Page<CampaignListResponseDTO> getApprovedCampaigns(Pageable pageable);
+    Page<CampaignListResponseDTO> getApprovedCampaigns(String keyword, Pageable pageable);
 }

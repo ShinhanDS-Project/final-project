@@ -82,22 +82,25 @@ public class AdminCampaignServiceImpl implements AdminCampaignService {
 
     // 보류 상태인 캠페인 리스트 조회.
     @Override
-    public Page<CampaignListResponseDTO> getPendingCampaigns(Pageable pageable) {
-        return campaignRepository.findByApprovalStatus(ApprovalStatus.PENDING, pageable)
+    @Transactional(readOnly = true)
+    public Page<CampaignListResponseDTO> getPendingCampaigns(String keyword, Pageable pageable) {
+        return campaignRepository.findByApprovalStatusWithKeyword(ApprovalStatus.PENDING, keyword != null ? keyword : "", pageable)
                 .map(CampaignListResponseDTO::from);
     }
 
     //반려 상태인 캠페인 리스트 조회
     @Override
-    public Page<CampaignListResponseDTO> getRejectedCampaigns(Pageable pageable) {
-        return campaignRepository.findByApprovalStatus(ApprovalStatus.REJECTED, pageable)
+    @Transactional(readOnly = true)
+    public Page<CampaignListResponseDTO> getRejectedCampaigns(String keyword, Pageable pageable) {
+        return campaignRepository.findByApprovalStatusWithKeyword(ApprovalStatus.REJECTED, keyword != null ? keyword : "", pageable)
                 .map(CampaignListResponseDTO::from);
     }
 
-    //승인 상태인 캠페인 리스트 조회 => 진행 중인 상태라서 RECRUITING 찾아와야 함
+    //승인 상태인 캠페인 리스트 조회
     @Override
-    public Page<CampaignListResponseDTO> getApprovedCampaigns(Pageable pageable) {
-        return campaignRepository.findByApprovalStatus(ApprovalStatus.APPROVED, pageable)
+    @Transactional(readOnly = true)
+    public Page<CampaignListResponseDTO> getApprovedCampaigns(String keyword, Pageable pageable) {
+        return campaignRepository.findByApprovalStatusWithKeyword(ApprovalStatus.APPROVED, keyword != null ? keyword : "", pageable)
                 .map(CampaignListResponseDTO::from);
     }
 

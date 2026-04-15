@@ -8,5 +8,5 @@ import java.time.LocalDateTime;
 
 public interface AdminLogService {
     void log(ActionType actionType, TargetType targetType, Long targetNo, String description, Admin admin);
-    Page<AdminLogResponseDTO> getLogsWithFilter(ActionType actionType, TargetType targetType, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
+    Page<AdminLogResponseDTO> getLogsWithFilter(ActionType actionType, TargetType targetType, LocalDateTime startDate, LocalDateTime endDate, String keyword, Pageable pageable);
 }

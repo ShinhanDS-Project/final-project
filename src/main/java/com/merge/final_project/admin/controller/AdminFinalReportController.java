@@ -5,6 +5,8 @@ import com.merge.final_project.report.finalreport.dto.FinalReportResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +17,10 @@ public class AdminFinalReportController {
 
     private final AdminFinalReportService adminFinalReportService;
 
-    // 승인 대기 활동 보고서 목록
+    // 승인 대기 활동 보고서 목록 (기본: 최신순)
     @GetMapping("/pending")
-    public ResponseEntity<Page<FinalReportResponseDTO>> getPendingReports(Pageable pageable) {
+    public ResponseEntity<Page<FinalReportResponseDTO>> getPendingReports(
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(adminFinalReportService.getPendingReports(pageable));
     }
 

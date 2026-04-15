@@ -4,6 +4,9 @@ import com.merge.final_project.admin.Admin;
 import com.merge.final_project.admin.AdminRepository;
 import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.auth.useraccount.SignupWalletHookService;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
+import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
+import com.merge.final_project.donation.payment.PaymentRepository;
 import com.merge.final_project.global.exceptions.BusinessException;
 import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.global.jwt.JwtTokenProvider;
@@ -12,9 +15,13 @@ import com.merge.final_project.notification.email.event.FoundationApprovedEvent;
 import com.merge.final_project.notification.email.event.FoundationDeactivatedByAdminEvent;
 import com.merge.final_project.notification.email.event.FoundationRejectedEvent;
 import com.merge.final_project.org.AccountStatus;
-import com.merge.final_project.org.dto.FoundationApplyRequestDTO;
+import com.merge.final_project.org.dto.*;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundation;
 import com.merge.final_project.org.illegalfoundation.IllegalFoundationRepository;
+import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
+import com.merge.final_project.redemption.RequesterType;
+import com.merge.final_project.redemption.repository.RedemptionRepository;
+import com.merge.final_project.wallet.entity.Wallet;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +32,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +47,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -72,7 +84,16 @@ class FoundationServiceTest {
     private SignupWalletHookService signupWalletHookService;
 
     @Mock
-    private com.merge.final_project.campaign.campaigns.repository.CampaignRepository campaignRepository;
+    private CampaignRepository campaignRepository;
+
+    @Mock
+    private PaymentRepository paymentRepository;
+
+    @Mock
+    private SettlementRepository settlementRepository;
+
+    @Mock
+    private RedemptionRepository redemptionRepository;
 
     @BeforeEach
     void setUp() {
@@ -358,5 +379,125 @@ class FoundationServiceTest {
                 () -> foundationService.deactivateFoundation(1L));
 
         assertThat(exception.getMessage()).isEqualTo(ErrorCode.FOUNDATION_ALREADY_INACTIVE.getMessage());
+    }
+
+    // ─── 공개 단체 목록 (ACTIVE만 노출) ───
+
+    @Test
+    @DisplayName("공개 단체 목록은 ACTIVE 상태 단체만 반환한다")
+    void 공개단체목록_ACTIVE만_반환() {
+        Foundation active = foundationOf(ReviewStatus.APPROVED, null);
+        Page<Foundation> page = new PageImpl<>(List.of(active));
+        when(foundationRepository.findApprovedWithFilter(eq(AccountStatus.ACTIVE), any(), any()))
+                .thenReturn(page);
+
+        Page<FoundationListResponseDTO> result = foundationService.getPublicFoundationList(null, PageRequest.of(0, 10));
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(foundationRepository).findApprovedWithFilter(eq(AccountStatus.ACTIVE), any(), any());
+    }
+
+    // ─── 마이페이지 통계 ───
+
+    @Test
+    @DisplayName("마이페이지 통계 — 진행중 캠페인 수와 이번달 모금액을 반환한다")
+    void 마이페이지_통계_정상조회() {
+        when(campaignRepository.countByFoundationNoAndCampaignStatus(1L, CampaignStatus.ACTIVE)).thenReturn(3L);
+        when(paymentRepository.sumThisMonthAmountByFoundationNo(1L)).thenReturn(new BigDecimal("150000"));
+
+        FoundationMyPageStatsDTO result = foundationService.getMyPageStats(1L);
+
+        assertThat(result.getActiveCampaignCount()).isEqualTo(3L);
+        assertThat(result.getThisMonthDonationAmount()).isEqualByComparingTo("150000");
+    }
+
+    @Test
+    @DisplayName("마이페이지 통계 — 이번달 모금액이 null이면 0을 반환한다")
+    void 마이페이지_통계_모금액null이면_0반환() {
+        when(campaignRepository.countByFoundationNoAndCampaignStatus(1L, CampaignStatus.ACTIVE)).thenReturn(0L);
+        when(paymentRepository.sumThisMonthAmountByFoundationNo(1L)).thenReturn(null);
+
+        FoundationMyPageStatsDTO result = foundationService.getMyPageStats(1L);
+
+        assertThat(result.getActiveCampaignCount()).isEqualTo(0L);
+        assertThat(result.getThisMonthDonationAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    // ─── 지갑 정보 조회 ───
+
+    @Test
+    @DisplayName("지갑이 연결된 단체는 지갑 주소와 잔액을 반환한다")
+    void 지갑정보_정상조회() {
+        Wallet wallet = mock(Wallet.class);
+        when(wallet.getWalletAddress()).thenReturn("0xABC");
+        when(wallet.getBalance()).thenReturn(new BigDecimal("5000"));
+
+        Foundation foundation = Foundation.builder()
+                .foundationEmail("test@test.com")
+                .foundationName("테스트단체")
+                .accountStatus(AccountStatus.ACTIVE)
+                .reviewStatus(ReviewStatus.APPROVED)
+                .wallet(wallet)
+                .build();
+        when(foundationRepository.findById(1L)).thenReturn(Optional.of(foundation));
+
+        FoundationWalletDTO result = foundationService.getMyWalletInfo(1L);
+
+        assertThat(result.getWalletAddress()).isEqualTo("0xABC");
+        assertThat(result.getBalance()).isEqualByComparingTo("5000");
+    }
+
+    @Test
+    @DisplayName("지갑이 없는 단체는 주소와 잔액을 null로 반환한다")
+    void 지갑정보_지갑없으면_null반환() {
+        Foundation foundation = Foundation.builder()
+                .foundationEmail("test@test.com")
+                .foundationName("테스트단체")
+                .accountStatus(AccountStatus.ACTIVE)
+                .reviewStatus(ReviewStatus.APPROVED)
+                .build();
+        when(foundationRepository.findById(1L)).thenReturn(Optional.of(foundation));
+
+        FoundationWalletDTO result = foundationService.getMyWalletInfo(1L);
+
+        assertThat(result.getWalletAddress()).isNull();
+        assertThat(result.getBalance()).isNull();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 단체 지갑 조회 시 FOUNDATION_NOT_FOUND 예외가 발생한다")
+    void 지갑정보_단체없으면_예외() {
+        when(foundationRepository.findById(999L)).thenReturn(Optional.empty());
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> foundationService.getMyWalletInfo(999L));
+
+        assertThat(ex.getMessage()).isEqualTo(ErrorCode.FOUNDATION_NOT_FOUND.getMessage());
+    }
+
+    // ─── 정산/환금 내역 ───
+
+    @Test
+    @DisplayName("정산 내역 페이징 조회 — settlementRepository를 foundationNo로 조회한다")
+    void 정산내역_정상조회() {
+        when(settlementRepository.findByFoundation_FoundationNo(eq(1L), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        Page<FoundationSettlementDTO> result = foundationService.getMySettlements(1L, PageRequest.of(0, 10));
+
+        assertThat(result).isNotNull();
+        verify(settlementRepository).findByFoundation_FoundationNo(eq(1L), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("환금 내역 페이징 조회 — FOUNDATION 타입으로 redemptionRepository를 조회한다")
+    void 환금내역_정상조회() {
+        when(redemptionRepository.findByRequesterTypeAndRequesterNo(eq(RequesterType.FOUNDATION), eq(1L), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        Page<FoundationRedemptionDTO> result = foundationService.getMyRedemptions(1L, PageRequest.of(0, 10));
+
+        assertThat(result).isNotNull();
+        verify(redemptionRepository).findByRequesterTypeAndRequesterNo(eq(RequesterType.FOUNDATION), eq(1L), any(Pageable.class));
     }
 }
