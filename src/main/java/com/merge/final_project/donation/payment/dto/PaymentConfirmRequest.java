@@ -24,7 +24,7 @@ public class PaymentConfirmRequest {
     @DecimalMin(value = "0.01", inclusive = true, message="오류가 발생하였습니다.")
     private BigDecimal amount;
 
-    @NotBlank(message="오류가 발생하였습니다.")
+    @NotNull(message="오류가 발생하였습니다.")
     private PaymentMethod method;
 
 
