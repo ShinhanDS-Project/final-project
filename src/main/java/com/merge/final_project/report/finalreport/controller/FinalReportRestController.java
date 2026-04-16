@@ -77,4 +77,12 @@ public class FinalReportRestController {
         finalReportService.updateReport(reportNo, dto, files, dto.getPurposes(), principal.getName());
         return ResponseEntity.ok("success");
     }
+
+    /**
+     * 6. 캠페인 번호로 보고서 조회 (공개용)
+     */
+    @GetMapping("/campaign/{campaignNo}")
+    public ResponseEntity<FinalReportResponseDTO> getReportByCampaign(@PathVariable("campaignNo") Long campaignNo) {
+        return ResponseEntity.ok(finalReportService.getPublicReportByCampaign(campaignNo));
+    }
 }

@@ -1,14 +1,14 @@
 # 1. Build Stage
-FROM gradle:8.12.1-jdk17 AS build
-WORKDIR /home/gradle/src
+FROM gradle:jdk17 AS build
+WORKDIR /home/final-project
 COPY --chown=gradle:gradle . .
 # Build using the gradle image directly, avoiding the missing wrapper issue
 RUN gradle build --no-daemon -x test
 
 # 2. Run Stage
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
+COPY --from=build /home/final-project/build/libs/*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]

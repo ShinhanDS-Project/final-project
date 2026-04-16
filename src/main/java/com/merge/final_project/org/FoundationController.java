@@ -34,7 +34,7 @@ public class FoundationController {
     // 비회원 기부단체 가입 신청 (승인/반려 전)
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<FoundationApplyResponseDTO> apply(@RequestPart("data") @Valid FoundationApplyRequestDTO requestDTO,
-                                      @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
+                                                            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
         return ResponseEntity.ok(foundationService.apply(requestDTO, profileImage));
     }
 
@@ -46,10 +46,10 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.getPublicFoundationList(keyword, pageable));
     }
 
-    // 기부단체 상세 조회
+    // 기부단체 상세 조회 (일반 사용자 공개 — ACTIVE 단체만, 민감 정보 제외)
     @GetMapping("/{foundationNo}")
-    public ResponseEntity<FoundationDetailResponseDTO> getDetail(@PathVariable Long foundationNo) {
-        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
+    public ResponseEntity<FoundationPublicDetailDTO> getDetail(@PathVariable Long foundationNo) {
+        return ResponseEntity.ok(foundationService.getPublicFoundationDetail(foundationNo));
     }
 
     // 기부단체 로그인
@@ -63,6 +63,13 @@ public class FoundationController {
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String bearerToken) {
         foundationService.logout(bearerToken);
         return ResponseEntity.ok().build();
+    }
+
+    // 기부단체 본인 상세 정보 조회 (마이페이지 / 회원정보 수정 화면 진입 시)
+    @GetMapping("/me")
+    public ResponseEntity<FoundationDetailResponseDTO> getMyDetail(Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
     }
 
     // 기부단체 회원정보 수정 (설명, 연락처, 계좌, 은행명, 수수료율, 프로필 이미지)
@@ -85,12 +92,11 @@ public class FoundationController {
         return ResponseEntity.ok().build();
     }
 
-    //기부단체가 본인 캠페인 리스트 조회 (기본: 최신순)
-    @GetMapping("/me/campaigns")
+    //기부단체 캠페인 리스트 조회 (기본: 최신순, 공개)
+    @GetMapping("/{foundationNo}/campaigns")
     public ResponseEntity<Page<CampaignListResponseDTO>> getMyCampaigns(
-            Authentication authentication,
+            @PathVariable Long foundationNo,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Long foundationNo = (Long) authentication.getDetails();
         return ResponseEntity.ok(foundationService.getMyCampaigns(foundationNo, pageable));
     }
 
@@ -112,10 +118,9 @@ public class FoundationController {
         return ResponseEntity.ok(foundationService.getMyPageStats(foundationNo));
     }
 
-    // 기부단체 마이페이지 — 지갑 주소 + 잔액
-    @GetMapping("/me/wallet")
-    public ResponseEntity<FoundationWalletDTO> getMyWalletInfo(Authentication authentication) {
-        Long foundationNo = (Long) authentication.getDetails();
+    // 기부단체 지갑 주소 + 잔액 조회 (공개)
+    @GetMapping("/{foundationNo}/wallet")
+    public ResponseEntity<FoundationWalletDTO> getMyWalletInfo(@PathVariable Long foundationNo) {
         return ResponseEntity.ok(foundationService.getMyWalletInfo(foundationNo));
     }
 

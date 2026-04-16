@@ -34,17 +34,22 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
-    @Value("${cors.allowed-origin}")
+    @Value("${CORS_ALLOWED_ORIGIN}")
     private String allowedOrigin;
 
     //CORS 설정을 위해 추가합니다
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(
+                "http://3.34.125.62:8090", // 실제 프론트엔드 서버 주소
+                "http://localhost:3000",   // 로컬 테스트용 (필요시)
+                allowedOrigin              // .env나 properties에서 가져온 값
+        ));
         config.setAllowedOrigins(List.of(allowedOrigin));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(false);
+        config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -92,26 +97,31 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 수혜자
+    /**
+     * 2. 수혜자 및 리액트 API 전용 필터 체인
+     */
     @Order(2)
     @Bean
     public SecurityFilterChain beneficiaryFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
-                .securityMatcher("/api/beneficiary/", "/finalReport/", "/api/v1/**")
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))  //[가빈] CORS 설정을 위해 추가
+                .securityMatcher("/api/beneficiary/**", "/finalReport/**", "/api/v1/**", "/api/redemptions/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable())
+                .httpBasic(basic -> basic.disable()) // 💡 팝업 방지 확실히!
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 수혜자 로그인/회원가입은 공개 (v1 포함)
+                        // 수혜자 및 공용 API 개방
                         .requestMatchers("/api/beneficiary/signup", "/api/beneficiary/signin").permitAll()
                         .requestMatchers("/api/v1/beneficiary/signup", "/api/v1/beneficiary/signin").permitAll()
-                        // 그 외 수혜자/보고서 관련은 인증 필요
+                        .requestMatchers("/api/v1/final-reports/campaigns").permitAll() // 필요 시 개방
+                        .requestMatchers("/api/v1/final-reports/campaign/**").permitAll() // 보고서 상세 조회 (공개)
+
+                        // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint) // 💡 팝업 대신 JSON 응답
                         .accessDeniedHandler(jwtAccessDeniedHandler)
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -144,10 +154,18 @@ public class SecurityConfig {
                                 "/api/foundation/login",     // 로그인
                                 "/api/foundation/logout",    // 로그아웃 (토큰 만료 후에도 호출 가능해야 함)
                                 "/api/foundation/campaigns"  // 캠페인 목록 조회 (공개)
+
                         ).permitAll()
+                        // GET 한정 공개 — 일반 사용자 기부단체 상세 조회 (숫자 ID 경로만 허용, /me 등 제외)
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/{foundationNo:\\d+}").permitAll()
                         // GET 한정 공개 — POST /register는 ROLE_FOUNDATION 필요
                         .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/*/detail").permitAll()
+                        // GET 한정 공개 — 기부단체 지갑 정보 및 캠페인 목록 (foundationNo 경로 파라미터)
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/*/wallet").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/*/campaigns").permitAll()
+                        // 호연
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/register").permitAll()
                         // 그 외 단체 전용 기능은 ROLE_FOUNDATION 필요
                         .anyRequest().hasAuthority("ROLE_FOUNDATION")
                 )
@@ -160,7 +178,9 @@ public class SecurityConfig {
         return http.build();
     }
 
+
     //일반 사용자
+    @Order(4)
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
@@ -178,25 +198,31 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/uploads/**",
                                 "/api/auth/**",
-                                "/api/signup/**",
+                                "/api/signup/**", // /api/signup/nickname 포함
                                 // 블록체인 대시보드/조회 API는 프론트 대시보드 초기 연동을 위해 우선 공개.
                                 // 추후 인증 정책 확정 시 role 기반 접근 제어로 전환 가능.
                                 "/api/blockchain/**",
                                 "/oauth2/**",
                                 "/login/**",
                                 "/social-info",
-                                "/users/support/**",
                                 "/api/donation/public/stats",    // main의 기부 누적 조회
                                 "/api/donation/public/home-hub",
                                 "/api/donation/public/recent-donations",
                                 "/api/donation/public/latest-campaigns"
-
-                                ).permitAll()
+                        ).permitAll()
+                        // UserController의 API 중 로그인이 필요 없는 기능만 명시적으로 허용
+                        .requestMatchers(HttpMethod.POST,
+                                "/users/support/email",
+                                "/users/support/password/reset/request",
+                                "/users/support/password/reset/verify",
+                                "/users/support/password/reset/confirm"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/support/see").permitAll()
 
                         // 2. [인증 경로] 로그인한 사용자만 가능
                         .requestMatchers("/finalReport/**").authenticated()
 
-                        // 3. 그 외 모든 요청은 인증 필요
+                        // 3. 그 외 모든 요청은 인증 필요 (마이페이지 관련 API들이 여기에 해당됨)
                         .anyRequest().authenticated()
                 )
 
@@ -215,4 +241,5 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 }

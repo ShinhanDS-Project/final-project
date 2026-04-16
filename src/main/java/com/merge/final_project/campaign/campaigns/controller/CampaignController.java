@@ -16,6 +16,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -57,6 +58,19 @@ public class CampaignController {
         return ResponseEntity.ok(campaignService.registerCampaign(dto, imageFile, detailImageFiles, foundationNo));
     }
 
+    @ResponseBody
+    @PutMapping(value = "/{campaignNo}", consumes = {"multipart/form-data"})
+    public ResponseEntity<CampaignRegisterResponseDTO> updatePendingCampaign(
+            @PathVariable Long campaignNo,
+            @RequestPart("dto") CampaignRequestDTO dto,
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestPart(value = "detailImageFiles", required = false) List<MultipartFile> detailImageFiles,
+            Authentication authentication
+    ) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(campaignService.updatePendingCampaign(campaignNo, dto, imageFile, detailImageFiles, foundationNo));
+    }
+
     /* 수혜자 확인: 입력된 엔트리 코드가 유효한 수혜자인지 검증함 */
     @ResponseBody
     @GetMapping("/beneficiary-check")
@@ -74,6 +88,15 @@ public class CampaignController {
     /* 화면 이동: 캠페인 등록 페이지(HTML)를 호출함 */
     @GetMapping("/register")
     public String getRegisterPage() {
+        return "campaign/register";
+    }
+
+    @GetMapping("/{campaignNo}/edit")
+    public String getEditPage(@PathVariable Long campaignNo, Authentication authentication, Model model) {
+        Long foundationNo = (Long) authentication.getDetails();
+        campaignService.getPendingCampaignForEdit(campaignNo, foundationNo);
+        model.addAttribute("editMode", true);
+        model.addAttribute("campaignNo", campaignNo);
         return "campaign/register";
     }
 
@@ -95,6 +118,13 @@ public class CampaignController {
     @GetMapping("/{campaignNo}/detail")
     public ResponseEntity<CampaignDetailResponseDTO> getCampaignDetail(@PathVariable Long campaignNo) {
         return ResponseEntity.ok(campaignService.getCampaignDetail(campaignNo));
+    }
+
+    @ResponseBody
+    @GetMapping("/{campaignNo}/edit-detail")
+    public ResponseEntity<CampaignDetailResponseDTO> getCampaignEditDetail(@PathVariable Long campaignNo, Authentication authentication) {
+        Long foundationNo = (Long) authentication.getDetails();
+        return ResponseEntity.ok(campaignService.getPendingCampaignForEdit(campaignNo, foundationNo));
     }
 }
 

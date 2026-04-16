@@ -17,6 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/beneficiary")
@@ -42,14 +44,18 @@ BeneficiaryRestController {
      * 2. 로그인 API (쿠키 발급)
      */
     @PostMapping("/signin")
-    public ResponseEntity<String> login(@RequestBody BeneficiarySigninRequestDTO loginDto, HttpServletResponse response) {
+    public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto, HttpServletResponse response) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
         );
 
-        String accessToken = jwtTokenProvider.createAdminAccessToken(
+
+        String accessToken = jwtTokenProvider.createGeneralAccessToken(
                 authentication.getName(),
-                authentication.getAuthorities().iterator().next().getAuthority()
+                loginDto.getEmail(),
+                "ROLE_BENEFICIARY",
+                beneficiaryService.findBeneficiary(loginDto)
+
         );
 
         Cookie cookie = new Cookie("accessToken", accessToken);
@@ -57,8 +63,11 @@ BeneficiaryRestController {
         cookie.setHttpOnly(true);
         cookie.setMaxAge(60 * 60 * 24);
         response.addCookie(cookie);
+        Map<String, String> responser = new HashMap<>();
+        responser.put("accessToken", accessToken);
+        responser.put("message", "로그인이 성공하였습니다.");
 
-        return ResponseEntity.ok("success");
+        return ResponseEntity.ok(responser);
     }
 
     /**

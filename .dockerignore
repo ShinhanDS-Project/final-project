@@ -1,0 +1,42 @@
+.git
+.gitignore
+.gradle
+build/
+bin/
+out/
+
+# IDE settings
+.idea
+*.iws
+*.iml
+*.ipr
+.vscode
+.settings
+.project
+.classpath
+.factorypath
+.springBeans
+.sts4-cache
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Gradle
+!gradle/wrapper/gradle-wrapper.jar
+
+# Sensitive information
+.env
+src/main/resources/application-local.yml
+src/main/resources/application-prod.yml
+src/main/resources/application-secret.yml
+src/main/resources/application-*.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log

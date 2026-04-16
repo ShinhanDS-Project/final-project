@@ -322,6 +322,18 @@ public class  FoundationServiceImpl implements FoundationService {
         return FoundationDetailResponseDTO.from(foundation);
     }
 
+    // 일반 사용자용 기부단체 상세 조회 — ACTIVE 단체만, 민감 정보 제외
+    @Override
+    @Transactional(readOnly = true)
+    public FoundationPublicDetailDTO getPublicFoundationDetail(Long foundationNo) {
+        Foundation foundation = foundationRepository.findById(foundationNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+        if (foundation.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND);
+        }
+        return FoundationPublicDetailDTO.from(foundation);
+    }
+
     // 기부단체 승인 시 임시 비밀번호 생성 후 메일 보내는 메서드 비동기로 호출,
     @Transactional
     @Override
@@ -342,10 +354,10 @@ public class  FoundationServiceImpl implements FoundationService {
         String tempPassword = passwordEncoder.encode(sendTempPassword);
 
         foundation.updatePassword(tempPassword);
-//        if (!alreadyApproved) {
-//            // 최초 승인 시점에만 단체 지갑/캠페인 지갑 세트를 생성한다.
-//            signupWalletHookService.onFoundationSignupCompleted(foundationNo);
-//        }
+        if (!alreadyApproved) {
+            // 최초 승인 시점에만 단체 지갑/캠페인 지갑 세트를 생성한다.
+            signupWalletHookService.onFoundationSignupCompleted(foundationNo);
+        }
 
         //트랜잭션 커밋 성공한 이후에만 메일 발송 -> 이벤트 기반으로 구현.
         eventPublisher.publishEvent(new FoundationApprovedEvent(foundationNo,foundation.getFoundationEmail(), foundation.getFoundationName(), sendTempPassword));
