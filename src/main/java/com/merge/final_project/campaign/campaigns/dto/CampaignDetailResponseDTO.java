@@ -27,6 +27,8 @@ public class CampaignDetailResponseDTO {
     private Integer progressPercent;
     private Long remainingAmount;
     private Long daysLeft;
+    // [바다] additional detail payload: donors
+    private Long donors;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
     private LocalDateTime usageStartAt;
@@ -37,6 +39,10 @@ public class CampaignDetailResponseDTO {
     private List<ImageSummary> images;
     private FoundationSummary foundation;
     private List<UsePlanSummary> usePlans;
+    // [바다] additional detail payload: tabs
+    private BeneficiarySummary beneficiary;
+    private List<RecentDonorSummary> recentDonors;
+    private List<DocumentSummary> documents;
 
     /* 기부 단체 요약 정보를 담는 내부 DTO */
     @Getter
@@ -65,5 +71,31 @@ public class CampaignDetailResponseDTO {
         private String imgOrgName;
         private String imgStoredName;
         private String purpose;
+    }
+
+    // [바다] beneficiary summary for detail tab
+    @Getter
+    @Builder
+    public static class BeneficiarySummary {
+        private String title;
+        private String target;
+    }
+
+    // [바다] recent donor summary for detail tab
+    @Getter
+    @Builder
+    public static class RecentDonorSummary {
+        private String name;
+        private Long amount;
+        private String time;
+    }
+
+    // [바다] document summary for detail tab
+    @Getter
+    @Builder
+    public static class DocumentSummary {
+        private String name;
+        private String size;
+        private String href;
     }
 }

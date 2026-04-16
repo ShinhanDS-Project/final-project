@@ -203,7 +203,11 @@ public class SecurityConfig {
                                 "/api/blockchain/**",
                                 "/oauth2/**",
                                 "/login/**",
-                                "/social-info"
+                                "/social-info",
+                                "/api/donation/public/stats",    // main의 기부 누적 조회
+                                "/api/donation/public/home-hub",
+                                "/api/donation/public/recent-donations",
+                                "/api/donation/public/latest-campaigns"
                         ).permitAll()
                         // UserController의 API 중 로그인이 필요 없는 기능만 명시적으로 허용
                         .requestMatchers(HttpMethod.POST,
