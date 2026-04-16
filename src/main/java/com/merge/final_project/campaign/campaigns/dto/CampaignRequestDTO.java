@@ -23,6 +23,7 @@ public class CampaignRequestDTO {
     private LocalDateTime usageEndAt;
 
     private List<UsePlanRequestDTO> usePlans;
+    private List<Long> deletedDetailImageNos;
 
     public Campaign toEntity() {
         return Campaign.builder()

@@ -156,6 +156,7 @@ public class CampaignServiceImpl implements CampaignService {
         if (imageFile != null && !imageFile.isEmpty()) {
             saveCampaignImage(imageFile, campaign.getCampaignNo(), REPRESENTATIVE_IMAGE_PURPOSE);
         }
+        deleteDetailImages(dto.getDeletedDetailImageNos(), campaign.getCampaignNo());
         saveDetailImages(detailImageFiles, campaign.getCampaignNo());
 
         usePlanRepository.deleteByCampaignNo(campaign.getCampaignNo());
@@ -377,12 +378,18 @@ public class CampaignServiceImpl implements CampaignService {
 
     private void validatePendingEditableCampaign(Campaign campaign, Long foundationNo) {
         if (!Objects.equals(campaign.getFoundationNo(), foundationNo)) {
-            throw new IllegalArgumentException("해당 재단의 캠페인만 수정할 수 있습니다.");
+            throw new IllegalArgumentException("해당 재단의 캠페인만 조회할 수 있습니다.");
         }
 
-        if (!ApprovalStatus.PENDING.equals(campaign.getApprovalStatus())
-                || !CampaignStatus.PENDING.equals(campaign.getCampaignStatus())) {
-            throw new IllegalStateException("승인 대기 상태의 캠페인만 수정할 수 있습니다.");
+        boolean isPendingCampaign =
+                ApprovalStatus.PENDING.equals(campaign.getApprovalStatus())
+                        && CampaignStatus.PENDING.equals(campaign.getCampaignStatus());
+
+        boolean isRejectedCampaign =
+                ApprovalStatus.REJECTED.equals(campaign.getApprovalStatus());
+
+        if (!isPendingCampaign && !isRejectedCampaign) {
+            throw new IllegalStateException("승인 대기 또는 반려 상태의 캠페인만 조회할 수 있습니다.");
         }
     }
 
@@ -526,6 +533,21 @@ public class CampaignServiceImpl implements CampaignService {
         for (MultipartFile detailImageFile : detailImageFiles) {
             saveCampaignImage(detailImageFile, campaignNo, DETAIL_IMAGE_PURPOSE);
         }
+    }
+
+    private void deleteDetailImages(List<Long> imageNos, Long campaignNo) {
+        if (imageNos == null || imageNos.isEmpty()) {
+            return;
+        }
+
+        imageRepository.findAllById(imageNos).stream()
+                .filter(image -> CAMPAIGN_IMAGE_TARGET_NAME.equals(image.getTargetName()))
+                .filter(image -> Objects.equals(campaignNo, image.getTargetNo()))
+                .filter(image -> DETAIL_IMAGE_PURPOSE.equals(image.getPurpose()))
+                .forEach(image -> {
+                    fileService.deleteFile(image.getImgStoredName());
+                    imageRepository.delete(image);
+                });
     }
 
     private void saveCampaignImage(MultipartFile imageFile, Long campaignNo, String purpose) {
