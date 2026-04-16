@@ -2,8 +2,10 @@ package com.merge.final_project.campaign.settlement.dto;
 
 import com.merge.final_project.campaign.settlement.SettlementStatus;
 import lombok.Builder;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
+@Getter
 @Builder
 public class SelectSettlementResponseDTO {
     //정산 내용 조회

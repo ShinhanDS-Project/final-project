@@ -371,6 +371,9 @@ public class UserServiceImpl implements UserService {
                     .amount(donation.getDonationAmount())
                     .total_amount(totalAmountWon)
                     .transactionNum(transactionNum)
+                    .usageEndAt(campaign.getUsageEndAt())
+                    .usageStartAt(campaign.getUsageStartAt())
+                    .campaignStatus(campaign.getCampaignStatus())
                     .build();
         })
                 .toList();
