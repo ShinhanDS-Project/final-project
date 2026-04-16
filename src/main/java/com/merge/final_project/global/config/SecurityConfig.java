@@ -196,7 +196,12 @@ public class SecurityConfig {
                                 "/api/blockchain/**",
                                 "/oauth2/**",
                                 "/login/**",
-                                "/social-info"
+                                "/social-info",
+                                // Swagger UI
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs"
                         ).permitAll()
                         // UserController의 API 중 로그인이 필요 없는 기능만 명시적으로 허용
                         .requestMatchers(HttpMethod.POST,

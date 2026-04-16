@@ -4,6 +4,9 @@ import com.merge.final_project.donation.payment.dto.PaymentConfirmRequest;
 import com.merge.final_project.donation.payment.dto.PaymentConfirmResponse;
 import com.merge.final_project.donation.payment.dto.PaymentReadyRequest;
 import com.merge.final_project.donation.payment.dto.PaymentReadyResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,12 @@ public class PaymentController {
     private PaymentService paymentService;
     @Autowired
     private PaymentRepository paymentRepository;
+    @Operation(summary = "결제 준비", description = "카카오페이 등 결제 수단으로 기부 결제를 준비합니다. 결제 URL을 반환합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "준비 성공 — 결제 URL 반환"),
+            @ApiResponse(responseCode = "400", description = "요청 값 유효성 오류"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 요청")
+    })
     @PostMapping("/ready")
     public ResponseEntity<PaymentReadyResponse> ready(Authentication authentication,
                                                       @Valid @RequestBody PaymentReadyRequest request
@@ -30,6 +39,12 @@ public class PaymentController {
         PaymentReadyResponse response = paymentService.paymentReady(loginUserNo, request);
         return ResponseEntity.ok(response);
     }
+    @Operation(summary = "결제 확인", description = "결제 완료 후 결제 결과를 확인하고 기부를 확정합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "확인 성공 — 기부 확정"),
+            @ApiResponse(responseCode = "400", description = "요청 값 유효성 오류"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 요청")
+    })
     @PostMapping("/confirm")
     public ResponseEntity<PaymentConfirmResponse> confirm(Authentication authentication, @Valid @RequestBody PaymentConfirmRequest dto) {
         //jwt 필터에서 저장한 값을 불러옴

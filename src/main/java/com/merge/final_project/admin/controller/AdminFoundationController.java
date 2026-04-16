@@ -26,9 +26,16 @@ public class AdminFoundationController {
 
     private final FoundationService foundationService;
 
-    // 관리자 기부단체 상세 조회 — 민감 정보 포함 (이메일, 계좌, 상태값 등 모두 노출)
+    @Operation(summary = "기부단체 상세 조회 (관리자)", description = "관리자용 기부단체 상세 정보를 조회합니다. 이메일·계좌·상태 등 민감 정보 포함.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "기부단체를 찾을 수 없음"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 요청"),
+            @ApiResponse(responseCode = "403", description = "관리자 권한 없음")
+    })
     @GetMapping("/{foundationNo}")
-    public ResponseEntity<FoundationDetailResponseDTO> getDetail(@PathVariable Long foundationNo) {
+    public ResponseEntity<FoundationDetailResponseDTO> getDetail(
+            @Parameter(description = "기부단체 번호", example = "1") @PathVariable Long foundationNo) {
         return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
     }
 

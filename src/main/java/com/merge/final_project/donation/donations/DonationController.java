@@ -1,5 +1,8 @@
 package com.merge.final_project.donation.donations;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,7 +19,11 @@ public class DonationController {
 
 
     private final DonationService donationService;
-    //기부내역 조회
+    @Operation(summary = "내 기부 내역 조회", description = "로그인한 사용자의 기부 내역 목록을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 요청")
+    })
     @GetMapping("/see/mydonation")
     public ResponseEntity<List<Donation>> requestDonationFind(Authentication authentication){
         Long loginUserNo = (Long) authentication.getDetails();

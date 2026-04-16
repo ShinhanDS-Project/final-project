@@ -1,6 +1,9 @@
 package com.merge.final_project.campaign.settlement.controller;
 
 import com.merge.final_project.campaign.settlement.service.CampaignSettlementService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class CampaignSettlementController {
     private final CampaignSettlementService campaignSettlementService;
 
+    @Operation(summary = "정산 배치 수동 실행", description = "ENDED 상태 캠페인에 대해 정산 배치를 수동으로 실행합니다. 개발·테스트 전용입니다.")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "정산 완료") })
     @PostMapping("/run")
     public ResponseEntity<String> runSettlement() {
         campaignSettlementService.settleAll();

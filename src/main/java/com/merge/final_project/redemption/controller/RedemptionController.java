@@ -4,6 +4,9 @@ import com.merge.final_project.redemption.RequesterType;
 import com.merge.final_project.redemption.dto.request.RedemptionRequest;
 import com.merge.final_project.redemption.dto.response.RedemptionResponse;
 import com.merge.final_project.redemption.service.RedemptionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,7 +24,12 @@ public class RedemptionController {
 
     private final RedemptionService redemptionService;
 
-    // 환전 요청 API (로그인 사용자 기준으로 요청자 식별)
+    @Operation(summary = "토큰 환금 신청", description = "기부단체 또는 수혜자가 보유 토큰의 현금 환금을 신청합니다. JWT 토큰에서 요청자 정보를 자동 추출합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "신청 성공"),
+            @ApiResponse(responseCode = "400", description = "요청 값 유효성 오류"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 요청")
+    })
     @PostMapping
     public ResponseEntity<RedemptionResponse> requestRedemption(
             Authentication authentication,

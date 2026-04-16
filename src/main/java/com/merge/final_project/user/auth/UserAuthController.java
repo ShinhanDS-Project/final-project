@@ -4,6 +4,9 @@ import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
 import com.merge.final_project.user.users.UserService;
 import com.merge.final_project.user.users.dto.login.UserLoginRequestDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import okhttp3.Response;
@@ -30,7 +33,11 @@ public class UserAuthController {
     private UserService userService;
 
 
-    //1.용도 : 소셜 회원 가입 직전 or 직후에 토큰 안에 들어있는 구글 사용자 정보를 프론트가 다시 꺼내기 위한 api
+    @Operation(summary = "소셜 임시 토큰 정보 조회", description = "소셜 회원가입 직전/직후 TEMP 토큰에서 구글 사용자 정보(이름·이메일)를 추출합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공 — 이름·이메일 반환"),
+            @ApiResponse(responseCode = "401", description = "유효하지 않은 TEMP 토큰")
+    })
     @GetMapping("/social-info")
     public ResponseEntity<?> socialInfo(@RequestHeader("Authorization") String bearerToken ) {
         //1. 프론트가 헤더로 토큰을 꺼내고, bearer 부분 때고 jwt만 꺼냄
@@ -58,7 +65,11 @@ public class UserAuthController {
         return ResponseEntity.ok(responser);
     }
 
-    //2. 용도 : 로그인 컨트롤러
+    @Operation(summary = "일반 사용자 로그인", description = "이메일·비밀번호로 로그인합니다. JWT 액세스 토큰을 반환합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그인 성공 — JWT 토큰 반환"),
+            @ApiResponse(responseCode = "401", description = "이메일 또는 비밀번호 불일치")
+    })
     @PostMapping("/login/user/local")
     public ResponseEntity<?> userLogin(@Valid @RequestBody UserLoginRequestDTO dto){
         //Service단에서 해당 테이블에 아이디 비밀번호, 현재 계정상태(UserStatus)까지 확인하
@@ -74,7 +85,8 @@ public class UserAuthController {
         return ResponseEntity.ok(responser);
     }
 
-    //3. 용도 : 로그아웃 컨트롤러(일반사용자)
+    @Operation(summary = "일반 사용자 로그아웃 (로컬)", description = "로컬 로그인 사용자 로그아웃. 프론트엔드에서 localStorage 토큰 제거를 처리합니다.")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "로그아웃 성공") })
     @PostMapping("/logout/user/local")
     public ResponseEntity<?> logoutLocal(){
         //프론트엔드에서 localStorage.removeItem('accessToken');
@@ -85,7 +97,8 @@ public class UserAuthController {
         return ResponseEntity.ok(responser);
     }
 
-    //4. 용도 : 로그아웃 컨트롤러(social)
+    @Operation(summary = "소셜 사용자 로그아웃", description = "소셜(Google) 로그인 사용자 로그아웃. 만료된 쿠키를 응답 헤더에 설정하여 브라우저 쿠키를 삭제합니다.")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "로그아웃 성공") })
     @PostMapping("/logout/user/social")
     public ResponseEntity<?> logoutSocial(HttpServletResponse response){
         //구글 로그인은 "만료시간이 과거 0초인 빈 쿠키를 응답 헤더 (Set-Cookie)에 실어서 브라우저에 쏜다

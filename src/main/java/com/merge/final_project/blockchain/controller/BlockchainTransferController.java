@@ -4,6 +4,9 @@ import com.merge.final_project.blockchain.dto.BlockchainTransferResponse;
 import com.merge.final_project.blockchain.dto.DonationTokenTransferRequest;
 import com.merge.final_project.blockchain.dto.PaymentTokenChargeRequest;
 import com.merge.final_project.blockchain.service.BlockchainTransferService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,10 +22,11 @@ public class BlockchainTransferController {
 
     private final BlockchainTransferService blockchainTransferService;
 
-    /**
-     * 결제 승인 직후 호출되는 토큰 충전 API.
-     * 서버(소유자) 측 토큰을 기부자 지갑으로 배정하고 거래내역을 저장한다.
-     */
+    @Operation(summary = "결제 토큰 충전", description = "결제 승인 직후 서버 HOT 지갑에서 기부자 지갑으로 토큰을 충전합니다. 거래 내역이 저장됩니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "충전 성공"),
+            @ApiResponse(responseCode = "400", description = "요청 값 오류")
+    })
     @PostMapping("/payments/complete")
     public ResponseEntity<BlockchainTransferResponse> completePayment(@RequestBody PaymentTokenChargeRequest request) {
         return ResponseEntity.ok(
@@ -34,10 +38,11 @@ public class BlockchainTransferController {
         );
     }
 
-    /**
-     * 기부 확정 시 호출되는 토큰 이체 API.
-     * 기부자 지갑에서 캠페인 지갑으로 토큰을 이동하고 거래내역을 저장한다.
-     */
+    @Operation(summary = "기부 토큰 이체", description = "기부 확정 시 기부자 지갑에서 캠페인 지갑으로 토큰을 이체합니다. 거래 내역이 저장됩니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "이체 성공"),
+            @ApiResponse(responseCode = "400", description = "요청 값 오류")
+    })
     @PostMapping("/donations")
     public ResponseEntity<BlockchainTransferResponse> transferDonation(@RequestBody DonationTokenTransferRequest request) {
         return ResponseEntity.ok(
