@@ -18,4 +18,19 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     @Transactional
     @Query("DELETE FROM Image i WHERE i.targetName = :targetName AND i.targetNo = :targetNo")
     void deleteByTargetNameAndTargetNo(@Param("targetName") String targetName, @Param("targetNo") Long targetNo);
+
+    //[바다] main 캠페인 이미지 로드
+    @Query("""
+SELECT i FROM Image i
+WHERE i.targetName = :targetName
+AND i.purpose = :purpose
+AND i.targetNo IN :targetNos
+ORDER BY i.targetNo ASC, i.createdAt DESC
+""")
+    List<Image> findByTargetNameAndPurposeAndTargetNoInOrderByTargetNoAscCreatedAtDesc(
+            @Param("targetName") String targetName,
+            @Param("purpose") String purpose,
+            @Param("targetNos") java.util.Collection<Long> targetNos
+    );
+
 }

@@ -15,6 +15,8 @@ public class CampaignDetailResponseDTO {
     private String title;
     private String description;
     private String category;
+    private String categoryCode;
+    private String entryCode;
     private String approvalStatus;
     private String campaignStatus;
     private String campaignStatusLabel; // 캠페인 상태를 화면에 보여줄 한글 레이블
@@ -25,6 +27,8 @@ public class CampaignDetailResponseDTO {
     private Integer progressPercent;
     private Long remainingAmount;
     private Long daysLeft;
+    // [바다] additional detail payload: donors
+    private Long donors;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
     private LocalDateTime usageStartAt;
@@ -32,8 +36,13 @@ public class CampaignDetailResponseDTO {
     private String walletAddress;
     private String representativeImagePath;
     private List<String> detailImagePaths;
+    private List<ImageSummary> images;
     private FoundationSummary foundation;
     private List<UsePlanSummary> usePlans;
+    // [바다] additional detail payload: tabs
+    private BeneficiarySummary beneficiary;
+    private List<RecentDonorSummary> recentDonors;
+    private List<DocumentSummary> documents;
 
     /* 기부 단체 요약 정보를 담는 내부 DTO */
     @Getter
@@ -52,5 +61,41 @@ public class CampaignDetailResponseDTO {
         private Long usePlanNo;
         private String planContent; // 사용 계획 내용
         private Long planAmount; // 계획된 사용 금액
+    }
+
+    @Getter
+    @Builder
+    public static class ImageSummary {
+        private Long imgNo;
+        private String imgPath;
+        private String imgOrgName;
+        private String imgStoredName;
+        private String purpose;
+    }
+
+    // [바다] beneficiary summary for detail tab
+    @Getter
+    @Builder
+    public static class BeneficiarySummary {
+        private String title;
+        private String target;
+    }
+
+    // [바다] recent donor summary for detail tab
+    @Getter
+    @Builder
+    public static class RecentDonorSummary {
+        private String name;
+        private Long amount;
+        private String time;
+    }
+
+    // [바다] document summary for detail tab
+    @Getter
+    @Builder
+    public static class DocumentSummary {
+        private String name;
+        private String size;
+        private String href;
     }
 }

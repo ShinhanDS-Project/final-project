@@ -5,16 +5,13 @@ import com.merge.final_project.admin.sse.ApprovalRequestEvent;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.CampaignCategory;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
-import com.merge.final_project.campaign.campaigns.dto.CampaignBeneficiaryCheckResponseDTO;
-import com.merge.final_project.campaign.campaigns.dto.CampaignDetailResponseDTO;
-import com.merge.final_project.campaign.campaigns.dto.CampaignFoundationCheckResponseDTO;
-import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
-import com.merge.final_project.campaign.campaigns.dto.CampaignRegisterResponseDTO;
-import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
+import com.merge.final_project.campaign.campaigns.dto.*;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.campaign.useplan.entity.UsePlan;
 import com.merge.final_project.campaign.useplan.repository.UsePlanRepository;
+import com.merge.final_project.donation.donations.Donation;
+import com.merge.final_project.donation.donations.DonationRepository;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
 import com.merge.final_project.global.utils.FileService;
@@ -22,6 +19,8 @@ import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
+import com.merge.final_project.user.users.User;
+import com.merge.final_project.user.users.UserRepository;
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletStatus;
 import com.merge.final_project.wallet.repository.WalletRepository;
@@ -35,14 +34,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -68,6 +62,9 @@ public class CampaignServiceImpl implements CampaignService {
     private final WalletRepository walletRepository;
     private final CampaignRepository campaignRepository;
     private final UsePlanRepository usePlanRepository;
+    // [바다] additional detail payload sources
+    private final DonationRepository donationRepository;
+    private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final FileService fileService;
     private final ApplicationEventPublisher eventPublisher; // SSE 이벤트 발행을 위한 주입
@@ -135,6 +132,47 @@ public class CampaignServiceImpl implements CampaignService {
     }
 
     @Override
+    @Transactional
+    public CampaignRegisterResponseDTO updatePendingCampaign(Long campaignNo, CampaignRequestDTO dto, MultipartFile imageFile, List<MultipartFile> detailImageFiles, Long foundationNo) {
+        Campaign campaign = campaignRepository.findById(campaignNo)
+                .orElseThrow(() -> new IllegalArgumentException("캠페인을 찾을 수 없습니다."));
+
+        validatePendingEditableCampaign(campaign, foundationNo);
+
+        Beneficiary beneficiary = beneficiaryRepository.findByEntryCode(dto.getEntryCode())
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 수혜자 코드입니다."));
+
+        campaign.setTitle(dto.getTitle());
+        campaign.setDescription(dto.getDescription());
+        campaign.setCategory(dto.getCategory());
+        campaign.setTargetAmount(dto.getTargetAmount());
+        campaign.setStartAt(dto.getStartAt());
+        campaign.setEndAt(dto.getEndAt());
+        campaign.setUsageStartAt(dto.getUsageStartAt());
+        campaign.setUsageEndAt(dto.getUsageEndAt());
+        campaign.setBeneficiaryNo(beneficiary.getBeneficiaryNo());
+        campaign.setUpdatedAt(LocalDateTime.now());
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            saveCampaignImage(imageFile, campaign.getCampaignNo(), REPRESENTATIVE_IMAGE_PURPOSE);
+        }
+        saveDetailImages(detailImageFiles, campaign.getCampaignNo());
+
+        usePlanRepository.deleteByCampaignNo(campaign.getCampaignNo());
+        if (dto.getUsePlans() != null) {
+            dto.getUsePlans().forEach(planDto -> usePlanRepository.save(planDto.toEntity(campaign.getCampaignNo())));
+        }
+
+        return CampaignRegisterResponseDTO.builder()
+                .campaignNo(campaign.getCampaignNo())
+                .foundationNo(campaign.getFoundationNo())
+                .approvalStatus(campaign.getApprovalStatus() == null ? null : campaign.getApprovalStatus().name())
+                .campaignStatus(campaign.getCampaignStatus() == null ? null : campaign.getCampaignStatus().name())
+                .message("캠페인 수정이 완료되었습니다.")
+                .build();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<CampaignListResponseDTO> getCampaignList(String sort, String searchType, String keyword, String category) {
         Comparator<Campaign> comparator;
@@ -166,23 +204,41 @@ public class CampaignServiceImpl implements CampaignService {
         Campaign campaign = campaignRepository.findByCampaignNoAndApprovalStatus(campaignNo, ApprovalStatus.APPROVED)
                 .orElseThrow(() -> new IllegalArgumentException("승인된 캠페인을 찾을 수 없습니다."));
 
+        return toCampaignDetailResponse(campaign);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CampaignDetailResponseDTO getPendingCampaignForEdit(Long campaignNo, Long foundationNo) {
+        Campaign campaign = campaignRepository.findById(campaignNo)
+                .orElseThrow(() -> new IllegalArgumentException("캠페인을 찾을 수 없습니다."));
+
+        validatePendingEditableCampaign(campaign, foundationNo);
+
+        return toCampaignDetailResponse(campaign);
+    }
+
+    private CampaignDetailResponseDTO toCampaignDetailResponse(Campaign campaign) {
         Foundation foundation = foundationRepository.findByFoundationNo(campaign.getFoundationNo())
                 .orElseThrow(() -> new IllegalArgumentException("기부 단체 정보를 찾을 수 없습니다."));
 
         BigDecimal currentAmount = campaign.getCurrentAmount() == null ? BigDecimal.ZERO : campaign.getCurrentAmount();
         long targetAmount = campaign.getTargetAmount() == null ? 0L : campaign.getTargetAmount();
         CampaignStatus campaignStatus = campaign.getCampaignStatus() == null ? CampaignStatus.PENDING : campaign.getCampaignStatus();
+        // [바다] donors count for detail cards
+        long donors = donationRepository.countByCampaignNo(campaign.getCampaignNo());
         String walletAddress = campaign.getWalletNo() == null ? null : walletRepository.findById(campaign.getWalletNo())
                 .map(Wallet::getWalletAddress)
                 .orElse(null);
 
-        List<Image> campaignImages = imageRepository.findByTargetNameAndTargetNo(CAMPAIGN_IMAGE_TARGET_NAME, campaignNo)
+        List<Image> campaignImages = imageRepository.findByTargetNameAndTargetNo(CAMPAIGN_IMAGE_TARGET_NAME, campaign.getCampaignNo())
                 .stream()
                 .sorted(Comparator.comparing(Image::getCreatedAt))
                 .toList();
 
         String representativeImagePath = campaignImages.stream()
                 .filter(image -> REPRESENTATIVE_IMAGE_PURPOSE.equals(image.getPurpose()))
+                .sorted(Comparator.comparing(Image::getCreatedAt).reversed())
                 .map(Image::getImgPath)
                 .findFirst()
                 .orElse(campaign.getImagePath());
@@ -192,7 +248,17 @@ public class CampaignServiceImpl implements CampaignService {
                 .map(Image::getImgPath)
                 .toList();
 
-        List<CampaignDetailResponseDTO.UsePlanSummary> usePlans = usePlanRepository.findByCampaignNoOrderByUsePlanNoAsc(campaignNo)
+        List<CampaignDetailResponseDTO.ImageSummary> images = campaignImages.stream()
+                .map(image -> CampaignDetailResponseDTO.ImageSummary.builder()
+                        .imgNo(image.getImgNo())
+                        .imgPath(image.getImgPath())
+                        .imgOrgName(image.getImgOrgName())
+                        .imgStoredName(image.getImgStoredName())
+                        .purpose(image.getPurpose())
+                        .build())
+                .toList();
+
+        List<CampaignDetailResponseDTO.UsePlanSummary> usePlans = usePlanRepository.findByCampaignNoOrderByUsePlanNoAsc(campaign.getCampaignNo())
                 .stream()
                 .map(plan -> CampaignDetailResponseDTO.UsePlanSummary.builder()
                         .usePlanNo(plan.getUsePlanNo())
@@ -201,11 +267,40 @@ public class CampaignServiceImpl implements CampaignService {
                         .build())
                 .toList();
 
+        // [바다] beneficiary tab payload
+        Beneficiary beneficiary = beneficiaryRepository.findById(campaign.getBeneficiaryNo()).orElse(null);
+        CampaignDetailResponseDTO.BeneficiarySummary beneficiarySummary = CampaignDetailResponseDTO.BeneficiarySummary.builder()
+                .title(beneficiary == null ? "수혜자 정보 준비 중" : beneficiary.getName())
+                .target(beneficiary == null || beneficiary.getBeneficiaryType() == null
+                        ? "-"
+                        : beneficiary.getBeneficiaryType().name())
+                .build();
+
+        // [바다] recent donor tab payload
+        List<CampaignDetailResponseDTO.RecentDonorSummary> recentDonors = donationRepository
+                .findTop5ByCampaignNoOrderByDonatedAtDesc(campaign.getCampaignNo())
+                .stream()
+                .map(this::toRecentDonorSummary)
+                .toList();
+
+        // [바다] documents tab payload (minimal from use plans)
+        List<CampaignDetailResponseDTO.DocumentSummary> documents = usePlans.stream()
+                .map(plan -> CampaignDetailResponseDTO.DocumentSummary.builder()
+                        .name(plan.getPlanContent() == null || plan.getPlanContent().isBlank()
+                                ? "사용 계획서"
+                                : plan.getPlanContent())
+                        .size(plan.getPlanAmount() == null ? "-" : String.format("%,d원", plan.getPlanAmount()))
+                        .href("")
+                        .build())
+                .toList();
+
         return CampaignDetailResponseDTO.builder()
                 .campaignNo(campaign.getCampaignNo())
                 .title(campaign.getTitle())
                 .description(campaign.getDescription())
                 .category(campaign.getCategory() == null ? null : campaign.getCategory().getLabel())
+                .categoryCode(campaign.getCategory() == null ? null : campaign.getCategory().name())
+                .entryCode(findEntryCode(campaign.getBeneficiaryNo()))
                 .approvalStatus(campaign.getApprovalStatus() == null ? ApprovalStatus.PENDING.name() : campaign.getApprovalStatus().name())
                 .campaignStatus(campaignStatus.name())
                 .campaignStatusLabel(toCampaignStatusLabel(campaignStatus))
@@ -216,6 +311,7 @@ public class CampaignServiceImpl implements CampaignService {
                 .progressPercent(calculateProgressPercent(currentAmount, targetAmount))
                 .remainingAmount(calculateRemainingAmount(targetAmount, currentAmount))
                 .daysLeft(calculateDaysLeft(campaign.getEndAt()))
+                .donors(donors)
                 .startAt(campaign.getStartAt())
                 .endAt(campaign.getEndAt())
                 .usageStartAt(campaign.getUsageStartAt())
@@ -223,6 +319,7 @@ public class CampaignServiceImpl implements CampaignService {
                 .walletAddress(walletAddress)
                 .representativeImagePath(representativeImagePath)
                 .detailImagePaths(detailImagePaths)
+                .images(images)
                 .foundation(CampaignDetailResponseDTO.FoundationSummary.builder()
                         .foundationNo(foundation.getFoundationNo())
                         .foundationName(foundation.getFoundationName())
@@ -230,6 +327,9 @@ public class CampaignServiceImpl implements CampaignService {
                         .profilePath(foundation.getProfilePath())
                         .build())
                 .usePlans(usePlans)
+                .beneficiary(beneficiarySummary)
+                .recentDonors(recentDonors)
+                .documents(documents)
                 .build();
     }
 
@@ -275,6 +375,27 @@ public class CampaignServiceImpl implements CampaignService {
                 .build();
     }
 
+    private void validatePendingEditableCampaign(Campaign campaign, Long foundationNo) {
+        if (!Objects.equals(campaign.getFoundationNo(), foundationNo)) {
+            throw new IllegalArgumentException("해당 재단의 캠페인만 수정할 수 있습니다.");
+        }
+
+        if (!ApprovalStatus.PENDING.equals(campaign.getApprovalStatus())
+                || !CampaignStatus.PENDING.equals(campaign.getCampaignStatus())) {
+            throw new IllegalStateException("승인 대기 상태의 캠페인만 수정할 수 있습니다.");
+        }
+    }
+
+    private String findEntryCode(Long beneficiaryNo) {
+        if (beneficiaryNo == null) {
+            return null;
+        }
+
+        return beneficiaryRepository.findById(beneficiaryNo)
+                .map(Beneficiary::getEntryCode)
+                .orElse(null);
+    }
+
     private List<CampaignListResponseDTO> toCampaignListResponse(List<Campaign> campaigns) {
         if (campaigns.isEmpty()) {
             return List.of();
@@ -313,6 +434,40 @@ public class CampaignServiceImpl implements CampaignService {
                         .endAt(campaign.getEndAt())
                         .build())
                 .toList();
+    }
+
+    // [바다] mapper for recent donor payload
+    private CampaignDetailResponseDTO.RecentDonorSummary toRecentDonorSummary(Donation donation) {
+        String donorName;
+        if (donation.isAnonymous()) {
+            donorName = "익명";
+        } else {
+            donorName = userRepository.findByUserNo(donation.getUserNo())
+                    .map(User::getName)
+                    .orElse("기부자");
+        }
+
+        long amount = donation.getDonationAmount() == null ? 0L : donation.getDonationAmount().longValue();
+        return CampaignDetailResponseDTO.RecentDonorSummary.builder()
+                .name(donorName)
+                .amount(amount)
+                .time(toRelativeTime(donation.getDonatedAt()))
+                .build();
+    }
+
+    // [바다] relative time formatter for recent donors
+    private String toRelativeTime(LocalDateTime donatedAt) {
+        if (donatedAt == null) {
+            return "-";
+        }
+        Duration duration = Duration.between(donatedAt, LocalDateTime.now());
+        long minutes = Math.max(0L, duration.toMinutes());
+        if (minutes < 1) return "방금 전";
+        if (minutes < 60) return minutes + "분 전";
+        long hours = minutes / 60;
+        if (hours < 24) return hours + "시간 전";
+        long days = hours / 24;
+        return days + "일 전";
     }
 
     private boolean matchesCategory(Campaign campaign, String category) {

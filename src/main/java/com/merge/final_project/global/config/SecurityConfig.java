@@ -154,6 +154,7 @@ public class SecurityConfig {
                                 "/api/foundation/login",     // 로그인
                                 "/api/foundation/logout",    // 로그아웃 (토큰 만료 후에도 호출 가능해야 함)
                                 "/api/foundation/campaigns"  // 캠페인 목록 조회 (공개)
+
                         ).permitAll()
                         // GET 한정 공개 — 일반 사용자 기부단체 상세 조회 (숫자 ID 경로만 허용, /me 등 제외)
                         .requestMatchers(HttpMethod.GET, "/api/foundation/{foundationNo:\\d+}").permitAll()
@@ -163,6 +164,8 @@ public class SecurityConfig {
                         // GET 한정 공개 — 기부단체 지갑 정보 및 캠페인 목록 (foundationNo 경로 파라미터)
                         .requestMatchers(HttpMethod.GET, "/api/foundation/*/wallet").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/foundation/*/campaigns").permitAll()
+                        // 호연
+                        .requestMatchers(HttpMethod.GET, "/api/foundation/campaigns/register").permitAll()
                         // 그 외 단체 전용 기능은 ROLE_FOUNDATION 필요
                         .anyRequest().hasAuthority("ROLE_FOUNDATION")
                 )
@@ -201,7 +204,11 @@ public class SecurityConfig {
                                 "/api/blockchain/**",
                                 "/oauth2/**",
                                 "/login/**",
-                                "/social-info"
+                                "/social-info",
+                                "/api/donation/public/stats",    // main의 기부 누적 조회
+                                "/api/donation/public/home-hub",
+                                "/api/donation/public/recent-donations",
+                                "/api/donation/public/latest-campaigns"
                         ).permitAll()
                         // UserController의 API 중 로그인이 필요 없는 기능만 명시적으로 허용
                         .requestMatchers(HttpMethod.POST,
