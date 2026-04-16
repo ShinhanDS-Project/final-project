@@ -31,7 +31,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "campaign")
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners({AuditingEntityListener.class, CampaignWalletStatusListener.class})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -119,6 +119,7 @@ public class Campaign extends BaseCreatedAtEntity {
     // [가빈] 캠페인 반려 시 상태 및 사유 변경 메서드
     public void reject(String reason) {
         this.approvalStatus = ApprovalStatus.REJECTED;
+        this.campaignStatus = CampaignStatus.CANCELLED;
         this.rejectReason = reason;
     }
     //[채원] add함수
