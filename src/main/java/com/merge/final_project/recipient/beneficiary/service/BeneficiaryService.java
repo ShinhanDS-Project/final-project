@@ -105,7 +105,8 @@ public class BeneficiaryService implements UserDetailsService {
     /**
      * 본인 상세 정보 조회 (조회용)
      */
-    public BeneficiaryInfoResponseDTO getMyDetailInfo(String email) {
+    public BeneficiaryInfoResponseDTO
+    getMyDetailInfo(String email) {
         Beneficiary beneficiary = beneficiaryRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("수혜자 정보를 찾을 수 없습니다."));
         return new BeneficiaryInfoResponseDTO(beneficiary);
