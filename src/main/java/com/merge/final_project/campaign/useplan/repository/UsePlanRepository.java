@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface UsePlanRepository extends JpaRepository<UsePlan, Long> {
     List<UsePlan> findByCampaignNoOrderByUsePlanNoAsc(Long campaignNo);
+
+    void deleteByCampaignNo(Long campaignNo);
 }
