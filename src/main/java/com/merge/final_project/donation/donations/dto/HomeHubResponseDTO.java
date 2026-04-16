@@ -17,4 +17,5 @@ public class HomeHubResponseDTO {
     private long totalCampaignCount;
     private List<HomeCampaignItemDTO> endingSoon;
     private List<HomeCampaignItemDTO> topParticipation;
+    private List<HomeLatestCampaignResponseDTO> latestOngoing;
 }

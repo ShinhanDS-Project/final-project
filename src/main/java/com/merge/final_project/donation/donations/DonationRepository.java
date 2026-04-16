@@ -25,6 +25,8 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
 
     // [바다] recent donors per campaign
     List<Donation> findTop5ByCampaignNoOrderByDonatedAtDesc(Long campaignNo);
+    //[바다] 기부 최근 5개
+    List<Donation> findTop50ByOrderByDonatedAtDesc();
 
     // 총 기부금액 조회
     @Query("select coalesce(sum(d.donationAmount), 0) from Donation d where d.userNo = :userNo")
@@ -81,4 +83,6 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
      * 재시도 스케줄러가 한 번에 처리할 후보를 순서대로 조회한다.
      */
     List<Donation> findTop50ByTokenStatusInOrderByDonationNoAsc(List<String> tokenStatus);
+
+
 }

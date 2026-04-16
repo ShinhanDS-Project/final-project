@@ -131,5 +131,15 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
             Pageable pageable
     );
 
+    //[바다] 메인 캠페인 리스트
+    @Query("""
+    SELECT c
+    FROM Campaign c
+    WHERE c.campaignStatus = com.merge.final_project.campaign.campaigns.CampaignStatus.ACTIVE
+      AND (c.endAt IS NULL OR c.endAt >= CURRENT_TIMESTAMP)
+    ORDER BY c.createdAt DESC
+""")
+    List<Campaign> findLatestOngoingCampaigns(Pageable pageable);
+
 
 }

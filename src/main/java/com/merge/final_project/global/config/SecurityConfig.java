@@ -187,7 +187,9 @@ public class SecurityConfig {
                                 "/social-info",
                                 "/users/support/**",
                                 "/api/donation/public/stats",    // main의 기부 누적 조회
-                                "/api/donation/public/home-hub"
+                                "/api/donation/public/home-hub",
+                                "/api/donation/public/recent-donations",
+                                "/api/donation/public/latest-campaigns"
 
                                 ).permitAll()
 
