@@ -41,6 +41,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     //구글 회원가입| 로그인 관련 handler
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+
         OAuth2User oAuth2User = (OAuth2User)authentication.getPrincipal();
         String email= oAuth2User.getAttribute("email");
         String name= oAuth2User.getAttribute("name");
