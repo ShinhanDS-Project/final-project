@@ -34,17 +34,22 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
-    @Value("${cors.allowed-origin}")
+    @Value("${CORS_ALLOWED_ORIGIN}")
     private String allowedOrigin;
 
     //CORS 설정을 위해 추가합니다
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(
+                "http://3.34.125.62:8090", // 실제 프론트엔드 서버 주소
+                "http://localhost:3000",   // 로컬 테스트용 (필요시)
+                allowedOrigin              // .env나 properties에서 가져온 값
+        ));
         config.setAllowedOrigins(List.of(allowedOrigin));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(false);
+        config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -229,4 +234,5 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 }
