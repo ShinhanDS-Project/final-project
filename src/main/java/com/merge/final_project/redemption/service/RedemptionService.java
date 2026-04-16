@@ -3,10 +3,12 @@ package com.merge.final_project.redemption.service;
 import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
+import com.merge.final_project.blockchain.gas.GasStationService;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.blockchain.service.BlockchainService;
 import com.merge.final_project.blockchain.service.TokenAmountConverter;
 import com.merge.final_project.blockchain.security.WalletPrivateKeyResolver;
+import com.merge.final_project.blockchain.wallet.HotWalletResolver;
 import com.merge.final_project.org.Foundation;
 import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.entity.Beneficiary;
@@ -20,7 +22,6 @@ import com.merge.final_project.redemption.dto.response.RedemptionResponse;
 import com.merge.final_project.redemption.entity.Redemption;
 import com.merge.final_project.redemption.repository.RedemptionRepository;
 import com.merge.final_project.wallet.entity.Wallet;
-import com.merge.final_project.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RedemptionService {
 
-    private final WalletRepository walletRepository;
+    private final HotWalletResolver hotWalletResolver;
     private final FoundationRepository foundationRepository;
     private final BeneficiaryRepository beneficiaryRepository;
     private final RedemptionRepository redemptionRepository;
@@ -46,6 +47,7 @@ public class RedemptionService {
     private final TransactionRepository transactionRepository;
     private final WalletPrivateKeyResolver walletPrivateKeyResolver;
     private final TokenAmountConverter tokenAmountConverter;
+    private final GasStationService gasStationService;
 
     @Value("${blockchain.wallet.hot-address}")
     private String hotWalletAddress;
@@ -82,8 +84,7 @@ public class RedemptionService {
         validateOnChainBalanceForRedemption(requesterWallet, request.getAmount());
 
         // 환급 토큰이 모일 서버 hot wallet 조회
-        Wallet hotWallet = walletRepository.findByWalletAddress(hotWalletAddress)
-                .orElseThrow(() -> new IllegalArgumentException("hot wallet not found"));
+        Wallet hotWallet = resolveHotWallet();
 
         // 환급 요청을 먼저 PENDING 상태로 생성한다.
         Redemption redemption = redemptionCommandService.createPending(
@@ -99,6 +100,7 @@ public class RedemptionService {
         TransactionReceipt receipt;
         try {
             // 요청자 지갑 개인키로 환급 컨트랙트를 호출한다.
+            gasStationService.ensureSufficientPol(requesterWallet);
             receipt = blockchainService.redeemOnChain(
                     walletPrivateKeyResolver.resolveForWallet(requesterWallet),
                     tokenAmountConverter.toOnChainAmount(request.getAmount()),
@@ -238,6 +240,10 @@ public class RedemptionService {
         if (request.getAmount() == null || request.getAmount() <= 0) {
             throw new IllegalArgumentException("amount must be positive");
         }
+    }
+
+    private Wallet resolveHotWallet() {
+        return hotWalletResolver.resolve(hotWalletAddress);
     }
 
     // 요청자 타입에 따라 실제 지갑 조회 경로가 다르므로 여기서 분기한다.

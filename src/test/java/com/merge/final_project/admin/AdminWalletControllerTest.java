@@ -7,9 +7,9 @@ import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
+import com.merge.final_project.blockchain.wallet.HotWalletResolver;
 import com.merge.final_project.wallet.entity.Wallet;
-import com.merge.final_project.wallet.entity.WalletType;
-import com.merge.final_project.wallet.repository.WalletLookupRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,11 +21,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 class AdminWalletControllerTest {
 
     @Mock
-    private WalletLookupRepository walletLookupRepository;
+    private HotWalletResolver hotWalletResolver;
 
     @Mock
     private TransactionRepository transactionRepository;
@@ -46,16 +46,18 @@ class AdminWalletControllerTest {
     @InjectMocks
     private AdminWalletController adminWalletController;
 
-    // ─── HOT 지갑 정보 조회 ───
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(adminWalletController, "configuredHotWalletAddress", "0xHOT");
+    }
 
     @Test
-    @DisplayName("HOT 지갑이 존재하면 주소와 잔액을 반환한다")
-    void HOT지갑_정상조회() {
+    @DisplayName("HOT wallet info is returned when resolver finds wallet")
+    void getHotWalletInfo_success() {
         Wallet hotWallet = mock(Wallet.class);
         when(hotWallet.getWalletAddress()).thenReturn("0xHOT");
         when(hotWallet.getBalance()).thenReturn(new BigDecimal("99999"));
-        when(walletLookupRepository.findFirstByWalletType(WalletType.HOT))
-                .thenReturn(Optional.of(hotWallet));
+        when(hotWalletResolver.resolve("0xHOT")).thenReturn(hotWallet);
 
         ResponseEntity<AdminWalletInfoDTO> response = adminWalletController.getHotWalletInfo();
 
@@ -66,19 +68,15 @@ class AdminWalletControllerTest {
     }
 
     @Test
-    @DisplayName("HOT 지갑이 없으면 IllegalStateException이 발생한다")
-    void HOT지갑_없으면_예외() {
-        when(walletLookupRepository.findFirstByWalletType(WalletType.HOT))
-                .thenReturn(Optional.empty());
-
+    @DisplayName("Exception is thrown when resolver cannot find HOT wallet")
+    void getHotWalletInfo_notFound() {
+        when(hotWalletResolver.resolve("0xHOT")).thenThrow(new IllegalStateException("not found"));
         assertThrows(IllegalStateException.class, () -> adminWalletController.getHotWalletInfo());
     }
 
-    // ─── HOT 지갑 거래 내역 조회 ───
-
     @Test
-    @DisplayName("HOT 지갑 거래 내역을 페이징으로 반환한다")
-    void HOT지갑_거래내역_정상조회() {
+    @DisplayName("HOT wallet transactions are returned as page")
+    void getHotWalletTransactions_success() {
         Wallet fromWallet = mock(Wallet.class);
         when(fromWallet.getWalletAddress()).thenReturn("0xFROM");
         Wallet toWallet = mock(Wallet.class);
@@ -95,8 +93,7 @@ class AdminWalletControllerTest {
 
         Wallet hotWallet = mock(Wallet.class);
         when(hotWallet.getWalletAddress()).thenReturn("0xHOT");
-        when(walletLookupRepository.findFirstByWalletType(WalletType.HOT))
-                .thenReturn(Optional.of(hotWallet));
+        when(hotWalletResolver.resolve("0xHOT")).thenReturn(hotWallet);
 
         Page<Transaction> txPage = new PageImpl<>(List.of(tx));
         when(transactionRepository.findByWalletAddressPaged(eq("0xHOT"), any()))
@@ -112,12 +109,11 @@ class AdminWalletControllerTest {
     }
 
     @Test
-    @DisplayName("HOT 지갑 거래 내역이 없으면 빈 페이지를 반환한다")
-    void HOT지갑_거래내역_없으면_빈페이지() {
+    @DisplayName("Empty page is returned when no HOT wallet transactions")
+    void getHotWalletTransactions_empty() {
         Wallet hotWallet = mock(Wallet.class);
         when(hotWallet.getWalletAddress()).thenReturn("0xHOT");
-        when(walletLookupRepository.findFirstByWalletType(WalletType.HOT))
-                .thenReturn(Optional.of(hotWallet));
+        when(hotWalletResolver.resolve("0xHOT")).thenReturn(hotWallet);
         when(transactionRepository.findByWalletAddressPaged(eq("0xHOT"), any()))
                 .thenReturn(Page.empty());
 
@@ -125,15 +121,14 @@ class AdminWalletControllerTest {
                 adminWalletController.getHotWalletTransactions(PageRequest.of(0, 10));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getContent()).isEmpty();
     }
 
     @Test
-    @DisplayName("거래 내역 조회 시 HOT 지갑이 없으면 IllegalStateException이 발생한다")
-    void 거래내역조회_HOT지갑없으면_예외() {
-        when(walletLookupRepository.findFirstByWalletType(WalletType.HOT))
-                .thenReturn(Optional.empty());
-
+    @DisplayName("Exception is thrown for transaction query when resolver fails")
+    void getHotWalletTransactions_notFound() {
+        when(hotWalletResolver.resolve("0xHOT")).thenThrow(new IllegalStateException("not found"));
         assertThrows(IllegalStateException.class,
                 () -> adminWalletController.getHotWalletTransactions(PageRequest.of(0, 10)));
     }
