@@ -270,12 +270,14 @@
     </div>
 </div>
 
-<script>
+<script th:inline="javascript">
+    const editMode = Boolean([[${editMode != null && editMode}]]);
+    const editCampaignNo = [[${campaignNo != null ? campaignNo : 'null'}]];
     let beneficiaryChecked = false;
     let foundationChecked = false;
     let foundationHasAvailableWallet = false;
 
-    function addPlanRow() {
+    function addPlanRow(planContent = '', planAmount = '') {
         const wrapper = document.createElement('div');
         wrapper.className = 'row-card';
         wrapper.innerHTML = `
@@ -284,6 +286,8 @@
                 <input type="number" name="planAmount" min="0" placeholder="금액" required>
             </div>
         `;
+        wrapper.querySelector('[name="planContent"]').value = planContent ?? '';
+        wrapper.querySelector('[name="planAmount"]').value = planAmount ?? '';
         document.getElementById('planList').appendChild(wrapper);
     }
 
@@ -296,6 +300,10 @@
 
     function toIsoOrNull(value) {
         return value ? new Date(value).toISOString().slice(0, 19) : null;
+    }
+
+    function toDatetimeLocal(value) {
+        return value ? value.slice(0, 16) : '';
     }
 
     function setCheckResult(elementId, type, html) {
@@ -386,12 +394,12 @@
             return;
         }
 
-        if (!foundationChecked) {
+        if (!editMode && !foundationChecked) {
             status.textContent = '재단 지갑 확인을 먼저 완료하세요.';
             return;
         }
 
-        if (!foundationHasAvailableWallet) {
+        if (!editMode && !foundationHasAvailableWallet) {
             status.textContent = '사용 가능한 캠페인 지갑이 없어 등록할 수 없습니다.';
             return;
         }
@@ -429,8 +437,11 @@
         });
 
         try {
-            const response = await fetch(`/api/foundation/campaigns/register?foundationNo=${encodeURIComponent(foundationNo)}`, {
-                method: 'POST',
+            const url = editMode
+                ? `/api/foundation/campaigns/${encodeURIComponent(editCampaignNo)}`
+                : `/api/foundation/campaigns/register?foundationNo=${encodeURIComponent(foundationNo)}`;
+            const response = await fetch(url, {
+                method: editMode ? 'PUT' : 'POST',
                 body: formData
             });
 
@@ -438,15 +449,61 @@
                 throw new Error(await response.text());
             }
 
-            status.textContent = '등록 요청이 완료되었습니다. 사용된 지갑 상태는 ACTIVE로 변경됩니다.';
+            status.textContent = editMode ? '수정이 완료되었습니다.' : '등록 요청이 완료되었습니다. 사용된 지갑 상태는 ACTIVE로 변경됩니다.';
         } catch (error) {
             status.textContent = `요청 실패: ${error.message}`;
         }
     }
 
+    async function loadEditCampaign() {
+        if (!editMode) {
+            addPlanRow();
+            addDetailImageRow();
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/foundation/campaigns/${encodeURIComponent(editCampaignNo)}/edit-detail`);
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const data = await response.json();
+            document.getElementById('title').value = data.title ?? '';
+            document.getElementById('category').value = data.categoryCode ?? '';
+            document.getElementById('entryCode').value = data.entryCode ?? '';
+            document.getElementById('foundationNo').value = data.foundation?.foundationNo ?? '';
+            document.getElementById('description').value = data.description ?? '';
+            document.getElementById('targetAmount').value = data.targetAmount ?? '';
+            document.getElementById('startAt').value = toDatetimeLocal(data.startAt);
+            document.getElementById('endAt').value = toDatetimeLocal(data.endAt);
+            document.getElementById('usageStartAt').value = toDatetimeLocal(data.usageStartAt);
+            document.getElementById('usageEndAt').value = toDatetimeLocal(data.usageEndAt);
+
+            beneficiaryChecked = true;
+            foundationChecked = true;
+            foundationHasAvailableWallet = true;
+
+            if (data.entryCode) {
+                setCheckResult('beneficiaryResult', 'success', `현재 수혜자 entry code: ${data.entryCode}`);
+            }
+            if (data.foundation) {
+                setCheckResult('foundationResult', 'success', `현재 재단: ${data.foundation.foundationName ?? '-'}<br>기존 배정 지갑을 유지합니다.`);
+            }
+
+            document.getElementById('planList').innerHTML = '';
+            (data.usePlans && data.usePlans.length ? data.usePlans : [{}]).forEach(plan => {
+                addPlanRow(plan.planContent ?? '', plan.planAmount ?? '');
+            });
+            addDetailImageRow();
+        } catch (error) {
+            document.getElementById('status').textContent = `수정 화면 로딩 실패: ${error.message}`;
+        }
+    }
+
     document.getElementById('checkBeneficiaryButton').addEventListener('click', checkBeneficiary);
     document.getElementById('checkFoundationButton').addEventListener('click', checkFoundation);
-    document.getElementById('addPlanButton').addEventListener('click', addPlanRow);
+    document.getElementById('addPlanButton').addEventListener('click', () => addPlanRow());
     document.getElementById('addDetailImageButton').addEventListener('click', addDetailImageRow);
     document.getElementById('submitCampaignButton').addEventListener('click', submitCampaign);
 
@@ -463,8 +520,7 @@
         document.getElementById('foundationResult').innerHTML = '';
     });
 
-    addPlanRow();
-    addDetailImageRow();
+    loadEditCampaign();
 </script>
 </body>
 </html>

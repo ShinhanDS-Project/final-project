@@ -15,6 +15,8 @@ public class CampaignDetailResponseDTO {
     private String title;
     private String description;
     private String category;
+    private String categoryCode;
+    private String entryCode;
     private String approvalStatus;
     private String campaignStatus;
     private String campaignStatusLabel; // 캠페인 상태를 화면에 보여줄 한글 레이블
@@ -32,6 +34,7 @@ public class CampaignDetailResponseDTO {
     private String walletAddress;
     private String representativeImagePath;
     private List<String> detailImagePaths;
+    private List<ImageSummary> images;
     private FoundationSummary foundation;
     private List<UsePlanSummary> usePlans;
 
@@ -52,5 +55,15 @@ public class CampaignDetailResponseDTO {
         private Long usePlanNo;
         private String planContent; // 사용 계획 내용
         private Long planAmount; // 계획된 사용 금액
+    }
+
+    @Getter
+    @Builder
+    public static class ImageSummary {
+        private Long imgNo;
+        private String imgPath;
+        private String imgOrgName;
+        private String imgStoredName;
+        private String purpose;
     }
 }

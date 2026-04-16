@@ -18,9 +18,19 @@ public interface CampaignService {
             Long foundationNo
     );
 
+    CampaignRegisterResponseDTO updatePendingCampaign(
+            Long campaignNo,
+            CampaignRequestDTO requestDto,
+            MultipartFile imageFile,
+            List<MultipartFile> detailImageFiles,
+            Long foundationNo
+    );
+
     List<CampaignListResponseDTO> getCampaignList(String sort, String searchType, String keyword, String category);
 
     CampaignDetailResponseDTO getCampaignDetail(Long campaignNo);
+
+    CampaignDetailResponseDTO getPendingCampaignForEdit(Long campaignNo, Long foundationNo);
 
     CampaignBeneficiaryCheckResponseDTO checkBeneficiaryByEntryCode(String entryCode);
 
