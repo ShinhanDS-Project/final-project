@@ -20,6 +20,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 
 @io.swagger.v3.oas.annotations.tags.Tag(name = "수혜자", description = "수혜자 회원가입·로그인·정보 조회·수정 API")
 @RestController
@@ -51,14 +53,18 @@ public class BeneficiaryRestController {
             @ApiResponse(responseCode = "400", description = "요청 값 유효성 오류")
     })
     @PostMapping("/signin")
-    public ResponseEntity<String> login(@RequestBody BeneficiarySigninRequestDTO loginDto, HttpServletResponse response) {
+    public ResponseEntity<?> login(@RequestBody BeneficiarySigninRequestDTO loginDto, HttpServletResponse response) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
         );
 
-        String accessToken = jwtTokenProvider.createAdminAccessToken(
+
+        String accessToken = jwtTokenProvider.createGeneralAccessToken(
                 authentication.getName(),
-                authentication.getAuthorities().iterator().next().getAuthority()
+                loginDto.getEmail(),
+                "ROLE_BENEFICIARY",
+                beneficiaryService.findBeneficiary(loginDto)
+
         );
 
         Cookie cookie = new Cookie("accessToken", accessToken);
@@ -66,8 +72,11 @@ public class BeneficiaryRestController {
         cookie.setHttpOnly(true);
         cookie.setMaxAge(60 * 60 * 24);
         response.addCookie(cookie);
+        Map<String, String> responser = new HashMap<>();
+        responser.put("accessToken", accessToken);
+        responser.put("message", "로그인이 성공하였습니다.");
 
-        return ResponseEntity.ok("success");
+        return ResponseEntity.ok(responser);
     }
 
     @Operation(summary = "내 정보 조회", description = "로그인한 수혜자의 상세 정보를 조회합니다.")

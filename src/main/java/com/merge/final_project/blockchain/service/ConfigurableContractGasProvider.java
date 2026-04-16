@@ -18,7 +18,7 @@ public class ConfigurableContractGasProvider implements ContractGasProvider {
     public ConfigurableContractGasProvider(
             Web3j web3j,
             @Value("${blockchain.gas.price}") String gasPrice,
-            @Value("${blockchain.gas.limit}") String gasLimit
+            @Value("${blockchain.tx.gas-limit:120000}") String gasLimit
     ) {
         this.web3j = web3j;
         this.minGasPrice = new BigInteger(gasPrice);

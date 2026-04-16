@@ -35,7 +35,7 @@ public class Web3jBlockchainTransferClient implements BlockchainTransferClient {
     @Value("${blockchain.contract.address:${blockchain.contract.donation-token-address}}")
     private String contractAddress;
 
-    @Value("${blockchain.tx.gas-limit:300000}")
+    @Value("${blockchain.tx.gas-limit:120000}")
     private BigInteger gasLimit;
 
     @Value("${blockchain.tx.receipt-interval-ms:1500}")

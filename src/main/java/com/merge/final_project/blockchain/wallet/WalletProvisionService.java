@@ -8,7 +8,6 @@ import com.merge.final_project.blockchain.security.WalletCryptoService;
 import com.merge.final_project.org.FoundationRepository;
 import com.merge.final_project.recipient.beneficiary.repository.BeneficiaryRepository;
 import com.merge.final_project.user.users.UserRepository;
-import com.merge.final_project.wallet.ServerWalletType;
 import com.merge.final_project.wallet.entity.Wallet;
 import com.merge.final_project.wallet.entity.WalletStatus;
 import com.merge.final_project.wallet.entity.WalletType;
@@ -37,10 +36,6 @@ public class WalletProvisionService {
     private final GasStationService gasStationService;
     private final WalletOwnerBindingService walletOwnerBindingService;
 
-    /**
-     * 공통 기본값으로 지갑/키를 생성한다.
-     * ACTIVE 지갑이면 즉시 사용 가능하도록 초기 POL 가스비 충전을 시도한다.
-     */
     @Transactional
     public Wallet createBaseWallet(WalletType walletType, Long ownerNo, WalletStatus status) {
         WalletCredentials credentials = walletCryptoService.createWalletCredentials();
@@ -69,9 +64,6 @@ public class WalletProvisionService {
         return savedWallet;
     }
 
-    /**
-     * 기부자 가입 완료 후 지갑을 생성하고 users.wallet_no를 바인딩한다.
-     */
     @Transactional
     public Wallet createUserWalletAfterSignup(Long userNo) {
         userRepository.findById(userNo)
@@ -86,10 +78,6 @@ public class WalletProvisionService {
         return wallet;
     }
 
-    /**
-     * 기부단체 승인 완료 후 단체 지갑 1개를 만들고,
-     * 추후 캠페인 생성에 사용할 캠페인 지갑 주소 3개를 미리 준비한다.
-     */
     @Transactional
     public Wallet createFoundationWalletAfterSignup(Long foundationNo) {
         foundationRepository.findById(foundationNo)
@@ -112,9 +100,6 @@ public class WalletProvisionService {
         return wallet;
     }
 
-    /**
-     * 수혜자 가입 완료 후 지갑을 생성하고 beneficiary.wallet_no/key_no를 저장한다.
-     */
     @Transactional
     public Wallet createBeneficiaryWalletAfterSignup(Long beneficiaryNo) {
         beneficiaryRepository.findById(beneficiaryNo)
@@ -130,32 +115,11 @@ public class WalletProvisionService {
         return wallet;
     }
 
-    /**
-     * HOT/COLD 서버 지갑이 없으면 생성하고, 있으면 기존 지갑을 재사용한다.
-     */
-    @Transactional
-    public Wallet createServerWallet(ServerWalletType serverWalletType) {
-        WalletType walletType = serverWalletType == ServerWalletType.HOT ? WalletType.HOT : WalletType.COLD;
-        return walletLookupRepository.findFirstByWalletType(walletType)
-                .orElseGet(() -> createBaseWallet(walletType, defaultServerOwnerNo(serverWalletType), WalletStatus.ACTIVE));
-    }
-
-    /**
-     * 단체 ownerNo에 연결된 비활성 캠페인 지갑 3개를 생성한다.
-     */
     private List<Wallet> createInitialCampaignWalletSetForFoundation(Long foundationNo) {
         List<Wallet> campaignWallets = new ArrayList<>(3);
         for (int idx = 1; idx <= 3; idx++) {
-            Long ownerNo = foundationNo;
-            campaignWallets.add(createBaseWallet(WalletType.CAMPAIGN, ownerNo, WalletStatus.INACTIVE));
+            campaignWallets.add(createBaseWallet(WalletType.CAMPAIGN, foundationNo, WalletStatus.INACTIVE));
         }
         return campaignWallets;
-    }
-
-    /**
-     * 서버 지갑 ownerNo는 실제 도메인 PK와 충돌하지 않도록 음수 상수를 사용한다.
-     */
-    private Long defaultServerOwnerNo(ServerWalletType serverWalletType) {
-        return serverWalletType == ServerWalletType.HOT ? -1L : -2L;
     }
 }

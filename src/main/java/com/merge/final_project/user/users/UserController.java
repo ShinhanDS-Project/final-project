@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @io.swagger.v3.oas.annotations.tags.Tag(name = "일반 사용자 마이페이지", description = "사용자 마이페이지 부가기능 API")
 @RestController
@@ -27,7 +28,8 @@ public class UserController {
     private UserService userService;
     @Autowired
     private DonationService donationService;
-
+    @Autowired
+    private UserRepository userRepository;
 
     // 이메일 찾기
     @PostMapping("/email")
