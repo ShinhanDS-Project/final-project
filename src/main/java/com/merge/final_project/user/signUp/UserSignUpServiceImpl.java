@@ -61,7 +61,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
             // 위 1번의 검증 로직 포함...
             String storedName = s3FileService.saveFile(file);
             savedPath = storedName; // rollback 시 delete용 key
-            requestDto.setProfilePath(s3FileService.getFilePath(storedName)); // DB 저장용 URL
+            requestDto.setProfilePath(storedName); // DB 저장용 key
         }
 
         try {

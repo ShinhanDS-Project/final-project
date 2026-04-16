@@ -14,8 +14,9 @@ public class UserTransactionResponseDTO {
     private Long campaignNo;
     private Long userNo;
     private String title;
+    private BigDecimal amount;
     private ApprovalStatus approvalStatus;
-    Long transactionNum; //기부내역
-    BigDecimal total_amount;
+    private Long transactionNum; //기부내역
+    private BigDecimal total_amount;
 
 }

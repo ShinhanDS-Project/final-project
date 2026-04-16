@@ -70,7 +70,9 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("해당 계정의 로그인 횟수가 초과되었습니다. 문의바랍니다.");
         }
         //4.비밀번호 확인하기
+        System.out.println("로그인 시도 - 이메일: " + dto.getEmail() + ", 조회된 UserNo: " + user.getUserNo());
         if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
+            System.out.println("비밀번호 불일치! UserNo: " + user.getUserNo() + ", 입력 길이: " + (dto.getPassword() != null ? dto.getPassword().length() : "null"));
             user.setsLoginCount(user.getLoginCount() + 1);
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
@@ -93,7 +95,8 @@ public class UserServiceImpl implements UserService {
     // 1단계: 비밀번호 재설정 요청
     @Override
     public void requestPasswordReset(ChangePasswordRequestDTO dto) {
-        User user = userRepository.findByEmailAndName(dto.getEmail(), dto.getName())
+        // [수정] LoginType.LOCAL을 추가하여 중복 이메일(Google/Local) 중 일반 가입 계정만 정확히 조회함
+        User user = userRepository.findByEmailAndNameAndLoginType(dto.getEmail(), dto.getName(), LoginType.LOCAL)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         verificationService.sendPasswordResetCode(user.getEmail());
@@ -115,6 +118,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        System.out.println("비밀번호 변경 시도 - 대상 UserNo: " + user.getUserNo() + ", 이메일: " + user.getEmail() + ", LoginType: " + user.getLoginType());
+
         if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
             throw new RuntimeException("현재 비밀번호가 일치하지 않습니다.");
         }
@@ -126,8 +131,10 @@ public class UserServiceImpl implements UserService {
         if (!dto.getNewPassword().equals(dto.getNewPassword2())) {
             throw new IllegalArgumentException("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
         }
-        // [추가] 검증 완료 후 새 비밀번호를 암호화하여 DB(엔티티)에 반영
+        // [추가] 비밀번호 변경 성공 시 로그인 실패 횟수를 초기화하여 잠금을 해제함
         user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
+        user.setsLoginCount(0);
+        userRepository.saveAndFlush(user);
     }
 
     // 3단계: 로그인 전 최종 비밀번호 재설정
@@ -165,7 +172,7 @@ public class UserServiceImpl implements UserService {
                 .phone(user.getPhone())
                 .nameHash(user.getNameHash())
                 .birth(user.getBirth())
-                .profilePath(user.getProfilePath())
+                .profilePath(user.getProfilePath() != null ? fileService.getFilePath(user.getProfilePath()) : null)
                 .build();
 
     }
@@ -361,6 +368,7 @@ public class UserServiceImpl implements UserService {
                     .userNo(donation.getUserNo())
                     .title(campaign != null ? campaign.getTitle() : "정보 없음")
                     .approvalStatus(campaign != null ? campaign.getApprovalStatus() : null)
+                    .amount(donation.getDonationAmount())
                     .total_amount(totalAmountWon)
                     .transactionNum(transactionNum)
                     .build();
