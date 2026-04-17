@@ -104,6 +104,35 @@
             grid-template-columns: 1fr 180px;
             gap: 12px;
         }
+        .detail-image-card {
+            display: grid;
+            grid-template-columns: 120px minmax(0, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+        }
+        .detail-image-card img {
+            width: 120px;
+            height: 88px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid var(--line);
+            background: #eef2f7;
+        }
+        .detail-image-card .image-name {
+            min-width: 0;
+            color: var(--muted);
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .danger {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+        .removed {
+            opacity: 0.45;
+        }
         .actions {
             display: flex;
             gap: 12px;
@@ -170,7 +199,7 @@
             margin-top: 4px;
         }
         @media (max-width: 720px) {
-            .grid, .row-grid, .inline-field {
+            .grid, .row-grid, .inline-field, .detail-image-card {
                 grid-template-columns: 1fr;
             }
             .actions {
@@ -276,6 +305,7 @@
     let beneficiaryChecked = false;
     let foundationChecked = false;
     let foundationHasAvailableWallet = false;
+    const deletedDetailImageNos = new Set();
 
     function addPlanRow(planContent = '', planAmount = '') {
         const wrapper = document.createElement('div');
@@ -295,6 +325,32 @@
         const wrapper = document.createElement('div');
         wrapper.className = 'row-card';
         wrapper.innerHTML = '<input type="file" name="detailImageFiles" accept="image/*">';
+        document.getElementById('detailImageList').appendChild(wrapper);
+    }
+
+    function addExistingDetailImageRow(image) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'row-card';
+        wrapper.dataset.imageNo = image.imgNo;
+        wrapper.innerHTML = `
+            <div class="detail-image-card">
+                <img src="${image.imgPath}" alt="detail image">
+                <div class="image-name">${image.imgOrgName || image.imgStoredName || image.imgPath || ''}</div>
+                <button type="button" class="danger" data-delete-detail-image>삭제</button>
+            </div>
+        `;
+        wrapper.querySelector('[data-delete-detail-image]').addEventListener('click', () => {
+            const imageNo = Number(wrapper.dataset.imageNo);
+            if (deletedDetailImageNos.has(imageNo)) {
+                deletedDetailImageNos.delete(imageNo);
+                wrapper.classList.remove('removed');
+                wrapper.querySelector('[data-delete-detail-image]').textContent = '삭제';
+            } else {
+                deletedDetailImageNos.add(imageNo);
+                wrapper.classList.add('removed');
+                wrapper.querySelector('[data-delete-detail-image]').textContent = '삭제 취소';
+            }
+        });
         document.getElementById('detailImageList').appendChild(wrapper);
     }
 
@@ -419,7 +475,8 @@
             endAt: toIsoOrNull(document.getElementById('endAt').value),
             usageStartAt: toIsoOrNull(document.getElementById('usageStartAt').value),
             usageEndAt: toIsoOrNull(document.getElementById('usageEndAt').value),
-            usePlans: plans
+            usePlans: plans,
+            deletedDetailImageNos: Array.from(deletedDetailImageNos)
         };
 
         const formData = new FormData();
@@ -495,6 +552,11 @@
             (data.usePlans && data.usePlans.length ? data.usePlans : [{}]).forEach(plan => {
                 addPlanRow(plan.planContent ?? '', plan.planAmount ?? '');
             });
+            document.getElementById('detailImageList').innerHTML = '';
+            deletedDetailImageNos.clear();
+            (data.images || [])
+                .filter(image => image.purpose === 'DETAIL')
+                .forEach(addExistingDetailImageRow);
             addDetailImageRow();
         } catch (error) {
             document.getElementById('status').textContent = `수정 화면 로딩 실패: ${error.message}`;

@@ -19,7 +19,8 @@ import java.util.List;
 @RequestMapping("/api/v1/final-reports")
 @RequiredArgsConstructor
 @Log4j2
-public class FinalReportRestController {
+public class
+FinalReportRestController {
 
     private final FinalReportService finalReportService;
     private final BeneficiaryService beneficiaryService;
