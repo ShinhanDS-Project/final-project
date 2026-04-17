@@ -4,6 +4,7 @@ import com.merge.final_project.global.jwt.JwtTokenProvider;
 import com.merge.final_project.user.signUp.dto.UserSignUpRequestDTO;
 import com.merge.final_project.user.users.UserService;
 import com.merge.final_project.user.users.dto.login.UserLoginRequestDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import okhttp3.Response;
@@ -86,16 +87,18 @@ public class UserAuthController {
 
     //4. 용도 : 로그아웃 컨트롤러(social)
     @PostMapping("/logout/user/social")
-    public ResponseEntity<?> logoutSocial(HttpServletResponse response){
+    public ResponseEntity<?> logoutSocial(HttpServletRequest request, HttpServletResponse response){
+        // 세션 무효화 (JSESSIONID 제거)
+        if (request.getSession(false) != null) {
+            request.getSession().invalidate();
+        }
+
         //구글 로그인은 "만료시간이 과거 0초인 빈 쿠키를 응답 헤더 (Set-Cookie)에 실어서 브라우저에 쏜다
-        //프론트엔드는 기존 토큰 쿠키를 덮어쓰고 삭제한다.
-        // 이렇게 분리한 이유는 handler에서 jwt 토큰을 파라미터에 노출하면 보안상 문제가 생기게 되어
-        //소셜과 일반사용자가 동일한 방식을 사용할 수 없다. => 이러한 한계를 해결하기 위해 컨트롤러를 분리함 (시간적 한계)
         ResponseCookie deleteCookie= ResponseCookie.from("accessToken","")
                 .httpOnly(true)
                 .secure(secureCookie)
                 .path("/")
-                .sameSite("None")
+                .sameSite("Lax") // 로컬 환경 대응
                 .maxAge(0)
                 .build();
         //HttpServletResponse -> 서버가 브라우저에게 보내는 응답객체

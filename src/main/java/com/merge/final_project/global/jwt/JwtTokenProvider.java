@@ -124,8 +124,8 @@ public class JwtTokenProvider {
         Object no = parseClaims(token).get("no");
         if (no == null) return null;
 
-        // 어떤 형태의 숫자(Integer, Long, Double 등)든 String으로 바꿔서 Long으로 파싱
-        return parseClaims(token).get("no", Long.class);
+        // 어떤 숫자 형태(Integer, Long, Double 등)든 안전하게 Long으로 변환
+        return Long.valueOf(String.valueOf(no));
     }    //3. 토큰 종류 구분하기
     public String getTokenType(String token){return parseClaims(token).get("type", String.class);}
 
