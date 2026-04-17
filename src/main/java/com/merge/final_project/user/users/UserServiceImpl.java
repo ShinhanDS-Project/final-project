@@ -84,11 +84,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public EmailResponseDTO findEmail(String phone, String name) {
-        //1. 핸드폰과 번호로 현재 존재하지 않는다면 존재하지 않다고 띄우기
-        User user = userRepository.findByPhoneAndName(phone, name)
-                .orElseThrow(() -> new RuntimeException("가입정보가 없습니다. 가입해주세요"));
-        //2. 존재한다면 이메일과 login Type 반환
+        // 1. 전화번호에서 하이픈 제거 (사용자 입력 포맷과 DB 저장 포맷 일치시키기)
+        String cleanPhone = phone.replaceAll("-", "");
 
+        // 2. 핸드폰과 이름으로 조회하여 존재하지 않는다면 예외 발생
+        User user = userRepository.findByPhoneAndName(cleanPhone, name)
+                .orElseThrow(() -> new RuntimeException("가입정보가 없습니다. 가입해주세요"));
+
+        // 3. 존재한다면 마스킹된 이메일과 로그인 타입 반환
         return new EmailResponseDTO(MaskingUtils.maskEmail(user.getEmail()), user.getLoginType());
     }
 
@@ -368,7 +371,7 @@ public class UserServiceImpl implements UserService {
                     .userNo(donation.getUserNo())
                     .title(campaign != null ? campaign.getTitle() : "정보 없음")
                     .approvalStatus(campaign != null ? campaign.getApprovalStatus() : null)
-                    .amount(donation.getDonationAmount())
+                    .priceamount(donation.getDonationAmount())
                     .total_amount(totalAmountWon)
                     .transactionNum(transactionNum)
                     .build();

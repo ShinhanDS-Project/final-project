@@ -10,11 +10,11 @@ import java.math.BigDecimal;
 @Getter
 @Builder
 public class UserTransactionResponseDTO {
-    Transaction transaction;
+    private Transaction transaction;
     private Long campaignNo;
     private Long userNo;
     private String title;
-    private BigDecimal amount;
+    private BigDecimal priceamount;
     private ApprovalStatus approvalStatus;
     private Long transactionNum; //기부내역
     private BigDecimal total_amount;
