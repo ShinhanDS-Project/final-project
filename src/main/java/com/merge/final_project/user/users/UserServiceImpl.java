@@ -70,9 +70,9 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("해당 계정의 로그인 횟수가 초과되었습니다. 문의바랍니다.");
         }
         //4.비밀번호 확인하기
-        System.out.println("로그인 시도 - 이메일: " + dto.getEmail() + ", 조회된 UserNo: " + user.getUserNo());
+      //  System.out.println("로그인 시도 - 이메일: " + dto.getEmail() + ", 조회된 UserNo: " + user.getUserNo());
         if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
-            System.out.println("비밀번호 불일치! UserNo: " + user.getUserNo() + ", 입력 길이: " + (dto.getPassword() != null ? dto.getPassword().length() : "null"));
+           // System.out.println("비밀번호 불일치! UserNo: " + user.getUserNo() + ", 입력 길이: " + (dto.getPassword() != null ? dto.getPassword().length() : "null"));
             user.setsLoginCount(user.getLoginCount() + 1);
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
@@ -121,7 +121,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        System.out.println("비밀번호 변경 시도 - 대상 UserNo: " + user.getUserNo() + ", 이메일: " + user.getEmail() + ", LoginType: " + user.getLoginType());
+       // System.out.println("비밀번호 변경 시도 - 대상 UserNo: " + user.getUserNo() + ", 이메일: " + user.getEmail() + ", LoginType: " + user.getLoginType());
 
         if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
             throw new RuntimeException("현재 비밀번호가 일치하지 않습니다.");

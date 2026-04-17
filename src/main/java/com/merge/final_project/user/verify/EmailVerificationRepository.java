@@ -18,6 +18,6 @@ public interface EmailVerificationRepository extends JpaRepository<EmailVerifica
 
     // [수정] 중복 데이터 존재 시 NonUniqueResultException 방지를 위해 List로 반환받습니다.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT e FROM EmailVerification e WHERE e.email = :email")
+    @Query("SELECT e FROM EmailVerification e WHERE e.email = :email ORDER BY e.emailVerifyNo ASC")
     List<EmailVerification> findByEmailForUpdate(@Param("email") String email);
 }

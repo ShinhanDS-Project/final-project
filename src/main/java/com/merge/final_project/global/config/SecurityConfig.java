@@ -22,6 +22,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Configuration
@@ -37,6 +39,8 @@ public class SecurityConfig {
     @Value("${CORS_ALLOWED_ORIGIN}")
     private String allowedOrigin;
 
+    @Value("${app.frontend-url}")
+    String frontendUrl;
     //CORS 설정을 위해 추가합니다
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -184,6 +188,7 @@ public class SecurityConfig {
     @Order(4)
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // [가빈] CORS 설정을 위해 추가
                 .csrf(csrf -> csrf.disable())
@@ -232,8 +237,8 @@ public class SecurityConfig {
                         .successHandler(oAuth2SuccessHandler)
                         .failureHandler((request, response, exception) -> {
                             exception.printStackTrace();
-                            response.sendRedirect("http://localhost:5173/login?error=" +
-                                    java.net.URLEncoder.encode(exception.getMessage(), java.nio.charset.StandardCharsets.UTF_8));
+                            response.sendRedirect(frontendUrl+"/login?error=" +
+                                    URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8));
                         })
                 )
 

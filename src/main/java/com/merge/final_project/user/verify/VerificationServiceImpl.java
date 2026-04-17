@@ -53,7 +53,10 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         EmailVerification verification = verifications.get(0);
-
+        if (verifications.size() > 1) {
+                        emailVerificationRepository.deleteAllInBatch(
+                                        verifications.subList(1, verifications.size()));
+                    }
         if (verification.isVerified()) {
             throw new IllegalStateException("이미 인증이 완료된 이메일입니다.");
         }
