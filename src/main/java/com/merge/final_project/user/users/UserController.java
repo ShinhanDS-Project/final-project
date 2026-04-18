@@ -4,6 +4,8 @@ import com.merge.final_project.blockchain.entity.Transaction;
 
 import com.merge.final_project.blockchain.service.TransactionService;
 import com.merge.final_project.donation.donations.DonationService;
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.user.users.dto.MicroTrackingDTO;
 import com.merge.final_project.user.users.dto.UserTransactionResponseDTO;
 import com.merge.final_project.user.users.dto.UserWalletResponseDTO;
@@ -59,7 +61,19 @@ public class UserController {
             Authentication authentication,
             @Valid @RequestBody EditPasswordDTO dto
     ) {
-        Long userNo = (Long) authentication.getDetails();
+        Object details = authentication.getDetails();
+        Long userNo;
+        if (details instanceof Long) {
+            userNo = (Long) details;
+        } else {
+            // details가 Long이 아닌 경우 (예: OAuth2User 또는 다른 필터에서 설정된 경우)
+            // principal에서 email을 가져와서 DB에서 userNo를 찾습니다.
+            String email = authentication.getName();
+            User user = userRepository.findByEmailAndLoginType(email, LoginType.LOCAL)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            userNo = user.getUserNo();
+        }
+        
         userService.editPassword(userNo, dto);
         return ResponseEntity.ok().build();
     }

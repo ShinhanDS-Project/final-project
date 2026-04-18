@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -44,9 +45,18 @@ public class VerificationServiceImpl implements VerificationService {
     @Transactional(noRollbackFor = IllegalArgumentException.class)
     @Override
     public boolean verifyCode(String email, String code) {
-        EmailVerification verification = emailVerificationRepository.findByEmailForUpdate(email)
-                .orElseThrow(() -> new IllegalArgumentException("인증 요청 이력이 없는 이메일입니다."));
+        // [수정] List로 조회하여 중복 데이터 에러를 방지합니다.
+        List<EmailVerification> verifications = emailVerificationRepository.findByEmailForUpdate(email);
 
+        if (verifications.isEmpty()) {
+            throw new IllegalArgumentException("인증 요청 이력이 없는 이메일입니다.");
+        }
+
+        EmailVerification verification = verifications.get(0);
+        if (verifications.size() > 1) {
+                        emailVerificationRepository.deleteAllInBatch(
+                                        verifications.subList(1, verifications.size()));
+                    }
         if (verification.isVerified()) {
             throw new IllegalStateException("이미 인증이 완료된 이메일입니다.");
         }
