@@ -1,7 +1,6 @@
 package com.merge.final_project.admin.service;
 
 import com.merge.final_project.notification.inapp.Notification;
-import com.merge.final_project.notification.inapp.NotificationRepository;
 import com.merge.final_project.notification.inapp.NotificationType;
 import com.merge.final_project.notification.inapp.RecipientType;
 import com.merge.final_project.org.FoundationRepository;
@@ -10,9 +9,7 @@ import com.merge.final_project.user.users.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -20,31 +17,34 @@ import java.util.List;
 @Slf4j
 public class AdminBroadcastServiceImpl implements AdminBroadcastService {
 
-    private final NotificationRepository notificationRepository;
+    private static final int BATCH_SIZE = 500;
+
+    private final NotificationBatchSaver notificationBatchSaver;
     private final UserRepository userRepository;
     private final FoundationRepository foundationRepository;
     private final BeneficiaryRepository beneficiaryRepository;
 
     @Override
-    @Transactional
     public int broadcast(String content) {
-        List<Notification> notifications = new ArrayList<>();
+        int total = 0;
+        total += sendInBatches(RecipientType.USERS,        userRepository.findAllActiveUserNos(),         content);
+        total += sendInBatches(RecipientType.FOUNDATION,   foundationRepository.findAllActiveFoundationNos(), content);
+        total += sendInBatches(RecipientType.BENEFICIARY,  beneficiaryRepository.findAllBeneficiaryNos(), content);
+        log.info("전체 공지 발송 완료 - 총 {}건", total);
+        return total;
+    }
 
-        // 활성 회원
-        userRepository.findAllActiveUserNos().forEach(no ->
-                notifications.add(build(RecipientType.USERS, no, content)));
-
-        // 활성 기부단체 (accountStatus = ACTIVE)
-        foundationRepository.findAllActiveFoundationNos().forEach(no ->
-                notifications.add(build(RecipientType.FOUNDATION, no, content)));
-
-        // 수혜자 전체 (상태 구분 없음)
-        beneficiaryRepository.findAllBeneficiaryNos().forEach(no ->
-                notifications.add(build(RecipientType.BENEFICIARY, no, content)));
-
-        notificationRepository.saveAll(notifications);
-        log.info("전체 공지 발송 완료 - 총 {}건", notifications.size());
-        return notifications.size();
+    private int sendInBatches(RecipientType type, List<Long> nos, String content) {
+        int total = 0;
+        for (int i = 0; i < nos.size(); i += BATCH_SIZE) {
+            List<Long> chunk = nos.subList(i, Math.min(i + BATCH_SIZE, nos.size()));
+            List<Notification> notifications = chunk.stream()
+                    .map(no -> build(type, no, content))
+                    .toList();
+            notificationBatchSaver.saveAll(notifications);
+            total += notifications.size();
+        }
+        return total;
     }
 
     private Notification build(RecipientType recipientType, Long receiverNo, String content) {

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -56,7 +57,7 @@ public class AdminNotificationController {
      * @return 발송된 알림 총 건수
      */
     @PostMapping("/broadcast")
-    public ResponseEntity<Map<String, Integer>> broadcast(@RequestBody AdminBroadcastRequestDTO request) {
+    public ResponseEntity<Map<String, Integer>> broadcast(@RequestBody @Validated AdminBroadcastRequestDTO request) {
         int count = adminBroadcastService.broadcast(request.getContent());
         return ResponseEntity.ok(Map.of("sent", count));
     }
