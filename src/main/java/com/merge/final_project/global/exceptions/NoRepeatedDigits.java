@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface NoRepeatedDigits {
-    String message() default "같은 숫자를 반복해서 사용할 수 없어.";
+    String message() default "같은 숫자를 반복해서 사용할 수 없습니다.";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

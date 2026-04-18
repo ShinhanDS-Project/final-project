@@ -1,5 +1,7 @@
 package com.merge.final_project.user.verify;
 
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.user.signUp.UserSignUpRepository;
 import com.merge.final_project.user.verify.dto.UserVerifyRequestDTO;
 import com.merge.final_project.user.verify.dto.UserVerifyResponseDTO;
@@ -62,11 +64,11 @@ public class VerificationServiceImpl implements VerificationService {
         }
 
         if (verification.getExpiredAt() == null || verification.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("인증시간이 만료되었습니다. 다시 시도해주세요.");
+            throw new BusinessException(ErrorCode.EXPIRED_CODE);
         }
 
         if (verification.getAttemptCount() >= 5) {
-            throw new IllegalArgumentException("인증 실패 횟수(5회)를 초과하여 무효 처리되었습니다.");
+            throw new BusinessException(ErrorCode.EXCEEDED_ATTEMPT_COUNT);
         }
 
         if (!verification.getVerificationCode().equals(code)) {
