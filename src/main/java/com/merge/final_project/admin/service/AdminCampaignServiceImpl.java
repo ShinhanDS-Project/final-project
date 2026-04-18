@@ -104,6 +104,12 @@ public class AdminCampaignServiceImpl implements AdminCampaignService {
                 .map(CampaignListResponseDTO::from);
     }
 
+    @Override
+    public Campaign getCampaignDetail(Long campaignNo) {
+        return campaignRepository.findByCampaignNo(campaignNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
+    }
+
     //로그인한 사람의 토큰에서 어떤 adminId인지 추출해서 adminlog의 admin객체로 넘기는 메서드
     private Admin getAdmin() {
         String adminId = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
