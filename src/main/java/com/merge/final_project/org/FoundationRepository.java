@@ -46,6 +46,10 @@ public interface FoundationRepository extends JpaRepository<Foundation, Long> {
     @Query("SELECT f FROM Foundation f WHERE f.accountStatus = 'PRE_REGISTERED' AND f.reviewStatus = :reviewStatus AND (:keyword = '' OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Foundation> findApplicationsByReviewStatusWithFilter(@Param("reviewStatus") ReviewStatus reviewStatus, @Param("keyword") String keyword, Pageable pageable);
 
+    // [가빈] 전체 공지용 - 활성 기부단체 PK 목록 (승인 + 활성 상태만)
+    @Query("SELECT f.foundationNo FROM Foundation f WHERE f.accountStatus = 'ACTIVE'")
+    List<Long> findAllActiveFoundationNos();
+
     // [가빈] 관리자 반려 목록 — 키워드 검색 (단체명, 대표자명)
     // keyword null → "" 변환 후 호출 (IS NULL 대신 = '' 사용: PostgreSQL lower(bytea) 오류 방지)
     @Query("SELECT f FROM Foundation f WHERE f.reviewStatus = :reviewStatus AND (:keyword = '' OR LOWER(f.foundationName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(f.representativeName) LIKE LOWER(CONCAT('%', :keyword, '%')))")

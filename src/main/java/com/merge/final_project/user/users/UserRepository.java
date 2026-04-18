@@ -43,6 +43,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE (:status IS NULL OR u.status = :status) AND (:keyword IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<User> findUsersWithFilter(@Param("status") UserStatus status, @Param("keyword") String keyword, Pageable pageable);
 
+    // [가빈] 전체 공지용 - 활성 회원 PK 목록
+    @Query("SELECT u.userNo FROM User u WHERE u.status = 'ACTIVE'")
+    List<Long> findAllActiveUserNos();
+
     //4. 마이페이지 -1. 개인정보 불러오기 :
 
 

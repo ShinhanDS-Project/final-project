@@ -1,5 +1,6 @@
 package com.merge.final_project.admin.controller;
 
+import com.merge.final_project.admin.dto.AdminUserDetailResponseDTO;
 import com.merge.final_project.admin.dto.AdminUserResponseDTO; // [가빈] 추가
 import com.merge.final_project.admin.service.AdminUserService;
 import com.merge.final_project.user.users.UserStatus; // [가빈] 추가
@@ -32,12 +33,18 @@ public class AdminUserController {
         return ResponseEntity.ok().build();
     }
 
-    // [가빈] 회원 목록 조회 — 상태 필터 + 키워드 검색 + 페이징
+    // 회원 목록 조회 — 상태 필터 + 키워드 검색 + 페이징
     @GetMapping
     public ResponseEntity<Page<AdminUserResponseDTO>> getUsers(
             @RequestParam(required = false) UserStatus status,
             @RequestParam(defaultValue = "") String keyword,
             Pageable pageable) {
         return ResponseEntity.ok(adminUserService.getUsers(status, keyword, pageable));
+    }
+
+    // 회원 상세보기
+    @GetMapping("/{userNo}/detail")
+    public ResponseEntity<AdminUserDetailResponseDTO> getUserById(@PathVariable Long userNo) {
+        return ResponseEntity.ok(AdminUserDetailResponseDTO.from(adminUserService.getUserById(userNo)));
     }
 }

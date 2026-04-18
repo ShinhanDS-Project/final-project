@@ -1,6 +1,7 @@
 package com.merge.final_project.admin.service;
 
 import com.merge.final_project.admin.dto.AdminUserResponseDTO;
+import com.merge.final_project.user.users.User;
 import com.merge.final_project.user.users.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,4 +14,5 @@ public interface AdminUserService {
 
     // [가빈] 회원 목록 조회 (상태 필터 + 키워드 검색 + 페이징)
     Page<AdminUserResponseDTO> getUsers(UserStatus status, String keyword, Pageable pageable);
+    User getUserById (Long userNo);
 }

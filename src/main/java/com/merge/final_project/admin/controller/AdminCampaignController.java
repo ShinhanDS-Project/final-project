@@ -1,8 +1,8 @@
 package com.merge.final_project.admin.controller;
 
+import com.merge.final_project.admin.dto.AdminCampaignDTO;
 import com.merge.final_project.admin.service.AdminCampaignService;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
-import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -59,9 +59,8 @@ public class AdminCampaignController {
 
     //관리자용 캠페인 상세보기
     @GetMapping("/{campaignNo}/detail")
-    public ResponseEntity<Campaign> getCampaignDetail(@PathVariable Long campaignNo){
-        Campaign campaignDetail = adminCampaignService.getCampaignDetail(campaignNo);
-        return ResponseEntity.ok(campaignDetail);
+    public ResponseEntity<AdminCampaignDTO> getCampaignDetail(@PathVariable Long campaignNo) {
+        return ResponseEntity.ok(AdminCampaignDTO.from(adminCampaignService.getCampaignDetail(campaignNo)));
     }
 
 }
