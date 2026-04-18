@@ -1,5 +1,6 @@
 package com.merge.final_project.admin.controller;
 
+import com.merge.final_project.admin.dto.AdminCampaignDTO;
 import com.merge.final_project.admin.service.AdminCampaignService;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import lombok.RequiredArgsConstructor;
@@ -55,4 +56,11 @@ public class AdminCampaignController {
         adminCampaignService.rejectCampaign(campaignNo, reason);
         return ResponseEntity.ok().build();
     }
+
+    //관리자용 캠페인 상세보기
+    @GetMapping("/{campaignNo}/detail")
+    public ResponseEntity<AdminCampaignDTO> getCampaignDetail(@PathVariable Long campaignNo) {
+        return ResponseEntity.ok(AdminCampaignDTO.from(adminCampaignService.getCampaignDetail(campaignNo)));
+    }
+
 }
