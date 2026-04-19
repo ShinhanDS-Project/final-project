@@ -18,4 +18,8 @@ public class DashboardSummaryDTO {
     // 배너
     private long totalUserCount;
     private BigDecimal totalDonationAmount;
+
+    // [가빈] 캠페인 상태별 카운트
+    private long endedCampaignCount;
+    private long settledCampaignCount;
 }

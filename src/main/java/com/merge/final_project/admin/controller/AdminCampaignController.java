@@ -2,6 +2,7 @@ package com.merge.final_project.admin.controller;
 
 import com.merge.final_project.admin.dto.AdminCampaignDTO;
 import com.merge.final_project.admin.service.AdminCampaignService;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.global.Image;
@@ -39,12 +40,13 @@ public class AdminCampaignController {
         return ResponseEntity.ok(adminCampaignService.getRejectedCampaigns(keyword, pageable));
     }
 
-    // 승인된 캠페인 목록 — 키워드(제목) 검색 + 페이징 (기본: 최신순)
+    // 승인된 캠페인 목록 — campaignStatus 필터 + 키워드(제목) 검색 + 페이징 (기본: 최신순)
     @GetMapping("/approved")
     public ResponseEntity<Page<CampaignListResponseDTO>> getApprovedCampaigns(
+            @RequestParam(required = false) CampaignStatus campaignStatus,
             @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(adminCampaignService.getApprovedCampaigns(keyword, pageable));
+        return ResponseEntity.ok(adminCampaignService.getApprovedCampaigns(campaignStatus, keyword, pageable));
     }
 
     // 캠페인 승인

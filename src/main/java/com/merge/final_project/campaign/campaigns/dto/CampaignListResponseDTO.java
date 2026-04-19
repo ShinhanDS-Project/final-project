@@ -2,6 +2,7 @@ package com.merge.final_project.campaign.campaigns.dto;
 
 import lombok.AllArgsConstructor;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,6 +27,7 @@ public class CampaignListResponseDTO {  //[가빈] 관리자 측에서 캠페인
     private LocalDateTime endAt;
     private Long foundationNo;
     private ApprovalStatus approvalStatus;
+    private CampaignStatus campaignStatus;
     private String rejectReason;
     private LocalDateTime createdAt;
 
@@ -37,6 +39,7 @@ public class CampaignListResponseDTO {  //[가빈] 관리자 측에서 캠페인
                 .targetAmount(campaign.getTargetAmount())
                 .foundationNo(campaign.getFoundationNo())
                 .approvalStatus(campaign.getApprovalStatus())
+                .campaignStatus(campaign.getCampaignStatus())
                 .rejectReason(campaign.getRejectReason())
                 .createdAt(campaign.getCreatedAt())
                 .build();
