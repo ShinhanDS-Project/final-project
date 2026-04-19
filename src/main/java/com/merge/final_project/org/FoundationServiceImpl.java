@@ -322,6 +322,27 @@ public class  FoundationServiceImpl implements FoundationService {
         return FoundationDetailResponseDTO.from(foundation);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public IllegalFoundationResponseDTO getFoundationIllegalCheck(Long foundationNo) {
+        Foundation foundation = foundationRepository.findById(foundationNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOUNDATION_NOT_FOUND));
+
+        Optional<IllegalFoundation> exactMatch = illegalFoundationRepository
+                .findByNameAndRepresentative(foundation.getFoundationName(), foundation.getRepresentativeName());
+        List<IllegalFoundation> similarList = illegalFoundationRepository
+                .findByNameContaining(foundation.getFoundationName());
+        List<IllegalFoundation> filteredSimilar = similarList.stream()
+                .filter(f -> exactMatch.isEmpty() || !f.getIllegalNo().equals(exactMatch.get().getIllegalNo()))
+                .toList();
+
+        return IllegalFoundationResponseDTO.builder()
+                .exactMatch(exactMatch.isPresent())
+                .matchedFoundation(exactMatch.map(IllegalFoundationDTO::from).orElse(null))
+                .similarFoundations(filteredSimilar.stream().map(IllegalFoundationDTO::from).collect(Collectors.toList()))
+                .build();
+    }
+
     // 일반 사용자용 기부단체 상세 조회 — ACTIVE 단체만, 민감 정보 제외
     @Override
     @Transactional(readOnly = true)

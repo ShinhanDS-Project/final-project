@@ -5,6 +5,7 @@ import com.merge.final_project.org.FoundationService;
 import com.merge.final_project.org.ReviewStatus;
 import com.merge.final_project.org.dto.FoundationDetailResponseDTO;
 import com.merge.final_project.org.dto.FoundationListResponseDTO;
+import com.merge.final_project.org.illegalfoundation.IllegalFoundationResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,12 @@ public class AdminFoundationController {
     @GetMapping("/{foundationNo}")
     public ResponseEntity<FoundationDetailResponseDTO> getDetail(@PathVariable Long foundationNo) {
         return ResponseEntity.ok(foundationService.getFoundationDetail(foundationNo));
+    }
+
+    // 관리자 기부단체 불법/유사 단체 체크 결과 조회
+    @GetMapping("/{foundationNo}/illegal-check")
+    public ResponseEntity<IllegalFoundationResponseDTO> getIllegalCheck(@PathVariable Long foundationNo) {
+        return ResponseEntity.ok(foundationService.getFoundationIllegalCheck(foundationNo));
     }
 
     // 승인 전 기부단체 리스트 조회 — 키워드 검색 + 페이징 + 정렬

@@ -38,6 +38,8 @@ public interface FoundationService {
     Page<FoundationListResponseDTO> getApprovedFoundationListForAdmin(AccountStatus accountStatus, String keyword, Pageable pageable);
     FoundationDetailResponseDTO getFoundationDetail(Long foundationNo);
 
+    IllegalFoundationResponseDTO getFoundationIllegalCheck(Long foundationNo);
+
     Long approveFoundation(Long foundationNo);
     Long rejectFoundationForIllegal(Long foundationNo);
 
