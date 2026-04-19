@@ -17,6 +17,12 @@ public class AdminFinalReportController {
 
     private final AdminFinalReportService adminFinalReportService;
 
+    // 활동 보고서 단건 상세 조회
+    @GetMapping("/{reportNo}")
+    public ResponseEntity<FinalReportResponseDTO> getReport(@PathVariable Long reportNo) {
+        return ResponseEntity.ok(adminFinalReportService.getReport(reportNo));
+    }
+
     // 승인 대기 활동 보고서 목록 (기본: 최신순)
     @GetMapping("/pending")
     public ResponseEntity<Page<FinalReportResponseDTO>> getPendingReports(

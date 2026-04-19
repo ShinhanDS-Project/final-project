@@ -7,6 +7,7 @@ import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.global.Image;
 import com.merge.final_project.global.ImageRepository;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -61,16 +62,24 @@ public class AdminCampaignController {
         return ResponseEntity.ok().build();
     }
 
-    // [가빈] 관리자용 캠페인 상세보기 — Image 테이블에서 이미지 경로 우선 조회
+    // [가빈] 관리자용 캠페인 상세보기 — Image 테이블에서 대표/상세 이미지 분리 조회
     @GetMapping("/{campaignNo}/detail")
     public ResponseEntity<AdminCampaignDTO> getCampaignDetail(@PathVariable Long campaignNo) {
         Campaign campaign = adminCampaignService.getCampaignDetail(campaignNo);
-        String imagePath = imageRepository.findByTargetNameAndTargetNo("campaign", campaignNo)
-                .stream()
+        List<Image> images = imageRepository.findByTargetNameAndTargetNo("campaign", campaignNo);
+
+        String imagePath = images.stream()
+                .filter(i -> "REPRESENTATIVE".equals(i.getPurpose()))
                 .map(Image::getImgPath)
                 .findFirst()
                 .orElse(campaign.getImagePath());
-        return ResponseEntity.ok(AdminCampaignDTO.from(campaign, imagePath));
+
+        List<String> detailImagePaths = images.stream()
+                .filter(i -> "DETAIL".equals(i.getPurpose()))
+                .map(Image::getImgPath)
+                .toList();
+
+        return ResponseEntity.ok(AdminCampaignDTO.from(campaign, imagePath, detailImagePaths));
     }
 
 }

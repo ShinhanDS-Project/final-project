@@ -9,6 +9,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -17,6 +18,7 @@ public class AdminCampaignDTO {
     private String title;
     private String description;
     private String imagePath;
+    private List<String> detailImagePaths;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
     private LocalDateTime usageStartAt;
@@ -61,13 +63,14 @@ public class AdminCampaignDTO {
                 .build();
     }
 
-    // [가빈] Image 테이블에서 조회한 이미지 경로를 우선 사용하는 오버로드
-    public static AdminCampaignDTO from(Campaign c, String imagePath) {
+    // [가빈] Image 테이블에서 조회한 대표/상세 이미지 경로를 사용하는 오버로드
+    public static AdminCampaignDTO from(Campaign c, String imagePath, List<String> detailImagePaths) {
         return AdminCampaignDTO.builder()
                 .campaignNo(c.getCampaignNo())
                 .title(c.getTitle())
                 .description(c.getDescription())
                 .imagePath(imagePath)
+                .detailImagePaths(detailImagePaths)
                 .startAt(c.getStartAt())
                 .endAt(c.getEndAt())
                 .usageStartAt(c.getUsageStartAt())
