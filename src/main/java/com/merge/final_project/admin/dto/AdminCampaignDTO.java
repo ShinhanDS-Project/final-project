@@ -60,4 +60,31 @@ public class AdminCampaignDTO {
                 .createdAt(c.getCreatedAt())
                 .build();
     }
+
+    // [가빈] Image 테이블에서 조회한 이미지 경로를 우선 사용하는 오버로드
+    public static AdminCampaignDTO from(Campaign c, String imagePath) {
+        return AdminCampaignDTO.builder()
+                .campaignNo(c.getCampaignNo())
+                .title(c.getTitle())
+                .description(c.getDescription())
+                .imagePath(imagePath)
+                .startAt(c.getStartAt())
+                .endAt(c.getEndAt())
+                .usageStartAt(c.getUsageStartAt())
+                .usageEndAt(c.getUsageEndAt())
+                .targetAmount(c.getTargetAmount())
+                .currentAmount(c.getCurrentAmount())
+                .achievedAt(c.getAchievedAt())
+                .category(c.getCategory())
+                .approvalStatus(c.getApprovalStatus())
+                .approvedAt(c.getApprovedAt())
+                .updatedAt(c.getUpdatedAt())
+                .campaignStatus(c.getCampaignStatus())
+                .foundationNo(c.getFoundationNo())
+                .walletNo(c.getWalletNo())
+                .beneficiaryNo(c.getBeneficiaryNo())
+                .rejectReason(c.getRejectReason())
+                .createdAt(c.getCreatedAt())
+                .build();
+    }
 }
