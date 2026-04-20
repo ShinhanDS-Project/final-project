@@ -50,6 +50,7 @@ public class SecurityConfig {
                 "http://localhost:5173",   // 로컬 테스트용
                 "http://localhost:3000",   // 로컬 테스트용
                 "http://merge.io.kr:8090",
+                "http://192.168.0.220:8090",
                 allowedOrigin              // .env나 properties에서 가져온 값
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
