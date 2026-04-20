@@ -91,7 +91,7 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/auth/login", "/admin/auth/logout").permitAll()
+                        .requestMatchers("/admin/login","/admin/auth/login", "/admin/auth/logout").permitAll()
                         .anyRequest().hasAuthority("ROLE_ADMIN")
                 )
                 .exceptionHandling(ex -> ex
