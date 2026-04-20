@@ -20,7 +20,7 @@ public record BlockchainTransactionItemResponse(
         // 화면 표시용 이벤트 라벨
         String eventTypeLabel,
         // 도메인 단위 금액
-        Long amount,
+        BigDecimal amount,
         // 가스 수수료
         BigDecimal gasFee,
         // 거래 발생 시각

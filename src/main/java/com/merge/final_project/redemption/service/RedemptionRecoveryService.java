@@ -14,12 +14,12 @@ import com.merge.final_project.wallet.entity.Wallet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,14 +36,11 @@ public class RedemptionRecoveryService {
     @Value("${blockchain.wallet.hot-address}")
     private String hotWalletAddress;
 
-    // 온체인 완료 상태지만 로컬 반영 안된 환전 데이터 복구 실행
     public void recoverOnChainConfirmedRedemptions() {
-        // ONCHAIN_CONFIRMED 상태 조회
         List<Redemption> redemptions = redemptionRepository.findAllByStatusOrderByRedemptionNoAsc(
                 RedemptionStatus.ONCHAIN_CONFIRMED
         );
         log.info("redemption recovery scan started. pendingCount={}", redemptions.size());
-        // 하나씩 복구 처리
         for (Redemption redemption : redemptions) {
             try {
                 finalizeConfirmedRedemption(redemption.getRedemptionNo());
@@ -54,28 +51,45 @@ public class RedemptionRecoveryService {
         }
     }
 
-    // 온체인 완료된 환전을 로컬 DB에 최종 반영 (체인 호출 없음)
     @Transactional
     public void finalizeConfirmedRedemption(Long redemptionNo) {
-        // 환전 조회
-        Redemption redemption = redemptionRepository.findById(redemptionNo)
+        // 동시 크론 실행 시 동일 redemption을 중복 처리하지 않도록 행 잠금으로 조회
+        Redemption redemption = redemptionRepository.findByIdForUpdate(redemptionNo)
                 .orElseThrow(() -> new IllegalArgumentException("redemption not found"));
-        // 상태가 ONCHAIN_CONFIRMED 아니면 스킵
+
+        // 이미 완료된 건은 멱등하게 즉시 종료
+        if (redemption.getStatus() == RedemptionStatus.COMPLETED) {
+            return;
+        }
+        // 복구 대상은 ONCHAIN_CONFIRMED 상태만 허용
         if (redemption.getStatus() != RedemptionStatus.ONCHAIN_CONFIRMED) {
             return;
         }
-        // 요청자 지갑
+
         Wallet requesterWallet = redemption.getWallet();
-        // HOT 지갑 조회
         Wallet hotWallet = resolveHotWallet();
 
-        // 기존 트랜잭션 확인
         Transaction transaction = redemption.getTransaction();
-        // 트랜잭션 없으면 새로 생성 (복구 목적)
         if (transaction == null) {
-            transaction = transactionRepository.save(
+            // 기존 성공 tx가 있으면 재사용(재전송/재생성 방지)
+            transaction = findExistingRecoveryTransaction(redemption, requesterWallet, hotWallet);
+        }
+        if (transaction == null) {
+            // 정말 없는 경우에만 신규 생성
+            transaction = createRecoveryTransaction(redemption, requesterWallet, hotWallet);
+        }
+
+        // 최종 완료 전 양쪽 지갑 잔액을 체인 기준으로 동기화
+        syncWalletBalance(requesterWallet);
+        syncWalletBalance(hotWallet);
+        redemptionCommandService.markCompleted(redemption.getRedemptionNo(), transaction, redemption.getBlockNumber());
+    }
+
+    private Transaction createRecoveryTransaction(Redemption redemption, Wallet requesterWallet, Wallet hotWallet) {
+        try {
+            return transactionRepository.save(
                     Transaction.builder()
-                            .transactionCode(UUID.randomUUID().toString())
+                            .transactionCode("REDEMPTION-RECOVERY-" + redemption.getRedemptionNo())
                             .fromWallet(requesterWallet)
                             .toWallet(hotWallet)
                             .amount(redemption.getAmount())
@@ -88,24 +102,39 @@ public class RedemptionRecoveryService {
                             .createdAt(LocalDateTime.now())
                             .build()
             );
+        } catch (DataIntegrityViolationException ex) {
+            // 동시성으로 유니크 충돌이 나면 실패시키지 않고 기존 tx 재조회 후 재연결
+            Transaction existing = findExistingRecoveryTransaction(redemption, requesterWallet, hotWallet);
+            if (existing != null) {
+                log.info("redemption recovery reused existing transaction after conflict. redemptionNo={}, transactionNo={}",
+                        redemption.getRedemptionNo(), existing.getTransactionNo());
+                return existing;
+            }
+            throw ex;
         }
-        // 요청자 지갑 잔액 동기화
-        syncWalletBalance(requesterWallet);
-        // HOT 지갑 잔액 동기화
-        syncWalletBalance(hotWallet);
-        // 환전 상태 COMPLETED로 변경
-        redemptionCommandService.markCompleted(redemption.getRedemptionNo(), transaction, redemption.getBlockNumber());
     }
 
-    // 블록체인 기준으로 지갑 잔액 동기화
+    private Transaction findExistingRecoveryTransaction(Redemption redemption, Wallet requesterWallet, Wallet hotWallet) {
+        return transactionRepository
+                .findTopByEventTypeAndStatusAndBlockNumAndAmountAndFromWallet_WalletNoAndToWallet_WalletNoOrderByTransactionNoDesc(
+                        TransactionEventType.REDEMPTION,
+                        TransactionStatus.SUCCESS,
+                        redemption.getBlockNumber(),
+                        redemption.getAmount(),
+                        requesterWallet.getWalletNo(),
+                        hotWallet.getWalletNo()
+                )
+                .orElse(null);
+    }
+
     private void syncWalletBalance(Wallet wallet) {
         try {
             wallet.updateBalance(
                     tokenAmountConverter.fromOnChainAmount(
-                            blockchainService.getTokenBalance(wallet.getWalletAddress())    // 온체인 잔액 조회
+                            blockchainService.getTokenBalance(wallet.getWalletAddress())
                     )
             );
-            wallet.updateLastUsedAt();  // 마지막 사용 시간 갱신
+            wallet.updateLastUsedAt();
         } catch (Exception e) {
             throw new RuntimeException("failed to sync wallet balance", e);
         }
