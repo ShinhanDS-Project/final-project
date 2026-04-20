@@ -25,7 +25,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     private final DonationRepository donationRepository;
     private final CampaignRepository campaignRepository;
-    private final com.merge.final_project.ai.client.DonationOpenApiClient openApiClient;
+    private final com.merge.final_project.ai.client.AiClient aiClient;
 
     @Override
     public List<RecommendedCampaignResponse> getRecommendedCampaigns(Long userNo) {
@@ -48,8 +48,8 @@ public class RecommendationServiceImpl implements RecommendationService {
                 })
                 .limit(3)
                 .peek(candidate -> {
-                    // 4. GPT를 이용해 각 후보별 맞춤 추천 사유 생성
-                    String gptReason = openApiClient.generateRecommendationReason(
+                    // 4. AI를 이용해 각 후보별 맞춤 추천 사유 생성
+                    String reasonText = aiClient.generateRecommendationReason(
                         userPattern.getDonorType().name(),
                         String.format("평균 기부액: %s, 관심 분야: %s", 
                             userPattern.getAverageDonationAmount(), 
@@ -57,15 +57,15 @@ public class RecommendationServiceImpl implements RecommendationService {
                         candidate.getTitle(),
                         candidate.getCategory().getLabel()
                     );
-                    candidate.setRecommendationReason(gptReason);
+                    candidate.setRecommendationReason(reasonText);
                 })
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<RecommendedCampaignResponse> searchCampaignsByReason(String reason) {
-        // 1. GPT를 통해 사용자의 의도 분석 (카테고리, 키워드 추출)
-        java.util.Map<String, Object> intent = openApiClient.analyzeSearchIntent(reason);
+        // 1. AI를 통해 사용자의 의도 분석 (카테고리, 키워드 추출)
+        java.util.Map<String, Object> intent = aiClient.analyzeSearchIntent(reason);
         String categoryStr = (String) intent.get("category");
         final List<String> keywords = (intent.get("keywords") instanceof List) ? (List<String>) intent.get("keywords") : java.util.Collections.emptyList();
 
@@ -85,8 +85,8 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .filter(c -> c.getCategory().equals(targetCategory) || keywords.stream().anyMatch(k -> (c.getTitle() != null && c.getTitle().contains(k)) || (c.getDescription() != null && c.getDescription().contains(k))))
                 .map(c -> {
                     RecommendedCampaignResponse resp = scoreAndMap(c, UserPatternDTO.builder().donorType(UserPatternDTO.DonorType.NEWBIE).build());
-                    // GPT에게 이 캠페인이 왜 사용자의 '이유'에 부합하는지 설명 요청
-                    String customReason = openApiClient.generateRecommendationReason(
+                    // AI에게 이 캠페인이 왜 사용자의 '이유'에 부합하는지 설명 요청
+                    String customReason = aiClient.generateRecommendationReason(
                         "SEARCH_USER", 
                         "검색 의도: " + reason, 
                         c.getTitle(), 

@@ -20,7 +20,7 @@ import java.util.List;
 public class RecommendationController {
 
     private final RecommendationService recommendationService;
-    private final com.merge.final_project.ai.client.DonationOpenApiClient donationOpenApiClient;
+    private final com.merge.final_project.ai.client.AiClient aiClient;
 
     /**
      * API 연결 상태를 테스트합니다.
@@ -28,16 +28,16 @@ public class RecommendationController {
 
     @GetMapping("/test-api")
     public ResponseEntity<String> testApiConnection() {
-        return ResponseEntity.ok(donationOpenApiClient.checkApiConfig());
+        return ResponseEntity.ok(aiClient.checkApiConfig());
     }
 
     /**
-     * GPT와 자유롭게 대화를 테스트합니다.
+     * AI 엔진과 자유롭게 대화를 테스트합니다.
      * GET /api/ai/chat?q=질문내용
      */
     @GetMapping("/chat")
     public ResponseEntity<String> chat(@org.springframework.web.bind.annotation.RequestParam("q") String question) {
-        return ResponseEntity.ok(donationOpenApiClient.chatTest(question));
+        return ResponseEntity.ok(aiClient.chatTest(question));
     }
 
     /**
