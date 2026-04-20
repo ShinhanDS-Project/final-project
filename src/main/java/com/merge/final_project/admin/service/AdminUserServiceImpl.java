@@ -70,6 +70,12 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .map(AdminUserResponseDTO::from);
     }
 
+    @Override
+    public User getUserById(Long userNo) {
+        return userRepository.findByUserNo(userNo)
+                .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
     private Admin getAdmin() {
         String adminId = Objects.requireNonNull(
                 SecurityContextHolder.getContext().getAuthentication()).getName();

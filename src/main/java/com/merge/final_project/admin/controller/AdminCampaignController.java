@@ -1,8 +1,14 @@
 package com.merge.final_project.admin.controller;
 
+import com.merge.final_project.admin.dto.AdminCampaignDTO;
 import com.merge.final_project.admin.service.AdminCampaignService;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.entity.Campaign;
+import com.merge.final_project.global.Image;
+import com.merge.final_project.global.ImageRepository;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -16,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminCampaignController {
 
     private final AdminCampaignService adminCampaignService;
+    private final ImageRepository imageRepository;
 
     // 승인 대기 캠페인 목록 — 키워드(제목) 검색 + 페이징 (기본: 최신순)
     @GetMapping("/pending")
@@ -33,12 +40,13 @@ public class AdminCampaignController {
         return ResponseEntity.ok(adminCampaignService.getRejectedCampaigns(keyword, pageable));
     }
 
-    // 승인된 캠페인 목록 — 키워드(제목) 검색 + 페이징 (기본: 최신순)
+    // 승인된 캠페인 목록 — campaignStatus 필터 + 키워드(제목) 검색 + 페이징 (기본: 최신순)
     @GetMapping("/approved")
     public ResponseEntity<Page<CampaignListResponseDTO>> getApprovedCampaigns(
+            @RequestParam(required = false) CampaignStatus campaignStatus,
             @RequestParam(defaultValue = "") String keyword,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(adminCampaignService.getApprovedCampaigns(keyword, pageable));
+        return ResponseEntity.ok(adminCampaignService.getApprovedCampaigns(campaignStatus, keyword, pageable));
     }
 
     // 캠페인 승인
@@ -55,4 +63,25 @@ public class AdminCampaignController {
         adminCampaignService.rejectCampaign(campaignNo, reason);
         return ResponseEntity.ok().build();
     }
+
+    // [가빈] 관리자용 캠페인 상세보기 — Image 테이블에서 대표/상세 이미지 분리 조회
+    @GetMapping("/{campaignNo}/detail")
+    public ResponseEntity<AdminCampaignDTO> getCampaignDetail(@PathVariable Long campaignNo) {
+        Campaign campaign = adminCampaignService.getCampaignDetail(campaignNo);
+        List<Image> images = imageRepository.findByTargetNameAndTargetNo("campaign", campaignNo);
+
+        String imagePath = images.stream()
+                .filter(i -> "REPRESENTATIVE".equals(i.getPurpose()))
+                .map(Image::getImgPath)
+                .findFirst()
+                .orElse(campaign.getImagePath());
+
+        List<String> detailImagePaths = images.stream()
+                .filter(i -> "DETAIL".equals(i.getPurpose()))
+                .map(Image::getImgPath)
+                .toList();
+
+        return ResponseEntity.ok(AdminCampaignDTO.from(campaign, imagePath, detailImagePaths));
+    }
+
 }

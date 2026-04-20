@@ -57,43 +57,73 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public String login(UserLoginRequestDTO dto) {
-        //이메일로 사용자 조회
+        // 1. 이메일로 사용자 조회
         User user = userRepository.findByEmailAndLoginType(dto.getEmail(), LoginType.LOCAL)
-                .orElseThrow(() -> new RuntimeException("가입되지 않은 이메일입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
 
-        //2. 계정상태를 확인하기
+        // 2. 계정 상태 확인
         if (!user.getStatus().equals(UserStatus.ACTIVE)) {
-            throw new RuntimeException("로그인할 수 없는 계정입니다. 문의바랍니다");
+            throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
         }
-        //3. (부가기능) login_count>=5이면 로그인 불가(비밀번호 재설정 인데, 일단 막아두기 --> 부가기능)
-        if (user.getLoginCount() >= 5) {
-            throw new RuntimeException("해당 계정의 로그인 횟수가 초과되었습니다. 문의바랍니다.");
+
+        // 3. 로그인 실패 횟수(loginCount)가 5회 이상이면 계정 잠금 처리
+        if (user.getLoginCount() != null && user.getLoginCount() >= 5) {
+            throw new BusinessException(ErrorCode.ACCOUNT_LOCKED);
         }
-        //4.비밀번호 확인하기
+
+        // 4. 비밀번호 일치 여부 확인
         if (!passwordEncoder.matches(dto.getPassword(), user.getPasswordHash())) {
-            user.setsLoginCount(user.getLoginCount() + 1);
-            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+            int currentCount = (user.getLoginCount() == null ? 0 : user.getLoginCount());
+            int newCount = currentCount + 1;
+            
+            // [중요] 독립된 트랜잭션에서 실패 횟수를 업데이트하여 로그인 실패 예외 시에도 커밋되도록 함
+            updateLoginCount(user.getEmail(), newCount);
+            
+            if (newCount >= 5) {
+                throw new BusinessException(ErrorCode.ACCOUNT_LOCKED);
+            }
+            throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
-        //5. 정상 로그인을 위해 jwt 토큰 활용
-        user.setsLoginCount(0);
+
+        // 5. 로그인 성공 시 실패 횟수 초기화 및 토큰 생성
+        updateLoginCount(user.getEmail(), 0);
         return jwtTokenProvider.createGeneralAccessToken(user.getName(), user.getEmail(), "ROLE_USER", user.getUserNo());
+    }
+
+    /**
+     * 로그인 실패 횟수를 업데이트합니다.
+     * Propagation.REQUIRES_NEW를 사용하여 상위 트랜잭션의 롤백 여부와 상관없이 독립적으로 커밋됩니다.
+     */
+    @Override
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void updateLoginCount(String email, int count) {
+        User user = userRepository.findByEmailAndLoginType(email, LoginType.LOCAL)
+                .orElse(null);
+        if (user != null) {
+            user.setsLoginCount(count);
+            userRepository.saveAndFlush(user);
+        }
     }
 
 
     @Override
     public EmailResponseDTO findEmail(String phone, String name) {
-        //1. 핸드폰과 번호로 현재 존재하지 않는다면 존재하지 않다고 띄우기
-        User user = userRepository.findByPhoneAndName(phone, name)
-                .orElseThrow(() -> new RuntimeException("가입정보가 없습니다. 가입해주세요"));
-        //2. 존재한다면 이메일과 login Type 반환
+        // 1. 전화번호에서 하이픈 제거 (사용자 입력 포맷과 DB 저장 포맷 일치시키기)
+        String cleanPhone = phone.replaceAll("-", "");
 
+        // 2. 핸드폰과 이름으로 조회하여 존재하지 않는다면 예외 발생
+        User user = userRepository.findByPhoneAndName(cleanPhone, name)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 3. 존재한다면 마스킹된 이메일과 로그인 타입 반환
         return new EmailResponseDTO(MaskingUtils.maskEmail(user.getEmail()), user.getLoginType());
     }
 
     // 1단계: 비밀번호 재설정 요청
     @Override
     public void requestPasswordReset(ChangePasswordRequestDTO dto) {
-        User user = userRepository.findByEmailAndName(dto.getEmail(), dto.getName())
+        // [수정] LoginType.LOCAL을 추가하여 중복 이메일(Google/Local) 중 일반 가입 계정만 정확히 조회함
+        User user = userRepository.findByEmailAndNameAndLoginType(dto.getEmail(), dto.getName(), LoginType.LOCAL)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         verificationService.sendPasswordResetCode(user.getEmail());
@@ -115,6 +145,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userNo)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+       // System.out.println("비밀번호 변경 시도 - 대상 UserNo: " + user.getUserNo() + ", 이메일: " + user.getEmail() + ", LoginType: " + user.getLoginType());
+
         if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
             throw new RuntimeException("현재 비밀번호가 일치하지 않습니다.");
         }
@@ -126,8 +158,10 @@ public class UserServiceImpl implements UserService {
         if (!dto.getNewPassword().equals(dto.getNewPassword2())) {
             throw new IllegalArgumentException("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
         }
-        // [추가] 검증 완료 후 새 비밀번호를 암호화하여 DB(엔티티)에 반영
+        // [추가] 비밀번호 변경 성공 시 로그인 실패 횟수를 초기화하여 잠금을 해제함
         user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
+        user.setsLoginCount(0);
+        userRepository.saveAndFlush(user);
     }
 
     // 3단계: 로그인 전 최종 비밀번호 재설정
@@ -165,7 +199,7 @@ public class UserServiceImpl implements UserService {
                 .phone(user.getPhone())
                 .nameHash(user.getNameHash())
                 .birth(user.getBirth())
-                .profilePath(user.getProfilePath())
+                .profilePath(user.getProfilePath() != null ? fileService.getFilePath(user.getProfilePath()) : null)
                 .build();
 
     }
@@ -361,6 +395,7 @@ public class UserServiceImpl implements UserService {
                     .userNo(donation.getUserNo())
                     .title(campaign != null ? campaign.getTitle() : "정보 없음")
                     .approvalStatus(campaign != null ? campaign.getApprovalStatus() : null)
+                    .priceamount(donation.getDonationAmount())
                     .total_amount(totalAmountWon)
                     .transactionNum(transactionNum)
                     .build();

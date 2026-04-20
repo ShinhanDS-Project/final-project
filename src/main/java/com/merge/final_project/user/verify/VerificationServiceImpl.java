@@ -1,5 +1,7 @@
 package com.merge.final_project.user.verify;
 
+import com.merge.final_project.global.exceptions.BusinessException;
+import com.merge.final_project.global.exceptions.ErrorCode;
 import com.merge.final_project.user.signUp.UserSignUpRepository;
 import com.merge.final_project.user.verify.dto.UserVerifyRequestDTO;
 import com.merge.final_project.user.verify.dto.UserVerifyResponseDTO;
@@ -9,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -44,19 +47,28 @@ public class VerificationServiceImpl implements VerificationService {
     @Transactional(noRollbackFor = IllegalArgumentException.class)
     @Override
     public boolean verifyCode(String email, String code) {
-        EmailVerification verification = emailVerificationRepository.findByEmailForUpdate(email)
-                .orElseThrow(() -> new IllegalArgumentException("인증 요청 이력이 없는 이메일입니다."));
+        // [수정] List로 조회하여 중복 데이터 에러를 방지합니다.
+        List<EmailVerification> verifications = emailVerificationRepository.findByEmailForUpdate(email);
 
+        if (verifications.isEmpty()) {
+            throw new IllegalArgumentException("인증 요청 이력이 없는 이메일입니다.");
+        }
+
+        EmailVerification verification = verifications.get(0);
+        if (verifications.size() > 1) {
+                        emailVerificationRepository.deleteAllInBatch(
+                                        verifications.subList(1, verifications.size()));
+                    }
         if (verification.isVerified()) {
             throw new IllegalStateException("이미 인증이 완료된 이메일입니다.");
         }
 
         if (verification.getExpiredAt() == null || verification.getExpiredAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("인증시간이 만료되었습니다. 다시 시도해주세요.");
+            throw new BusinessException(ErrorCode.EXPIRED_CODE);
         }
 
         if (verification.getAttemptCount() >= 5) {
-            throw new IllegalArgumentException("인증 실패 횟수(5회)를 초과하여 무효 처리되었습니다.");
+            throw new BusinessException(ErrorCode.EXCEEDED_ATTEMPT_COUNT);
         }
 
         if (!verification.getVerificationCode().equals(code)) {

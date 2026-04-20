@@ -14,19 +14,12 @@ import org.hibernate.usertype.UserType;
 @Getter
 @Setter
 public class UserLoginRequestDTO {
-    @NotBlank
-    @Email
+    @NotBlank(message = "이메일을 입력해주세요.")
+    @Email(message = "올바른 이메일 형식이 아닙니다.")
     private String email;
 
-   // @NotBlank(message = "비밀번호는 필수입니다.")
-    @Size(min = 8, max = 20, message = "비밀번호는 8자 이상 20자 이하여야 해.")
-    @Pattern(
-            regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).*$",
-            message = "비밀번호는 영문, 숫자, 특수문자를 각각 1개 이상 포함해야 해."
-    )
-    @NoRepeatedDigits(message = "같은 숫자를 3번 이상 연속으로 사용할 수 없어.")
+    @NotBlank(message = "비밀번호를 입력해주세요.")
     private String password;
+    
     private LoginType userType;
-
-
 }

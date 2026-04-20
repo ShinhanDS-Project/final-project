@@ -22,6 +22,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Configuration
@@ -37,6 +39,8 @@ public class SecurityConfig {
     @Value("${CORS_ALLOWED_ORIGIN}")
     private String allowedOrigin;
 
+    @Value("${app.frontend-url}")
+    String frontendUrl;
     //CORS 설정을 위해 추가합니다
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -46,6 +50,7 @@ public class SecurityConfig {
                 "http://localhost:5173",   // 로컬 테스트용
                 "http://localhost:3000",   // 로컬 테스트용
                 "http://merge.io.kr:8090",
+                "http://192.168.0.220:8090",
                 allowedOrigin              // .env나 properties에서 가져온 값
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
@@ -184,13 +189,13 @@ public class SecurityConfig {
     @Order(4)
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // [가빈] CORS 설정을 위해 추가
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         // 1. [공개 경로] 누구나 접근 가능
                         .requestMatchers(
@@ -231,6 +236,11 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
+                        .failureHandler((request, response, exception) -> {
+                            exception.printStackTrace();
+                            response.sendRedirect(frontendUrl+"/login?error=" +
+                                    URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8));
+                        })
                 )
 
                 .exceptionHandling(ex -> ex

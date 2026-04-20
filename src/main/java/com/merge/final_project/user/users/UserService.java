@@ -13,6 +13,9 @@ public interface UserService {
     //1. 로그인 용도
     public String login(UserLoginRequestDTO dto);
 
+    // 로그인 실패 시 횟수 업데이트 (독립 트랜잭션)
+    void updateLoginCount(String email, int count);
+
     //2.로그인 -부가기능 1: 아이디 찾기 (핸드폰 번호+ 이름)
     public EmailResponseDTO findEmail(String phone, String name);
     //3. 비밀번호 기능

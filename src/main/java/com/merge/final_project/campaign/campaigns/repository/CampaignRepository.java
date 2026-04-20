@@ -69,6 +69,10 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     // keyword null → "" 변환 후 호출 (IS NULL 대신 = '' 사용: PostgreSQL lower(bytea) 오류 방지)
     @Query("SELECT c FROM Campaign c WHERE c.approvalStatus = :approvalStatus AND (:keyword = '' OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Campaign> findByApprovalStatusWithKeyword(@Param("approvalStatus") ApprovalStatus approvalStatus, @Param("keyword") String keyword, Pageable pageable);
+
+    // [가빈] 관리자 승인 캠페인 목록 — campaignStatus 필터 + 키워드 검색
+    @Query("SELECT c FROM Campaign c WHERE c.approvalStatus = :approvalStatus AND (:campaignStatus IS NULL OR c.campaignStatus = :campaignStatus) AND (:keyword = '' OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Campaign> findByApprovalStatusWithFilters(@Param("approvalStatus") ApprovalStatus approvalStatus, @Param("campaignStatus") CampaignStatus campaignStatus, @Param("keyword") String keyword, Pageable pageable);
     //[가빈] 기부단체 별 캠페인 목록 조회
     Page<Campaign> findByFoundationNo(Long foundationNo, Pageable pageable);
 

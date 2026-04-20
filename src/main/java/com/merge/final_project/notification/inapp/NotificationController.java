@@ -58,4 +58,5 @@ public class NotificationController {
         notificationService.markAllAsRead(recipientType, receiverNo);
         return ResponseEntity.ok().build();
     }
+
 }

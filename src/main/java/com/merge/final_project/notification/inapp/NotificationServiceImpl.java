@@ -8,6 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
@@ -72,5 +75,27 @@ public class NotificationServiceImpl implements NotificationService {
                 .findByReceiverNoAndRecipientType(receiverNo, recipientType, Pageable.unpaged())
                 .filter(n -> !n.isRead())
                 .forEach(Notification::markAsRead);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AdminNotificationResponseDTO> getAll(
+            RecipientType recipientType,
+            NotificationType notificationType,
+            Boolean isRead,
+            String keyword,
+            LocalDate from,
+            LocalDate to,
+            Pageable pageable
+    ) {
+        // enum을 String으로 변환 (null이면 그대로 null 전달 → CAST(null AS text) IS NULL = true → 전체 조회)
+        String recipientTypeStr = recipientType != null ? recipientType.name() : null;
+        String notificationTypeStr = notificationType != null ? notificationType.name() : null;
+        LocalDateTime fromDt = from != null ? from.atStartOfDay() : null;
+        LocalDateTime toDt = to != null ? to.plusDays(1).atStartOfDay() : null;
+
+        return notificationRepository
+                .findAllForAdmin(recipientTypeStr, notificationTypeStr, isRead, keyword, fromDt, toDt, pageable)
+                .map(AdminNotificationResponseDTO::from);
     }
 }

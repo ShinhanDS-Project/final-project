@@ -49,6 +49,15 @@ public class AdminFinalReportServiceImpl implements AdminFinalReportService {
                 });
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public FinalReportResponseDTO getReport(Long reportNo) {
+        FinalReport report = finalReportRepository.findById(reportNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FINAL_REPORT_NOT_FOUND));
+        var images = imageRepository.findByTargetNameAndTargetNo("final_report", reportNo);
+        return new FinalReportResponseDTO(report, images);
+    }
+
     //보고서 승인 -> 로그 남기고, 알림 보내는 과정 중 오류 생기면 롤백 해야함. 따라서 트랜잭션 적용
     @Override
     @Transactional

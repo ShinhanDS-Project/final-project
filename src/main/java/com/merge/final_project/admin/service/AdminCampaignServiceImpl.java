@@ -6,6 +6,7 @@ import com.merge.final_project.admin.adminlog.ActionType;
 import com.merge.final_project.admin.adminlog.AdminLogService;
 import com.merge.final_project.admin.adminlog.TargetType;
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
+import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
@@ -96,12 +97,18 @@ public class AdminCampaignServiceImpl implements AdminCampaignService {
                 .map(CampaignListResponseDTO::from);
     }
 
-    //승인 상태인 캠페인 리스트 조회
+    //승인 상태인 캠페인 리스트 조회 — campaignStatus 필터 추가
     @Override
     @Transactional(readOnly = true)
-    public Page<CampaignListResponseDTO> getApprovedCampaigns(String keyword, Pageable pageable) {
-        return campaignRepository.findByApprovalStatusWithKeyword(ApprovalStatus.APPROVED, keyword != null ? keyword : "", pageable)
+    public Page<CampaignListResponseDTO> getApprovedCampaigns(CampaignStatus campaignStatus, String keyword, Pageable pageable) {
+        return campaignRepository.findByApprovalStatusWithFilters(ApprovalStatus.APPROVED, campaignStatus, keyword != null ? keyword : "", pageable)
                 .map(CampaignListResponseDTO::from);
+    }
+
+    @Override
+    public Campaign getCampaignDetail(Long campaignNo) {
+        return campaignRepository.findByCampaignNo(campaignNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
     }
 
     //로그인한 사람의 토큰에서 어떤 adminId인지 추출해서 adminlog의 admin객체로 넘기는 메서드

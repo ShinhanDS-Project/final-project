@@ -3,6 +3,8 @@ package com.merge.final_project.notification.inapp;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
+
 public interface NotificationService {
 
     // 알림 생성 - 각 서비스에서 승인/반려/상태변경 시 호출
@@ -19,4 +21,14 @@ public interface NotificationService {
 
     // 전체 읽음 처리
     void markAllAsRead(RecipientType recipientType, Long receiverNo);
+
+    Page<AdminNotificationResponseDTO> getAll(
+            RecipientType recipientType,
+            NotificationType notificationType,
+            Boolean isRead,
+            String keyword,
+            LocalDate from,
+            LocalDate to,
+            Pageable pageable
+    );
 }

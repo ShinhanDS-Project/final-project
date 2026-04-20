@@ -61,7 +61,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
             // 위 1번의 검증 로직 포함...
             String storedName = s3FileService.saveFile(file);
             savedPath = storedName; // rollback 시 delete용 key
-            requestDto.setProfilePath(s3FileService.getFilePath(storedName)); // DB 저장용 URL
+            requestDto.setProfilePath(storedName); // DB 저장용 key
         }
 
         try {
@@ -149,7 +149,7 @@ public class UserSignUpServiceImpl implements UserSignUpService{
         if (dto.getPassword() == null || dto.getPassword().isBlank()) {
             throw new IllegalArgumentException("비밀번호는 필수입니다.");
         }
-        if (userSignUpRepository.existsByEmailAndLoginType(dto.getEmail(), LoginType.LOCAL)) {
+        if (userSignUpRepository.existsByEmailAndLoginType(dto.getEmail(), dto.getLoginType())) {
             throw new IllegalArgumentException("이미 존재하는 로컬 계정입니다.");
         }
         if (!verificationService.isVerifiedEmail(dto.getEmail())) {

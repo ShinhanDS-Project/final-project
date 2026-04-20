@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -18,14 +19,20 @@ public class VerificationIssuer {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void issue(String email, String subject, String code) {
-        // 1. 비관적 락으로 조회 (정책 검사와 수정을 원자적으로 처리)
-        EmailVerification verification = emailVerificationRepository.findByEmailForUpdate(email)
-                .orElse(null);
+        // [수정] List로 조회하여 NonUniqueResultException 에러를 방지합니다.
+        List<EmailVerification> verifications = emailVerificationRepository.findByEmailForUpdate(email);
 
+        EmailVerification verification;
         LocalDateTime now = LocalDateTime.now();
 
-        if (verification != null) {
-            // 2. 정책 검증 (락 안에서 수행하므로 동시 요청에 안전함)
+        if (!verifications.isEmpty()) {
+            // 중복 데이터가 있다면 첫 번째 것만 사용하고 나머지는 삭제하여 정리합니다.
+            verification = verifications.get(0);
+            if (verifications.size() > 1) {
+                emailVerificationRepository.deleteAllInBatch(verifications.subList(1, verifications.size()));
+            }
+
+            // 2. 정책 검증
             if (verification.getExpiredAt() != null && verification.getExpiredAt().isAfter(now.plusMinutes(4))) {
                 throw new IllegalStateException("인증번호는 1분마다 재요청할 수 있습니다.");
             }

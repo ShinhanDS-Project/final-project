@@ -152,6 +152,13 @@ public class BeneficiaryService implements UserDetailsService {
         return beneficiary.getBeneficiaryNo();
     }
 
+    // [가빈] 관리자 수혜자 상세 조회
+    public BeneficiaryInfoResponseDTO getBeneficiaryById(Long beneficiaryNo) {
+        Beneficiary beneficiary = beneficiaryRepository.findById(beneficiaryNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BENEFICIARY_NOT_FOUND));
+        return new BeneficiaryInfoResponseDTO(beneficiary);
+    }
+
     public Long findBeneficiary(BeneficiarySigninRequestDTO dto){
         Beneficiary beneficiary= beneficiaryRepository.findByEmail(dto.getEmail())
                 .orElseThrow(()->new BusinessException(ErrorCode.AUTHENTICATION_FAILED));

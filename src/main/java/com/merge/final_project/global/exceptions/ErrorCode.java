@@ -45,6 +45,9 @@ public enum ErrorCode {
     USER_ALREADY_INACTIVE(HttpStatus.CONFLICT, "USER_003", "이미 비활성화된 회원입니다."),
     // 사용자
     DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST,"USER_004","중복된 닉네임입니다."),
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "USER_005", "이메일 또는 비밀번호가 올바르지 않습니다."),
+    ACCOUNT_DISABLED(HttpStatus.FORBIDDEN, "USER_006", "로그인할 수 없는 계정입니다. 고객센터에 문의해주세요."),
+    ACCOUNT_LOCKED(HttpStatus.FORBIDDEN, "USER_007", "비밀번호 5회 오류로 계정이 잠겼습니다. 비밀번호 재설정 후 이용해주세요."),
 
     // 파일 관련
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_001", "파일 업로드에 실패했습니다."),

@@ -47,6 +47,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         BigDecimal totalDonation = paymentRepository.sumTotalCompletedAmount();
 
         long activeCampaignCount = campaignRepository.countByCampaignStatus(CampaignStatus.ACTIVE);
+        long endedCampaignCount = campaignRepository.countByCampaignStatus(CampaignStatus.ENDED);
+        long settledCampaignCount = campaignRepository.countByCampaignStatus(CampaignStatus.SETTLED);
 
         long pendingFoundationCount = foundationRepository.countByReviewStatusNotIn(
                 List.of(ReviewStatus.APPROVED, ReviewStatus.REJECTED)
@@ -69,6 +71,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 .achievedCampaignRatio(achievedRatio)
                 .totalUserCount(totalUserCount)
                 .totalDonationAmount(totalDonation != null ? totalDonation : BigDecimal.ZERO)
+                .endedCampaignCount(endedCampaignCount)
+                .settledCampaignCount(settledCampaignCount)
                 .build();
     }
 
