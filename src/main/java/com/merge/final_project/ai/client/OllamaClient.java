@@ -91,6 +91,53 @@ public class OllamaClient implements AiClient {
     }
 
     @Override
+    public void streamChat(String userMessage, org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter) {
+        String url = "http://localhost:11434/api/chat";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", "gemmafour:latest");
+        body.put("stream", true);
+        body.put("messages", List.of(
+                Map.of("role", "system", "content", "당신은 로컬에서 실행 중인 친절한 기부 천사 Gemma3 AI입니다. 질문에 아주 정성껏 대답해줘."),
+                Map.of("role", "user", "content", userMessage)
+        ));
+
+        restTemplate.execute(url, org.springframework.http.HttpMethod.POST, request -> {
+            request.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+            objectMapper.writeValue(request.getBody(), body);
+        }, response -> {
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(response.getBody(), java.nio.charset.StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.trim().isEmpty()) continue;
+                    try {
+                        Map<String, Object> map = objectMapper.readValue(line, Map.class);
+                        if (map.containsKey("message")) {
+                            Map<String, Object> message = (Map<String, Object>) map.get("message");
+                            if (message != null && message.containsKey("content")) {
+                                String content = (String) message.get("content");
+                                if (content != null && !content.isEmpty()) {
+                                    emitter.send(org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event().data(content));
+                                }
+                            }
+                        }
+                        if (Boolean.TRUE.equals(map.get("done"))) {
+                            break;
+                        }
+                    } catch (Exception e) {
+                        // 개별 라인 파싱 에러 무시
+                    }
+                }
+                emitter.complete();
+            } catch (Exception e) {
+                emitter.completeWithError(e);
+            }
+            return null;
+        });
+    }
+
+    @Override
     public String checkApiConfig() {
         return "✅ 로컬 Ollama(Gemma3) 모드 작동 중";
     }

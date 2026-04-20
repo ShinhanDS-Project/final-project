@@ -35,9 +35,11 @@ public class RecommendationController {
      * AI 엔진과 자유롭게 대화를 테스트합니다.
      * GET /api/ai/chat?q=질문내용
      */
-    @GetMapping("/chat")
+    @GetMapping(value = "/chat", produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> chat(@org.springframework.web.bind.annotation.RequestParam("q") String question) {
-        return ResponseEntity.ok(aiClient.chatTest(question));
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                .body(aiClient.chatTest(question));
     }
 
     /**

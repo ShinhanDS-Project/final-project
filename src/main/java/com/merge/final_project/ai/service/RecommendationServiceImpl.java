@@ -64,10 +64,11 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Override
     public List<RecommendedCampaignResponse> searchCampaignsByReason(String reason) {
-        // 1. AI를 통해 사용자의 의도 분석 (카테고리, 키워드 추출)
+        // 1. AI를 통해 사용자의 의도 분석 (카테고리, 키워드 추출, 정렬 의도 파악)
         java.util.Map<String, Object> intent = aiClient.analyzeSearchIntent(reason);
         String categoryStr = (String) intent.get("category");
         final List<String> keywords = (intent.get("keywords") instanceof List) ? (List<String>) intent.get("keywords") : java.util.Collections.emptyList();
+        final String sortType = (String) intent.getOrDefault("sort", "DEFAULT");
 
         // 람다에서 사용하기 위해 final 변수로 선언 및 할당
         final com.merge.final_project.campaign.campaigns.CampaignCategory targetCategory;
@@ -80,22 +81,60 @@ public class RecommendationServiceImpl implements RecommendationService {
         // 2. 해당 카테고리의 ACTIVE 캠페인들 가져오기
         List<Campaign> campaigns = campaignRepository.findByCampaignStatus(CampaignStatus.ACTIVE);
 
-        // 3. 키워드 매칭 및 스코어링
-        return campaigns.stream()
-                .filter(c -> c.getCategory().equals(targetCategory) || keywords.stream().anyMatch(k -> (c.getTitle() != null && c.getTitle().contains(k)) || (c.getDescription() != null && c.getDescription().contains(k))))
-                .map(c -> {
-                    RecommendedCampaignResponse resp = scoreAndMap(c, UserPatternDTO.builder().donorType(UserPatternDTO.DonorType.NEWBIE).build());
-                    // AI에게 이 캠페인이 왜 사용자의 '이유'에 부합하는지 설명 요청
+        // 3. 키워드 매칭 및 스코어링 (필터링 강화)
+        List<RecommendedCampaignResponse> results = campaigns.stream()
+                .filter(c -> {
+                    boolean catMatch = c.getCategory().equals(targetCategory);
+                    boolean keyMatch = keywords.stream().anyMatch(k -> 
+                        (c.getTitle() != null && c.getTitle().contains(k)) || 
+                        (c.getDescription() != null && c.getDescription().contains(k))
+                    );
+                    
+                    // 특정 카테고리가 분석되었다면(ETC가 아니라면), 해당 카테고리이거나 키워드가 정말 강력하게 매칭되어야 함
+                    if (targetCategory != com.merge.final_project.campaign.campaigns.CampaignCategory.ETC) {
+                        return catMatch || (keyMatch && c.getCategory() == targetCategory);
+                    }
+                    return catMatch || keyMatch;
+                })
+                .map(c -> scoreAndMap(c, UserPatternDTO.builder().donorType(UserPatternDTO.DonorType.NEWBIE).build()))
+                .collect(Collectors.toList());
+
+        // 4. AI 의도에 따른 정렬 기준 정의
+        Comparator<RecommendedCampaignResponse> comparator;
+        switch (sortType) {
+            case "LOW_ACHIEVEMENT":
+                comparator = Comparator.comparingDouble(RecommendedCampaignResponse::getAchievementRate);
+                break;
+            case "HIGH_ACHIEVEMENT":
+                comparator = Comparator.comparingDouble(RecommendedCampaignResponse::getAchievementRate).reversed();
+                break;
+            case "NEWEST":
+                comparator = Comparator.comparingLong(RecommendedCampaignResponse::getCampaignNo).reversed();
+                break;
+            default:
+                // 기본값: 카테고리 일치 우선 + 최신순
+                comparator = (c1, c2) -> {
+                    boolean match1 = c1.getCategory().equals(targetCategory);
+                    boolean match2 = c2.getCategory().equals(targetCategory);
+                    if (match1 && !match2) return -1;
+                    if (!match1 && match2) return 1;
+                    return Long.compare(c2.getCampaignNo(), c1.getCampaignNo());
+                };
+        }
+
+        return results.stream()
+                .sorted(comparator)
+                .limit(3)
+                .peek(resp -> {
+                    // AI에게 이 캠페인이 왜 사용자의 '정교한 의도'에 부합하는지 설명 요청
                     String customReason = aiClient.generateRecommendationReason(
                         "SEARCH_USER", 
-                        "검색 의도: " + reason, 
-                        c.getTitle(), 
-                        c.getCategory().getLabel()
+                        String.format("검색 의도: %s (정렬기준: %s)", reason, sortType), 
+                        resp.getTitle(), 
+                        resp.getCategory().getLabel()
                     );
                     resp.setRecommendationReason(customReason);
-                    return resp;
                 })
-                .limit(3)
                 .collect(Collectors.toList());
     }
 
