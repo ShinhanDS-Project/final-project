@@ -104,6 +104,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             TransactionStatus status
     );
 
+    Optional<Transaction> findTopByEventTypeAndStatusAndBlockNumAndAmountAndFromWallet_WalletNoAndToWallet_WalletNoOrderByTransactionNoDesc(
+            TransactionEventType eventType,
+            TransactionStatus status,
+            Long blockNum,
+            Long amount,
+            Long fromWalletNo,
+            Long toWalletNo
+    );
+
     /**
      * 상태 조건에서 blockNum이 있는 거래 중 가장 큰 blockNum 1건 조회.
      * 대시보드 최신 블록 값 계산에 사용한다.
