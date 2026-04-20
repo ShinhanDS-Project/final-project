@@ -47,7 +47,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://3.34.125.62:8090", // 실제 프론트엔드 서버 주소
-                "http://localhost:5173",   // 로컬 테스트용
+                "http://localhost:5174",   // 로컬 테스트용
                 "http://localhost:3000",   // 로컬 테스트용
                 "http://merge.io.kr:8090",
                 "http://192.168.0.220:8090",
@@ -205,6 +205,7 @@ public class SecurityConfig {
                                 "/uploads/**",
                                 "/api/auth/**",
                                 "/api/signup/**", // /api/signup/nickname 포함
+                                "/api/ai/**",
                                 // 블록체인 대시보드/조회 API는 프론트 대시보드 초기 연동을 위해 우선 공개.
                                 // 추후 인증 정책 확정 시 role 기반 접근 제어로 전환 가능.
                                 "/api/blockchain/**",
