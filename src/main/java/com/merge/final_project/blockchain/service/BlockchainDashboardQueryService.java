@@ -120,6 +120,7 @@ public class BlockchainDashboardQueryService {
 
     public BlockchainTransactionDetailResponse getTransactionDetail(String txHash, String statusText) {
         TransactionStatus status = resolveStatus(statusText);
+        // 같은 txHash가 여러 건일 수 있어 최신 transactionNo 기준 1건을 대표로 노출
         Transaction transaction = transactionRepository
                 .findTopByTxHashIgnoreCaseAndStatusOrderByTransactionNoDesc(txHash, status)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "transaction not found: " + txHash));
@@ -177,6 +178,7 @@ public class BlockchainDashboardQueryService {
         String normalized = keyword.trim();
         TransactionStatus success = TransactionStatus.SUCCESS;
 
+        // 검색어가 txHash면 거래 상세로 바로 이동할 수 있게 우선 판별
         if (transactionRepository.findTopByTxHashIgnoreCaseAndStatusOrderByTransactionNoDesc(normalized, success).isPresent()) {
             return new BlockchainSearchResolveResponse("transaction", normalized);
         }

@@ -53,12 +53,15 @@ public class RedemptionRecoveryService {
 
     @Transactional
     public void finalizeConfirmedRedemption(Long redemptionNo) {
+        // 동시 크론 실행 시 동일 redemption을 중복 처리하지 않도록 행 잠금으로 조회
         Redemption redemption = redemptionRepository.findByIdForUpdate(redemptionNo)
                 .orElseThrow(() -> new IllegalArgumentException("redemption not found"));
 
+        // 이미 완료된 건은 멱등하게 즉시 종료
         if (redemption.getStatus() == RedemptionStatus.COMPLETED) {
             return;
         }
+        // 복구 대상은 ONCHAIN_CONFIRMED 상태만 허용
         if (redemption.getStatus() != RedemptionStatus.ONCHAIN_CONFIRMED) {
             return;
         }
@@ -68,12 +71,15 @@ public class RedemptionRecoveryService {
 
         Transaction transaction = redemption.getTransaction();
         if (transaction == null) {
+            // 기존 성공 tx가 있으면 재사용(재전송/재생성 방지)
             transaction = findExistingRecoveryTransaction(redemption, requesterWallet, hotWallet);
         }
         if (transaction == null) {
+            // 정말 없는 경우에만 신규 생성
             transaction = createRecoveryTransaction(redemption, requesterWallet, hotWallet);
         }
 
+        // 최종 완료 전 양쪽 지갑 잔액을 체인 기준으로 동기화
         syncWalletBalance(requesterWallet);
         syncWalletBalance(hotWallet);
         redemptionCommandService.markCompleted(redemption.getRedemptionNo(), transaction, redemption.getBlockNumber());
@@ -97,6 +103,7 @@ public class RedemptionRecoveryService {
                             .build()
             );
         } catch (DataIntegrityViolationException ex) {
+            // 동시성으로 유니크 충돌이 나면 실패시키지 않고 기존 tx 재조회 후 재연결
             Transaction existing = findExistingRecoveryTransaction(redemption, requesterWallet, hotWallet);
             if (existing != null) {
                 log.info("redemption recovery reused existing transaction after conflict. redemptionNo={}, transactionNo={}",
