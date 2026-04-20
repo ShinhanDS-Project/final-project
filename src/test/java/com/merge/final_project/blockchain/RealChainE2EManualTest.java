@@ -5,6 +5,7 @@ import com.merge.final_project.blockchain.entity.Key;
 import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.entity.TransactionEventType;
 import com.merge.final_project.blockchain.entity.TransactionStatus;
+import com.merge.final_project.blockchain.gas.GasStationService;
 import com.merge.final_project.blockchain.repository.KeyRepository;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
 import com.merge.final_project.blockchain.security.WalletCredentials;
@@ -91,6 +92,7 @@ class RealChainE2EManualTest {
     private final WalletCryptoService walletCryptoService;
     private final BlockchainTransferClient blockchainTransferClient;
     private final BlockchainTransferService blockchainTransferService;
+    private final GasStationService gasStationService;
     private final SettlementTransactionService settlementTransactionService;
     private final RedemptionService redemptionService;
     private final RedemptionRepository redemptionRepository;
@@ -118,6 +120,7 @@ class RealChainE2EManualTest {
             WalletCryptoService walletCryptoService,
             BlockchainTransferClient blockchainTransferClient,
             BlockchainTransferService blockchainTransferService,
+            GasStationService gasStationService,
             SettlementTransactionService settlementTransactionService,
             RedemptionService redemptionService,
             RedemptionRepository redemptionRepository,
@@ -137,6 +140,7 @@ class RealChainE2EManualTest {
         this.walletCryptoService = walletCryptoService;
         this.blockchainTransferClient = blockchainTransferClient;
         this.blockchainTransferService = blockchainTransferService;
+        this.gasStationService = gasStationService;
         this.settlementTransactionService = settlementTransactionService;
         this.redemptionService = redemptionService;
         this.redemptionRepository = redemptionRepository;
@@ -153,6 +157,7 @@ class RealChainE2EManualTest {
         Wallet ownerWallet = hotWallet;
         ReflectionTestUtils.setField(blockchainTransferService, "hotWalletAddress", hotWallet.getWalletAddress());
         ReflectionTestUtils.setField(redemptionService, "hotWalletAddress", hotWallet.getWalletAddress());
+        ReflectionTestUtils.setField(gasStationService, "hotWalletAddress", hotWallet.getWalletAddress());
         String ownerPrivateKey = resolvePrivateKey(ownerWallet);
 
         User user = userSignUpRepository.save(

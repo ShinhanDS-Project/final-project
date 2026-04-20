@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -56,6 +57,7 @@ public class BlockchainDashboardQueryService {
     private final FoundationRepository foundationRepository;
     private final UserRepository userRepository;
     private final BeneficiaryRepository beneficiaryRepository;
+    private final TokenAmountConverter tokenAmountConverter;
 
     public BlockchainTransactionsResponse getTransactions(int page, int size, String keyword, String statusText) {
         TransactionStatus status = resolveStatus(statusText);
@@ -210,7 +212,7 @@ public class BlockchainDashboardQueryService {
                 transaction.getStatus() == null ? null : transaction.getStatus().name(),
                 toApiEventType(transaction.getEventType()),
                 toEventTypeLabel(transaction.getEventType()),
-                transaction.getAmount(),
+                resolveDisplayAmount(transaction),
                 transaction.getGasFee(),
                 resolveOccurredAt(transaction),
                 fromWallet == null ? null : fromWallet.getWalletAddress(),
@@ -405,6 +407,16 @@ public class BlockchainDashboardQueryService {
 
     private LocalDateTime resolveOccurredAt(Transaction transaction) {
         return transaction.getSentAt() != null ? transaction.getSentAt() : transaction.getCreatedAt();
+    }
+
+    private BigDecimal resolveDisplayAmount(Transaction transaction) {
+        if (transaction == null || transaction.getAmount() == null) {
+            return null;
+        }
+        if (transaction.getEventType() == TransactionEventType.POL_AUTO_TOPUP) {
+            return tokenAmountConverter.fromOnChainAmount(BigInteger.valueOf(transaction.getAmount()));
+        }
+        return BigDecimal.valueOf(transaction.getAmount());
     }
 
     private Page<Transaction> loadTransactionPage(int page, int size, TransactionStatus status, String keyword) {

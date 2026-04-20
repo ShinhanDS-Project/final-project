@@ -21,7 +21,7 @@ public record BlockchainTransactionDetailResponse(
         // 이벤트 라벨
         String eventTypeLabel,
         // 금액
-        Long amount,
+        BigDecimal amount,
         // 발생 시각
         LocalDateTime sentAt,
         // 가스 수수료
