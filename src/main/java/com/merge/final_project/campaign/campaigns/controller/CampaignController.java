@@ -3,7 +3,7 @@ package com.merge.final_project.campaign.campaigns.controller;
 import com.merge.final_project.campaign.campaigns.dto.CampaignBeneficiaryCheckResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignDetailResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignFoundationCheckResponseDTO;
-import com.merge.final_project.campaign.campaigns.dto.CampaignListResponseDTO;
+import com.merge.final_project.campaign.campaigns.dto.CampaignListPageResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignRegisterResponseDTO;
 import com.merge.final_project.campaign.campaigns.dto.CampaignRequestDTO;
 import com.merge.final_project.campaign.campaigns.service.CampaignService;
@@ -35,13 +35,15 @@ public class CampaignController {
     /* 캠페인 목록을 가져오는 API: 정렬, 검색조건, 키워드, 카테고리를 파라미터로 받아 필터링된 리스트를 반환함 */
     @ResponseBody
     @GetMapping
-    public ResponseEntity<List<CampaignListResponseDTO>> getCampaignList(
+    public ResponseEntity<CampaignListPageResponseDTO> getCampaignList(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "6") int size,
             @RequestParam(value = "sort", defaultValue = "deadline") String sort,
-            @RequestParam(value = "searchType", required = false) String searchType,
             @RequestParam(value = "keyword", required = false) String keyword,
-            @RequestParam(value = "category", required = false) String category
+            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "includeClosed", defaultValue = "false") boolean includeClosed
     ) {
-        return ResponseEntity.ok(campaignService.getCampaignList(sort, searchType, keyword, category));
+        return ResponseEntity.ok(campaignService.getCampaignList(page, size, sort, keyword, category, includeClosed));
     }
 
     /* 신규 캠페인 등록 API: JSON 데이터(@RequestPart dto)와 이미지 파일들을 동시에 처리하는 multipart/form-data 방식 */

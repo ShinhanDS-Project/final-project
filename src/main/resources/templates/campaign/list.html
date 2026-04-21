@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -354,8 +354,8 @@
     </section>
 
     <div class="sort-row">
-        <button type="button" data-sort="deadline" class="active">마감임박순</button>
-        <button type="button" data-sort="participation">참여순</button>
+        <button type="button" data-sort="deadline" class="active">마감 임박순</button>
+        <button type="button" data-sort="participation">참여율순</button>
     </div>
 
     <div id="resultSummary" class="result-summary">목록을 불러오는 중입니다.</div>
@@ -363,11 +363,16 @@
     <div id="empty" class="empty" style="display:none;">표시할 캠페인이 없습니다.</div>
 </main>
 
+
 <script>
-    let currentSort = 'deadline';
+    let currentSort = "deadline";
+    let currentPage = 1;
+    let hasNextPage = false;
+    let isLoadingMore = false;
+    const PAGE_SIZE = 6;
 
     function formatAmount(value) {
-        return `${Number(value || 0).toLocaleString()}원`;
+        return Number(value || 0).toLocaleString() + "원";
     }
 
     function calculateProgress(currentAmount, targetAmount) {
@@ -380,139 +385,207 @@
 
     function calculateDday(endAt) {
         if (!endAt) {
-            return 'D-0';
+            return "D-0";
         }
 
         const end = new Date(endAt);
         const today = new Date();
         const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
-        return `D-${Math.max(diff, 0)}`;
+        return "D-" + Math.max(diff, 0);
     }
 
     function updateSortButtons() {
-        document.querySelectorAll('[data-sort]').forEach(button => {
-            button.classList.toggle('active', button.dataset.sort === currentSort);
+        document.querySelectorAll("[data-sort]").forEach(button => {
+            button.classList.toggle("active", button.dataset.sort === currentSort);
         });
     }
 
-    function buildQuery() {
-        const params = new URLSearchParams();
-        params.set('sort', currentSort);
+    function ensureLoadMoreButton() {
+        let loadMoreButton = document.getElementById("loadMoreButton");
+        if (loadMoreButton) {
+            return loadMoreButton;
+        }
 
-        const searchType = document.getElementById('searchType').value;
-        const keyword = document.getElementById('keyword').value.trim();
-        const category = document.getElementById('category').value;
+        const wrapper = document.createElement("div");
+        wrapper.style.display = "flex";
+        wrapper.style.justifyContent = "center";
+        wrapper.style.marginTop = "20px";
+
+        loadMoreButton = document.createElement("button");
+        loadMoreButton.id = "loadMoreButton";
+        loadMoreButton.type = "button";
+        loadMoreButton.className = "ghost";
+        loadMoreButton.textContent = "더보기";
+        loadMoreButton.style.display = "none";
+        loadMoreButton.addEventListener("click", () => {
+            if (!isLoadingMore && hasNextPage) {
+                loadCampaigns({ append: true });
+            }
+        });
+
+        wrapper.appendChild(loadMoreButton);
+        document.querySelector("main.page").appendChild(wrapper);
+        return loadMoreButton;
+    }
+
+    function updateLoadMoreButton() {
+        const loadMoreButton = ensureLoadMoreButton();
+        loadMoreButton.style.display = hasNextPage ? "inline-flex" : "none";
+        loadMoreButton.disabled = isLoadingMore;
+    }
+
+    function resetListState() {
+        currentPage = 1;
+        hasNextPage = false;
+        isLoadingMore = false;
+        document.getElementById("list").innerHTML = "";
+        updateLoadMoreButton();
+    }
+
+    function buildQuery(page = 1) {
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("size", String(PAGE_SIZE));
+        params.set("sort", currentSort);
+        params.set("includeClosed", "false");
+
+        const searchType = document.getElementById("searchType").value;
+        const keyword = document.getElementById("keyword").value.trim();
+        const category = document.getElementById("category").value;
 
         if (searchType) {
-            params.set('searchType', searchType);
+            params.set("searchType", searchType);
         }
         if (keyword) {
-            params.set('keyword', keyword);
+            params.set("keyword", keyword);
         }
         if (category) {
-            params.set('category', category);
+            params.set("category", category);
         }
 
         return params.toString();
     }
 
-    function renderCampaigns(items) {
-        const list = document.getElementById('list');
-        const empty = document.getElementById('empty');
-        const summary = document.getElementById('resultSummary');
-        list.innerHTML = '';
-
-        if (!items.length) {
-            empty.style.display = 'block';
-            summary.textContent = '검색 조건에 맞는 캠페인이 없습니다.';
-            return;
+    function appendCampaigns(items, append = false) {
+        const list = document.getElementById("list");
+        if (!append) {
+            list.innerHTML = "";
         }
-
-        empty.style.display = 'none';
-        summary.textContent = `총 ${items.length}개의 캠페인을 찾았습니다.`;
 
         items.forEach(item => {
             const progressRate = calculateProgress(item.currentAmount, item.targetAmount);
-            const card = document.createElement('article');
-            card.className = 'card';
+            const card = document.createElement("article");
+            card.className = "card";
             card.onclick = () => {
-                location.href = `/api/foundation/campaigns/${item.campaignNo}`;
+                location.href = "/api/foundation/campaigns/" + item.campaignNo;
             };
-            card.innerHTML = `
-                <div class="thumb">
-                    ${item.imagePath ? `<img src="${item.imagePath}" alt="${item.title}">` : '<div class="thumb-empty">대표 이미지 없음</div>'}
-                    <div class="badge-wrap">
-                        <span class="badge">${item.category ?? '카테고리'}</span>
-                        <span class="badge subtle">${calculateDday(item.endAt)}</span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <h2 class="title">${item.title ?? ''}</h2>
-                    <p class="org">${item.foundationName ?? '기부단체 정보 없음'}</p>
-                    <div class="stats">
-                        <div>
-                            <div class="percent">${progressRate}%</div>
-                            <div class="meta">달성률</div>
-                        </div>
-                        <div>
-                            <div class="amount">${formatAmount(item.currentAmount)}</div>
-                            <div class="meta">현재 모금액</div>
-                        </div>
-                    </div>
-                    <div class="bar"><span style="width:${progressRate}%"></span></div>
-                </div>
-            `;
+            card.innerHTML =
+                "<div class=\"thumb\">" +
+                (item.imagePath
+                    ? "<img src=\"" + item.imagePath + "\" alt=\"" + (item.title || "") + "\">"
+                    : "<div class=\"thumb-empty\">대표 이미지 없음</div>") +
+                "<div class=\"badge-wrap\">" +
+                "<span class=\"badge\">" + (item.category || "카테고리") + "</span>" +
+                "<span class=\"badge subtle\">" + calculateDday(item.endAt) + "</span>" +
+                "</div></div>" +
+                "<div class=\"card-body\">" +
+                "<h2 class=\"title\">" + (item.title || "") + "</h2>" +
+                "<p class=\"org\">" + (item.foundationName || "기부단체 정보 없음") + "</p>" +
+                "<div class=\"stats\"><div><div class=\"percent\">" + progressRate + "%</div><div class=\"meta\">달성률</div></div>" +
+                "<div><div class=\"amount\">" + formatAmount(item.currentAmount) + "</div><div class=\"meta\">현재 모금액</div></div></div>" +
+                "<div class=\"bar\"><span style=\"width:" + progressRate + "%\"></span></div>" +
+                "</div>";
             list.appendChild(card);
         });
     }
 
-    async function loadCampaigns() {
-        const list = document.getElementById('list');
-        const empty = document.getElementById('empty');
-        const summary = document.getElementById('resultSummary');
+    function updateSummary(pageInfo) {
+        const summary = document.getElementById("resultSummary");
+        const totalElements = Number(pageInfo?.totalElements ?? 0);
+        summary.textContent = "총 " + totalElements.toLocaleString() + "개의 캠페인을 찾았습니다.";
+    }
+
+    async function loadCampaigns({ append = false } = {}) {
+        const list = document.getElementById("list");
+        const empty = document.getElementById("empty");
+        const summary = document.getElementById("resultSummary");
+        const requestPage = append ? currentPage + 1 : 1;
 
         try {
             updateSortButtons();
-            summary.textContent = '목록을 불러오는 중입니다.';
+            if (!append) {
+                resetListState();
+                empty.style.display = "none";
+                empty.textContent = "표시할 캠페인이 없습니다.";
+                summary.textContent = "목록을 불러오는 중입니다.";
+            } else {
+                isLoadingMore = true;
+                updateLoadMoreButton();
+            }
 
-            const response = await fetch(`/api/foundation/campaigns?${buildQuery()}`);
+            const response = await fetch("/api/foundation/campaigns?" + buildQuery(requestPage));
             if (!response.ok) {
                 throw new Error(await response.text());
             }
 
             const data = await response.json();
-            renderCampaigns(data);
+            const items = Array.isArray(data?.content) ? data.content : (Array.isArray(data) ? data : []);
+            const pageInfo = data?.pageInfo || null;
+
+            if (!append && items.length === 0) {
+                list.innerHTML = "";
+                empty.style.display = "block";
+                summary.textContent = "검색 조건에 맞는 캠페인이 없습니다.";
+                hasNextPage = false;
+                updateLoadMoreButton();
+                return;
+            }
+
+            appendCampaigns(items, append);
+            currentPage = Number(pageInfo?.page || requestPage);
+            hasNextPage = Boolean(pageInfo?.hasNext);
+            updateSummary(pageInfo);
+            empty.style.display = "none";
+            updateLoadMoreButton();
         } catch (error) {
-            list.innerHTML = '';
-            empty.style.display = 'block';
-            summary.textContent = '목록 조회 중 오류가 발생했습니다.';
-            empty.textContent = `목록을 불러오지 못했습니다. ${error.message}`;
+            if (!append) {
+                list.innerHTML = "";
+                empty.style.display = "block";
+                summary.textContent = "목록 조회 중 오류가 발생했습니다.";
+                empty.textContent = "목록을 불러오지 못했습니다. " + error.message;
+            }
+            hasNextPage = false;
+            updateLoadMoreButton();
+        } finally {
+            isLoadingMore = false;
+            updateLoadMoreButton();
         }
     }
 
-    document.querySelectorAll('[data-sort]').forEach(button => {
-        button.addEventListener('click', () => {
+    document.querySelectorAll("[data-sort]").forEach(button => {
+        button.addEventListener("click", () => {
             currentSort = button.dataset.sort;
-            loadCampaigns();
+            loadCampaigns({ append: false });
         });
     });
 
-    document.getElementById('searchButton').addEventListener('click', loadCampaigns);
-    document.getElementById('resetButton').addEventListener('click', () => {
-        document.getElementById('searchType').value = 'title';
-        document.getElementById('keyword').value = '';
-        document.getElementById('category').value = '';
-        currentSort = 'deadline';
-        loadCampaigns();
+    document.getElementById("searchButton").addEventListener("click", () => loadCampaigns({ append: false }));
+    document.getElementById("resetButton").addEventListener("click", () => {
+        document.getElementById("searchType").value = "title";
+        document.getElementById("keyword").value = "";
+        document.getElementById("category").value = "";
+        currentSort = "deadline";
+        loadCampaigns({ append: false });
     });
 
-    document.getElementById('keyword').addEventListener('keydown', event => {
-        if (event.key === 'Enter') {
-            loadCampaigns();
+    document.getElementById("keyword").addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            loadCampaigns({ append: false });
         }
     });
 
-    loadCampaigns();
+    ensureLoadMoreButton();
+    loadCampaigns({ append: false });
 </script>
 </body>
 </html>
