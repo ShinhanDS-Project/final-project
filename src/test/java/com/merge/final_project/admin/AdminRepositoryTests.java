@@ -18,10 +18,10 @@ public class AdminRepositoryTests {
 
     @Test
     void 아이디_조회 () {
-        Optional<Admin> admin = adminRepository.findByAdminId("admin_gabeen");
+        Optional<Admin> admin = adminRepository.findByAdminId("admin");
 
         assertTrue(admin.isPresent());
-        assertEquals("admin_gabeen", admin.get().getAdminId());
+        assertEquals("admin", admin.get().getAdminId());
     }
 
 }

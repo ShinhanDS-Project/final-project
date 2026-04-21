@@ -116,8 +116,8 @@ public class BlockchainTransferService {
                 resolvedDonationId
         );
         if ("SUCCESS".equalsIgnoreCase(transferResult.status())) {
-            // 이 경로는 캠페인 지갑 잔액이 누적 증가한다.
-            applyCampaignWalletBalanceIncrease(campaignWallet, amount);
+            // 온체인 기부 성공 시 기부자/캠페인 지갑 잔액을 같은 트랜잭션에서 함께 반영한다.
+            applyDonationSuccessStateUpdate(userWallet, campaignWallet, amount);
         } else {
             log.warn("donateToCampaign failed. userNo={}, campaignNo={}, donationId={}, message={}",
                     userNo, campaignNo, resolvedDonationId, transferResult.message());
@@ -153,9 +153,17 @@ public class BlockchainTransferService {
         return BigInteger.valueOf(Instant.now().toEpochMilli());
     }
 
-    private void applyCampaignWalletBalanceIncrease(Wallet campaignWallet, Long amount) {
-        BigDecimal current = campaignWallet.getBalance() == null ? BigDecimal.ZERO : campaignWallet.getBalance();
-        campaignWallet.updateBalance(current.add(BigDecimal.valueOf(amount)));
+    private void applyDonationSuccessStateUpdate(Wallet userWallet, Wallet campaignWallet, Long amount) {
+        BigDecimal delta = BigDecimal.valueOf(amount);
+
+        // 기부자 지갑 차감
+        BigDecimal userCurrent = userWallet.getBalance() == null ? BigDecimal.ZERO : userWallet.getBalance();
+        userWallet.updateBalance(userCurrent.subtract(delta));
+        userWallet.updateLastUsedAt();
+
+        // 캠페인 지갑 증액
+        BigDecimal campaignCurrent = campaignWallet.getBalance() == null ? BigDecimal.ZERO : campaignWallet.getBalance();
+        campaignWallet.updateBalance(campaignCurrent.add(delta));
         campaignWallet.updateLastUsedAt();
     }
 
