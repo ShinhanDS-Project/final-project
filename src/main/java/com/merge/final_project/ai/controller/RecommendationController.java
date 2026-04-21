@@ -21,6 +21,7 @@ public class RecommendationController {
 
     private final RecommendationService recommendationService;
     private final com.merge.final_project.ai.client.AiClient aiClient;
+    private final com.merge.final_project.ai.service.ChatBot chatBot;
 
     /**
      * API 연결 상태를 테스트합니다.
@@ -32,14 +33,14 @@ public class RecommendationController {
     }
 
     /**
-     * AI 엔진과 자유롭게 대화를 테스트합니다.
+     * AI 엔진과 지능적으로 대화합니다. (LangChain RAG 적용)
      * GET /api/ai/chat?q=질문내용
      */
     @GetMapping(value = "/chat", produces = "application/json;charset=UTF-8")
     public ResponseEntity<String> chat(@org.springframework.web.bind.annotation.RequestParam("q") String question) {
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
-                .body(aiClient.chatTest(question));
+                .body(chatBot.chat(question));
     }
 
     /**
