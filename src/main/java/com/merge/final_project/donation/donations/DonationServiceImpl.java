@@ -34,8 +34,6 @@ public class DonationServiceImpl implements DonationService {
     private static final String REPRESENTATIVE_IMAGE_PURPOSE = "REPRESENTATIVE";
 
     private static final List<CampaignStatus> HOME_VISIBLE_STATUSES = List.of(
-            CampaignStatus.APPROVED,
-            CampaignStatus.RECRUITING,
             CampaignStatus.ACTIVE
     );
 

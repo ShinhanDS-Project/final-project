@@ -24,6 +24,7 @@ public class CampaignListResponseDTO {  //[가빈] 관리자 측에서 캠페인
     private Long targetAmount;
     private BigDecimal currentAmount;
     private String category;
+    private LocalDateTime startAt;
     private LocalDateTime endAt;
     private Long foundationNo;
     private ApprovalStatus approvalStatus;
@@ -40,6 +41,8 @@ public class CampaignListResponseDTO {  //[가빈] 관리자 측에서 캠페인
                 .foundationNo(campaign.getFoundationNo())
                 .approvalStatus(campaign.getApprovalStatus())
                 .campaignStatus(campaign.getCampaignStatus())
+                .startAt(campaign.getStartAt())
+                .endAt(campaign.getEndAt())
                 .rejectReason(campaign.getRejectReason())
                 .createdAt(campaign.getCreatedAt())
                 .build();

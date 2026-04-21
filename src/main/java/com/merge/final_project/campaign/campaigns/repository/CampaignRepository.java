@@ -1,6 +1,7 @@
 package com.merge.final_project.campaign.campaigns.repository;
 
 import com.merge.final_project.campaign.campaigns.ApprovalStatus;
+import com.merge.final_project.campaign.campaigns.CampaignCategory;
 import com.merge.final_project.campaign.campaigns.CampaignStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import org.springframework.data.domain.Page;
@@ -120,6 +121,28 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
 
     //[채원]
     List<Campaign> findAllByCampaignNoIn(List<Long> campaignNos);
+
+    @EntityGraph(attributePaths = "foundation")
+    @Query("""
+            SELECT c
+            FROM Campaign c
+            LEFT JOIN c.foundation f
+            WHERE c.approvalStatus = :approvalStatus
+              AND c.campaignStatus IN :campaignStatuses
+              AND (:category IS NULL OR c.category = :category)
+              AND (
+                  :keyword = ''
+                  OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(COALESCE(f.foundationName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+              )
+            """)
+    Page<Campaign> findPublicCampaignPage(
+            @Param("approvalStatus") ApprovalStatus approvalStatus,
+            @Param("campaignStatuses") Collection<CampaignStatus> campaignStatuses,
+            @Param("category") CampaignCategory category,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 
     //[바다] main 사용 캠페인
     Page<Campaign> findByCampaignStatusInAndApprovalStatusOrderByEndAtAscCampaignNoDesc(
