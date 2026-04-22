@@ -243,8 +243,8 @@ public class UserServiceImpl implements UserService {
         // 2. 정산내역 (가장 확실한 ID 기반 조회)
         List<Settlement> settlements = settlementRepository.findByCampaign_CampaignNo(campaignNo);
         Optional<Settlement> settlementOpt = settlements.stream()
-                .sorted((s1, s2) -> Long.compare(s2.getSettlementNo(), s1.getSettlementNo()))
-                .findFirst();
+                .filter(s -> s.getStatus() == SettlementStatus.COMPLETED)
+                .max(java.util.Comparator.comparingLong(Settlement::getSettlementNo));
 
         SelectSettlementResponseDTO settlementDTO = null;
         if (settlementOpt.isPresent()) {
@@ -261,16 +261,33 @@ public class UserServiceImpl implements UserService {
 
         // 3. 리포트 및 날짜 계산
         Optional<FinalReport> finalReportOpt = finalReportRepository.findByCampaign_no(campaignNo);
-        
+
         long day = 0;
         boolean isPassed = false;
-        if (campaign.getUsageEndAt() != null) {
-            LocalDate endAt = campaign.getUsageEndAt().toLocalDate();
-            LocalDate today = LocalDate.now();
-            LocalDate startReporting = endAt.plusDays(1);
-            
-            day = Math.abs(ChronoUnit.DAYS.between(today, startReporting));
-            isPassed = today.isAfter(endAt);
+        String trackingStatus = "FUNDRAISING"; // 기본값
+
+        LocalDate today = LocalDate.now();
+
+        if (campaign.getEndAt() != null && campaign.getUsageEndAt() != null) {
+            LocalDate fundraisingEndAt = campaign.getEndAt().toLocalDate(); // 모금 종료일
+            LocalDate usageEndAt = campaign.getUsageEndAt().toLocalDate();     // 사업 종료일
+
+            if (!today.isAfter(fundraisingEndAt)) {
+                // 1. 모금 중 (모금 종료일까지 남은 기간)
+                day = ChronoUnit.DAYS.between(today, fundraisingEndAt);
+                isPassed = false;
+                trackingStatus = "FUNDRAISING";
+            } else if (!today.isAfter(usageEndAt)) {
+                // 2. 모금 종료 후 사업 진행 중 (사업 종료일까지 남은 기간)
+                day = ChronoUnit.DAYS.between(today, usageEndAt);
+                isPassed = false;
+                trackingStatus = "IN_PROGRESS";
+            } else {
+                // 3. 사업 종료 후 (사업 종료일로부터 경과된 기간)
+                day = ChronoUnit.DAYS.between(usageEndAt, today);
+                isPassed = true;
+                trackingStatus = "FINISHED";
+            }
         }
 
         FinalReportMicroTrackingResponseDto.FinalReportData reportData = null;
@@ -286,9 +303,9 @@ public class UserServiceImpl implements UserService {
                 .dayPassed(day)
                 .isExist(finalReportOpt.isPresent())
                 .isPassed(isPassed)
+                .trackingStatus(trackingStatus)
                 .reportData(reportData)
                 .build();
-
         return MicroTrackingDTO.builder()
                 .campaignNo(campaignNo)
                 .userFinalReportDTO(finalReportMicroDTO)
