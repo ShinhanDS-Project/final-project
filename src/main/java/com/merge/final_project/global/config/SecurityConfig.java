@@ -46,7 +46,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-                "http://3.34.125.62:80", // 실제 프론트엔드 서버 주소
+                "http://3.34.125.62:3000", // 실제 프론트엔드 서버 주소
                 "http://localhost:8090",   // 백엔드 자체 테스트용
                 "http://localhost:5174",   // 로컬 테스트용
                 "http://localhost:3000",   // 로컬 테스트용
