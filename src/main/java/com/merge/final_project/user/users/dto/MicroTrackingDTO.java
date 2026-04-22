@@ -10,6 +10,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class MicroTrackingDTO {
-    SelectSettlementResponseDTO UsersettlementDTO;
-    FinalReportMicroTrackingResponseDto UserfinalReportDTO;
+    private Long campaignNo;
+    private SelectSettlementResponseDTO userSettlementDTO;
+    private FinalReportMicroTrackingResponseDto userFinalReportDTO;
 }

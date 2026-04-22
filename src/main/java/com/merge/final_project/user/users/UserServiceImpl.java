@@ -236,104 +236,80 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public MicroTrackingDTO showMicroTracking(Long campaignNo) {
+        // 1. 캠페인 체크
+        Campaign campaign = campaignRepository.findByCampaignNo(campaignNo)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
 
-        // ---> 1. 정산내용
-        // Optional을 활용하여 정산이 없는 경우 예외를 던지지 않고 처리
-        Optional<Settlement> settlementOpt = settlementRepository.findByCampaign_CampaignNo(campaignNo).stream()
-                .filter(s -> s.getStatus().equals(SettlementStatus.COMPLETED))
-                .findFirst();
+        // 2. 정산내역 (가장 확실한 ID 기반 조회)
+        List<Settlement> settlements = settlementRepository.findByCampaign_CampaignNo(campaignNo);
+        Optional<Settlement> settlementOpt = settlements.stream()
+                .filter(s -> s.getStatus() == SettlementStatus.COMPLETED)
+                .max(java.util.Comparator.comparingLong(Settlement::getSettlementNo));
 
-        SelectSettlementResponseDTO settlementDTO;
+        SelectSettlementResponseDTO settlementDTO = null;
         if (settlementOpt.isPresent()) {
-            // 정산 완료된 내역이 있을 때
-            Settlement settlement = settlementOpt.get();
+            Settlement s = settlementOpt.get();
             settlementDTO = SelectSettlementResponseDTO.builder()
-                    .foundationNo(settlement.getFoundation().getFoundationNo())
-                    .foundationAmount(settlement.getFoundationAmount())
-                    .settledAt(settlement.getSettledAt())
-                    .beneficiaryAmount(settlement.getBeneficiaryAmount())
-                    .beneficiaryNo(settlement.getBeneficiary().getBeneficiaryNo())
-                    .settlementStatus(settlement.getStatus()) // COMPLETED
-                    .build();
-        } else {
-            // 정산 대기 중이거나 정산 내역이 아예 없는 경우 (예외 발생 안 함)
-            settlementDTO = SelectSettlementResponseDTO.builder()
-                    // 필요한 경우 null 대신 0을 넣거나, PENDING 상태를 반환하도록 세팅
-                    .settlementStatus(null) // 혹은 SettlementStatus.PENDING 등 프론트와 약속한 상태
+                    .foundationNo(s.getFoundation() != null ? s.getFoundation().getFoundationNo() : null)
+                    .foundationAmount(s.getFoundationAmount())
+                    .settledAt(s.getSettledAt())
+                    .beneficiaryAmount(s.getBeneficiaryAmount())
+                    .beneficiaryNo(s.getBeneficiary() != null ? s.getBeneficiary().getBeneficiaryNo() : null)
+                    .settlementStatus(s.getStatus())
                     .build();
         }
 
+        // 3. 리포트 및 날짜 계산
+        Optional<FinalReport> finalReportOpt = finalReportRepository.findByCampaign_no(campaignNo);
 
+        long day = 0;
+        boolean isPassed = false;
+        String trackingStatus = "FUNDRAISING"; // 기본값
 
-//---------------------------------------------------------------------------------------
-        //1. 실제로 존재하는 캠페인인지 확인
-        Campaign campaign= campaignRepository.findByCampaignNo(campaignNo)
-                .orElseThrow(()-> new BusinessException(ErrorCode.CAMPAIGN_NOT_FOUND));
+        LocalDate today = LocalDate.now();
 
-        //2. 리포트 여부 확인
-        Optional<FinalReport> finalReport= finalReportRepository.findByCampaign_no(campaignNo);
-        FinalReportMicroTrackingResponseDto finalReportMicroDTO;
+        if (campaign.getEndAt() != null && campaign.getUsageEndAt() != null) {
+            LocalDate fundraisingEndAt = campaign.getEndAt().toLocalDate(); // 모금 종료일
+            LocalDate usageEndAt = campaign.getUsageEndAt().toLocalDate();     // 사업 종료일
 
-        // 3. 사업 종료일 확인 및 시간 함정(24시간) 피하기 위해 LocalDate 사용
-        LocalDate nextDay = campaign.getUsageEndAt().plusDays(1).toLocalDate(); // 종료일 다음 날의 순수 날짜
-        LocalDate today = LocalDate.now(); // 오늘의 순수 날짜
-
-        // 순수 날짜끼리 비교하므로 24시간이 지나지 않아도 정확히 일수(D-Day)를 계산
-        long day = Math.abs(ChronoUnit.DAYS.between(nextDay, today));
-        boolean isPassed = today.isAfter(nextDay); // 오늘이 다음 날을 지났는지 판별
-
-        if(finalReport.isEmpty()) {
-            //3. 사업 종료일 확인
-            // 캠페인 엔티티에서 사업종료일+1 가져오기
-            // 기준은 종료일 다음날 00시 00분 설정이므로
-            // 종료일 다음날 00시 00분 설정
-
-          if (isPassed) {
-                    // 몇일 지났는지 확인해야함
-
-                    finalReportMicroDTO = FinalReportMicroTrackingResponseDto.builder()
-                            .dayPassed(day)
-                            .isExist(false) // 리포트 존재 여부 플래그
-                            .reportData(null)  // 데이터는 없음
-                            .isPassed(true)
-                            .build();
-          }
-          else{
-              finalReportMicroDTO = FinalReportMicroTrackingResponseDto.builder()
-                      .dayPassed(day)
-                      .isExist(false) // 리포트 존재 여부 플래그
-                      .reportData(null)  // 데이터는 없음
-                      .isPassed(false)
-                      .build();
-          }
-        }
-        else {
-            FinalReport finalReportNotEmpty = finalReport.get();
-            // 3. 모든 조건을 통과하면 리포트 반환
-            if (isPassed) {
-                finalReportMicroDTO = FinalReportMicroTrackingResponseDto.builder()
-                        .dayPassed(day)
-                        .isExist(true)
-                        .isPassed(true)
-                        .reportData(FinalReportMicroTrackingResponseDto.FinalReportData.builder()
-                                .title(finalReportNotEmpty.getTitle())
-                                .content(finalReportNotEmpty.getContent())
-                                .build()).build();
+            if (!today.isAfter(fundraisingEndAt)) {
+                // 1. 모금 중 (모금 종료일까지 남은 기간)
+                day = ChronoUnit.DAYS.between(today, fundraisingEndAt);
+                isPassed = false;
+                trackingStatus = "FUNDRAISING";
+            } else if (!today.isAfter(usageEndAt)) {
+                // 2. 모금 종료 후 사업 진행 중 (사업 종료일까지 남은 기간)
+                day = ChronoUnit.DAYS.between(today, usageEndAt);
+                isPassed = false;
+                trackingStatus = "IN_PROGRESS";
             } else {
-                finalReportMicroDTO = FinalReportMicroTrackingResponseDto.builder()
-                        .dayPassed(day)
-                        .isExist(true)
-                        .isPassed(false)
-                        .reportData(FinalReportMicroTrackingResponseDto.FinalReportData.builder()
-                                .title(finalReportNotEmpty.getTitle())
-                                .content(finalReportNotEmpty.getContent())
-                                .build()).build();
-
+                // 3. 사업 종료 후 (사업 종료일로부터 경과된 기간)
+                day = ChronoUnit.DAYS.between(usageEndAt, today);
+                isPassed = true;
+                trackingStatus = "FINISHED";
             }
         }
+
+        FinalReportMicroTrackingResponseDto.FinalReportData reportData = null;
+        if (finalReportOpt.isPresent()) {
+            FinalReport fr = finalReportOpt.get();
+            reportData = FinalReportMicroTrackingResponseDto.FinalReportData.builder()
+                    .title(fr.getTitle())
+                    .content(fr.getContent())
+                    .build();
+        }
+
+        FinalReportMicroTrackingResponseDto finalReportMicroDTO = FinalReportMicroTrackingResponseDto.builder()
+                .dayPassed(day)
+                .isExist(finalReportOpt.isPresent())
+                .isPassed(isPassed)
+                .trackingStatus(trackingStatus)
+                .reportData(reportData)
+                .build();
         return MicroTrackingDTO.builder()
-                .UserfinalReportDTO(finalReportMicroDTO)
-                .UsersettlementDTO(settlementDTO)
+                .campaignNo(campaignNo)
+                .userFinalReportDTO(finalReportMicroDTO)
+                .userSettlementDTO(settlementDTO)
                 .build();
     }
 

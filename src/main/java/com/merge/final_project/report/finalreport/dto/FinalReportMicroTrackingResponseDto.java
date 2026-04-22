@@ -12,8 +12,10 @@ public class FinalReportMicroTrackingResponseDto {
     Long dayPassed;
     Boolean isExist;
     Boolean isPassed; //지났는지 여부
+    String trackingStatus; // FUNDRAISING, IN_PROGRESS, FINISHED
 
     @Getter
+    @Setter
     @Builder
     public static class FinalReportData {
         private String title;
