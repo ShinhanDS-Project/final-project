@@ -50,7 +50,7 @@ public class SecurityConfig {
                 "http://localhost:8090",   // 백엔드 자체 테스트용
                 "http://localhost:5174",   // 로컬 테스트용
                 "http://localhost:3000",   // 로컬 테스트용
-                "https://wwww.merge.io.kr",
+                "https://www.merge.io.kr",
                 "http://192.168.0.220:80",
                 allowedOrigin              // .env나 properties에서 가져온 값
         ));
