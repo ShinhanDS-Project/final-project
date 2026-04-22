@@ -14,6 +14,7 @@ public class FinalReportMicroTrackingResponseDto {
     Boolean isPassed; //지났는지 여부
 
     @Getter
+    @Setter
     @Builder
     public static class FinalReportData {
         private String title;

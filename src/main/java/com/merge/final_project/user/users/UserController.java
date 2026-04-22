@@ -97,7 +97,7 @@ public class UserController {
     // 나의 기부 내역-> DonationController에 존재
     //마이크로트래킹도
     @GetMapping("/see")
-    public ResponseEntity<MicroTrackingDTO> showMicro(Long campaignNo){
+    public ResponseEntity<MicroTrackingDTO> showMicro(@RequestParam Long campaignNo){
 
         MicroTrackingDTO microTracking=userService.showMicroTracking(campaignNo);
         return ResponseEntity.ok(microTracking);
