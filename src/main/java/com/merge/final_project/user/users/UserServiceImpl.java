@@ -259,8 +259,9 @@ public class UserServiceImpl implements UserService {
                     .build();
         }
 
-        // 3. 리포트 및 날짜 계산
-        Optional<FinalReport> finalReportOpt = finalReportRepository.findByCampaign_no(campaignNo);
+        // 3. 리포트 및 날짜 계산 (승인된 리포트만 조회)
+        Optional<FinalReport> finalReportOpt = finalReportRepository.findByCampaign_no(campaignNo)
+                .filter(fr -> fr.getApprovalStatus() == com.merge.final_project.report.finalreport.ReportApprovalStatus.APPROVED);
 
         long day = 0;
         boolean isPassed = false;
@@ -291,7 +292,9 @@ public class UserServiceImpl implements UserService {
         }
 
         FinalReportMicroTrackingResponseDto.FinalReportData reportData = null;
-        if (finalReportOpt.isPresent()) {
+        boolean isReportExist = finalReportOpt.isPresent();
+
+        if (isReportExist) {
             FinalReport fr = finalReportOpt.get();
             reportData = FinalReportMicroTrackingResponseDto.FinalReportData.builder()
                     .title(fr.getTitle())
@@ -301,7 +304,7 @@ public class UserServiceImpl implements UserService {
 
         FinalReportMicroTrackingResponseDto finalReportMicroDTO = FinalReportMicroTrackingResponseDto.builder()
                 .dayPassed(day)
-                .isExist(finalReportOpt.isPresent())
+                .isExist(isReportExist)
                 .isPassed(isPassed)
                 .trackingStatus(trackingStatus)
                 .reportData(reportData)
