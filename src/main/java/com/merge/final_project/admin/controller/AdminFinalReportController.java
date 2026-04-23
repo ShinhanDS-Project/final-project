@@ -1,6 +1,7 @@
 package com.merge.final_project.admin.controller;
 
 import com.merge.final_project.admin.service.AdminFinalReportService;
+import com.merge.final_project.report.finalreport.ReportApprovalStatus;
 import com.merge.final_project.report.finalreport.dto.FinalReportResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,14 @@ public class AdminFinalReportController {
     public ResponseEntity<Page<FinalReportResponseDTO>> getPendingReports(
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(adminFinalReportService.getPendingReports(pageable));
+    }
+
+    // 보고서 조회 목록(기본: 승인/반려 포함, 최신순) - 필요 시 상태 필터 가능
+    @GetMapping
+    public ResponseEntity<Page<FinalReportResponseDTO>> getReports(
+            @RequestParam(required = false) ReportApprovalStatus approvalStatus,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(adminFinalReportService.getReports(approvalStatus, pageable));
     }
 
     // 활동 보고서 승인
