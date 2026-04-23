@@ -19,6 +19,7 @@ public interface FinalReportRepository extends JpaRepository<FinalReport, Long>,
 
     //[가빈] 상태 별로 보고서 목록 조회해오려고 추가함
     Page<FinalReport> findByApprovalStatus(ReportApprovalStatus approvalStatus, Pageable pageable);
+    Page<FinalReport> findByApprovalStatusIn(List<ReportApprovalStatus> approvalStatuses, Pageable pageable);
 
     //[채원] 캠페인 아이디 기준으로 FinalReport 조회
     @Query("SELECT f FROM FinalReport f WHERE f.campaign_no = :campaignNo")

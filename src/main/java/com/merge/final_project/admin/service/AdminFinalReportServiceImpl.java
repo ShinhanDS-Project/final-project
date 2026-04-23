@@ -25,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,6 +44,21 @@ public class AdminFinalReportServiceImpl implements AdminFinalReportService {
     @Override
     public Page<FinalReportResponseDTO> getPendingReports(Pageable pageable) {
         return finalReportRepository.findByApprovalStatus(ReportApprovalStatus.PENDING, pageable)
+                .map(report -> {
+                    var images = imageRepository.findByTargetNameAndTargetNo("final_report", report.getReportNo());
+                    return new FinalReportResponseDTO(report, images);
+                });
+    }
+
+    @Override
+    public Page<FinalReportResponseDTO> getReports(ReportApprovalStatus approvalStatus, Pageable pageable) {
+        Page<FinalReport> reports = approvalStatus == null
+                ? finalReportRepository.findByApprovalStatusIn(
+                        Arrays.asList(ReportApprovalStatus.APPROVED, ReportApprovalStatus.REJECTED),
+                        pageable)
+                : finalReportRepository.findByApprovalStatus(approvalStatus, pageable);
+
+        return reports
                 .map(report -> {
                     var images = imageRepository.findByTargetNameAndTargetNo("final_report", report.getReportNo());
                     return new FinalReportResponseDTO(report, images);

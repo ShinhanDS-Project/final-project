@@ -296,6 +296,7 @@ public class UserServiceImpl implements UserService {
             reportData = FinalReportMicroTrackingResponseDto.FinalReportData.builder()
                     .title(fr.getTitle())
                     .content(fr.getContent())
+                    .approvalStatus(fr.getApprovalStatus())
                     .build();
         }
 

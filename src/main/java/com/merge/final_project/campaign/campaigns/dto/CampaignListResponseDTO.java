@@ -38,6 +38,7 @@ public class CampaignListResponseDTO {  //[가빈] 관리자 측에서 캠페인
                 .title(campaign.getTitle())
                 .category(campaign.getCategory() == null ? null : campaign.getCategory().getLabel())
                 .targetAmount(campaign.getTargetAmount())
+                .currentAmount(campaign.getCurrentAmount())
                 .foundationNo(campaign.getFoundationNo())
                 .approvalStatus(campaign.getApprovalStatus())
                 .campaignStatus(campaign.getCampaignStatus())

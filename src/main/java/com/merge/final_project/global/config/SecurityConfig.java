@@ -50,6 +50,7 @@ public class SecurityConfig {
                 "http://localhost:8090",   // 백엔드 자체 테스트용
                 "http://localhost:5174",   // 로컬 테스트용
                 "http://localhost:3000",   // 로컬 테스트용
+                "http://localhost:5173",
                 "https://www.merge.io.kr",
                 "http://192.168.0.220:80",
                 "https://giveandtake.shinhanacademy.co.kr",

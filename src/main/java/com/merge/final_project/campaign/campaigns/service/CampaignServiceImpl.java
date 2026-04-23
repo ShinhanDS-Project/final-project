@@ -456,7 +456,8 @@ public class CampaignServiceImpl implements CampaignService {
             donorName = "익명";
         } else {
             donorName = userRepository.findByUserNo(donation.getUserNo())
-                    .map(User::getName)
+                    .map(User::getNameHash)
+                    .filter(nameHash -> nameHash != null && !nameHash.isBlank())
                     .orElse("기부자");
         }
 
