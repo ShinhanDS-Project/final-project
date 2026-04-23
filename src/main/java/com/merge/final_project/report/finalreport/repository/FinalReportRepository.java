@@ -1,5 +1,6 @@
 package com.merge.final_project.report.finalreport.repository;
 
+import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.report.finalreport.ReportApprovalStatus;
 import com.merge.final_project.report.finalreport.entitiy.FinalReport;
 import org.springframework.data.domain.Page;
@@ -23,4 +24,6 @@ public interface FinalReportRepository extends JpaRepository<FinalReport, Long>,
     //[채원] 캠페인 아이디 기준으로 FinalReport 조회
     @Query("SELECT f FROM FinalReport f WHERE f.campaign_no = :campaignNo")
     Optional<FinalReport> findByCampaign_no(@Param("campaignNo") Long campaignNo);
+
+    Optional<FinalReport> findByCampaignNoAndApprovalStatus(Long campaignNo, ApprovalStatus approvalStatus);
 }

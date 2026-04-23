@@ -2,6 +2,7 @@ package com.merge.final_project.user.users;
 
 import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
+import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
@@ -260,8 +261,11 @@ public class UserServiceImpl implements UserService {
         }
 
         // 3. 리포트 및 날짜 계산
-        Optional<FinalReport> finalReportOpt = finalReportRepository.findByCampaign_no(campaignNo);
-
+        Optional<FinalReport> finalReportOpt =
+                finalReportRepository.findByCampaignNoAndApprovalStatus(
+                        campaignNo,
+                        ApprovalStatus.APPROVED
+                );
         long day = 0;
         boolean isPassed = false;
         String trackingStatus = "FUNDRAISING"; // 기본값
