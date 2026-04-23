@@ -52,6 +52,7 @@ public class SecurityConfig {
                 "http://localhost:3000",   // 로컬 테스트용
                 "https://www.merge.io.kr",
                 "http://192.168.0.220:80",
+                "https://giveandtake.shinhanacademy.co.kr",
                 allowedOrigin              // .env나 properties에서 가져온 값
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
