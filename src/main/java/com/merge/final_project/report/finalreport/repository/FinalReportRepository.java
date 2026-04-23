@@ -25,5 +25,5 @@ public interface FinalReportRepository extends JpaRepository<FinalReport, Long>,
     @Query("SELECT f FROM FinalReport f WHERE f.campaign_no = :campaignNo")
     Optional<FinalReport> findByCampaign_no(@Param("campaignNo") Long campaignNo);
 
-    Optional<FinalReport> findByCampaignNoAndApprovalStatus(Long campaignNo, ApprovalStatus approvalStatus);
+   // Optional<FinalReport> findByCampaignNoAndApprovalStatus(Long campaignNo, ApprovalStatus approvalStatus);
 }

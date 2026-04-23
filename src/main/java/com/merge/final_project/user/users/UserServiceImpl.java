@@ -2,7 +2,6 @@ package com.merge.final_project.user.users;
 
 import com.merge.final_project.blockchain.entity.Transaction;
 import com.merge.final_project.blockchain.repository.TransactionRepository;
-import com.merge.final_project.campaign.campaigns.ApprovalStatus;
 import com.merge.final_project.campaign.campaigns.entity.Campaign;
 import com.merge.final_project.campaign.campaigns.repository.CampaignRepository;
 import com.merge.final_project.campaign.settlement.Repository.SettlementRepository;
@@ -260,12 +259,10 @@ public class UserServiceImpl implements UserService {
                     .build();
         }
 
-        // 3. 리포트 및 날짜 계산
-        Optional<FinalReport> finalReportOpt =
-                finalReportRepository.findByCampaignNoAndApprovalStatus(
-                        campaignNo,
-                        ApprovalStatus.APPROVED
-                );
+        // 3. 리포트 및 날짜 계산 (승인된 리포트만 조회)
+        Optional<FinalReport> finalReportOpt = finalReportRepository.findByCampaign_no(campaignNo)
+                .filter(fr -> fr.getApprovalStatus() == com.merge.final_project.report.finalreport.ReportApprovalStatus.APPROVED);
+
         long day = 0;
         boolean isPassed = false;
         String trackingStatus = "FUNDRAISING"; // 기본값
@@ -295,7 +292,9 @@ public class UserServiceImpl implements UserService {
         }
 
         FinalReportMicroTrackingResponseDto.FinalReportData reportData = null;
-        if (finalReportOpt.isPresent()) {
+        boolean isReportExist = finalReportOpt.isPresent();
+
+        if (isReportExist) {
             FinalReport fr = finalReportOpt.get();
             reportData = FinalReportMicroTrackingResponseDto.FinalReportData.builder()
                     .title(fr.getTitle())
@@ -305,7 +304,7 @@ public class UserServiceImpl implements UserService {
 
         FinalReportMicroTrackingResponseDto finalReportMicroDTO = FinalReportMicroTrackingResponseDto.builder()
                 .dayPassed(day)
-                .isExist(finalReportOpt.isPresent())
+                .isExist(isReportExist)
                 .isPassed(isPassed)
                 .trackingStatus(trackingStatus)
                 .reportData(reportData)
